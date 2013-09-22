@@ -1,0 +1,10 @@
+*~
+bin/
+
+# Eclipse
+.buildpath
+.project
+.settings
+.classpath
+
+.directory
