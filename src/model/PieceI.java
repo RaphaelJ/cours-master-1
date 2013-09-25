@@ -2,8 +2,9 @@ package model;
 
 public class PieceI extends Piece {
 
-	public PieceI() {
-		
+	public PieceI(Coordinates initialPosition) {
+		super(initialPosition);
+
 		rectangle = new RotationRectangle(4, 4, new Coordinates(1, 1));
 
 		blocks.add(new Coordinates(1, 0));

@@ -2,7 +2,8 @@ package model;
 
 public class PieceZ extends Piece {
 
-	public PieceZ() {
+	public PieceZ(Coordinates initialPosition) {
+		super(initialPosition);
 		
 		rectangle = new RotationRectangle(3, 3, new Coordinates(1, 1));
 

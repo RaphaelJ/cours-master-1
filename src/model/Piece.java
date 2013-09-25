@@ -11,6 +11,13 @@ public abstract class Piece {
 	// Represents the coordinates list of the piece's blocks inside the rotation rectangle
 	protected List<Coordinates> blocks = new ArrayList<Coordinates>();
 	
+	protected Coordinates position;
+	
+	public Piece(Coordinates initialPosition) {
+
+		this.position = initialPosition;
+	}
+	
 	// Perform a counter clockwise rotation of the piece
 	public void rotate() {
 		
@@ -56,5 +63,9 @@ public abstract class Piece {
 			positions[coord.getY()][coord.getX()] = true;
 		
 		return positions;
+	}
+	
+	public RotationRectangle getRectangle() {
+		return rectangle;
 	}
 }
