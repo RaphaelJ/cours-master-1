@@ -1,15 +1,17 @@
-package model;
+package model.piece;
 
-public class PieceZ extends Piece {
+import model.Coordinates;
 
-	public PieceZ(Coordinates initialPosition) {
+public class PieceT extends Piece {
+
+	public PieceT(Coordinates initialPosition) {
 		super(initialPosition);
 		
 		rectangle = new RotationRectangle(3, 3, new Coordinates(1, 1));
 
 		blocks.add(new Coordinates(0, 1));
 		blocks.add(new Coordinates(1, 1));
+		blocks.add(new Coordinates(2, 1));
 		blocks.add(new Coordinates(1, 2));
-		blocks.add(new Coordinates(2, 2));
 	}
 }

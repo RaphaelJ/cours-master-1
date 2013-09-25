@@ -1,7 +1,7 @@
 package controller;
 
-import model.Piece;
 import model.Playfield;
+import model.piece.Piece;
 
 public class GameController {
 

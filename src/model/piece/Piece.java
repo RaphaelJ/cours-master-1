@@ -1,10 +1,9 @@
-package model;
+package model.piece;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import model.Coordinates;
-import model.piece.RotationRectangle;
 
 public abstract class Piece {
 

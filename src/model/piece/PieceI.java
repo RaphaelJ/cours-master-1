@@ -1,4 +1,6 @@
-package model;
+package model.piece;
+
+import model.Coordinates;
 
 public class PieceI extends Piece {
 
