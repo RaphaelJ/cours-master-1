@@ -1,17 +1,45 @@
 package model.piece;
 
-import model.Coordinates;
-
 public class PieceI extends Piece {
+    public class PieceIFactory extends Piece.PieceFactory {
+        public int extent = 4;
 
-	public PieceI(Coordinates initialPosition) {
-		super(initialPosition);
+        public Piece construct(int currentState)
+        {
+            return new PieceI(currentState);
+        }
+    }
 
-		rectangle = new RotationRectangle(4, 4, new Coordinates(1, 1));
+    // Shares the states between each instances of the Pieces.
+    private static final boolean[][][] states = { {
+            { false, false, false, false },
+            { true,  true,  true,  true  },
+            { false, false, false, false },
+            { false, false, false, false }
+        }, {
+            { false, false, true, false },
+            { false, false, true, false },
+            { false, false, true, false },
+            { false, false, true, false }
+        }, {
+            { false, false, false, false },
+            { false, false, false, false },
+            { true,  true,  true,  true  },
+            { false, false, false, false }
+        }, {
+            { false, true, false, false },
+            { false, true, false, false },
+            { false, true, false, false },
+            { false, true, false, false }
+        }
+    };
+    protected final Boolean[][][] _states = states;
 
-		blocks.add(new Coordinates(1, 0));
-		blocks.add(new Coordinates(1, 1));
-		blocks.add(new Coordinates(1, 2));
-		blocks.add(new Coordinates(1, 3));
-	}
+    private static final PieceIFactory factory = new PieceIFactory();
+    protected final PieceFactory _factory = factory;
+
+    public PieceI(int currentState)
+    {
+        super(currentState);
+    }
 }

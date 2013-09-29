@@ -1,17 +1,41 @@
 package model.piece;
 
-import model.Coordinates;
-
 public class PieceZ extends Piece {
+    public class PieceZFactory extends Piece.PieceFactory {
+        public int extent = 3;
 
-	public PieceZ(Coordinates initialPosition) {
-		super(initialPosition);
-		
-		rectangle = new RotationRectangle(3, 3, new Coordinates(1, 1));
+        public Piece construct(int currentState)
+        {
+            return new PieceZ(currentState);
+        }
+    }
 
-		blocks.add(new Coordinates(0, 1));
-		blocks.add(new Coordinates(1, 1));
-		blocks.add(new Coordinates(1, 2));
-		blocks.add(new Coordinates(2, 2));
-	}
+    // Shares the states between each instances of the Pieces.
+    private static final states = { {
+            { true,  true,  false },
+            { false, true,  true  },
+            { false, false, false }
+        }, {
+            { false, false, true },
+            { false, true,  true },
+            { false, true,  false }
+        }, {
+            { false, false, false },
+            { true,  true,  false },
+            { false, true,  true  }
+        }, {
+            { false, true,  false },
+            { true,  true,  false },
+            { true,  false, false }
+        }
+    };
+    protected final Boolean[][][] _states = states;
+
+    private static final PieceZFactory factory = new PieceZFactory();
+    protected final PieceFactory _factory = factory;
+
+    public PieceZ(int currentState)
+    {
+        super(currentState);
+    }
 }

@@ -1,7 +1,6 @@
 package model;
 
 public class ScoreNintendo extends Score {
-
 	@Override
 	public void increase(int clearedLines, int level) throws Exception {
 		
