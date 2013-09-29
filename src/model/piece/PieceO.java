@@ -1,12 +1,15 @@
 package model.piece;
 
 public class PieceO extends Piece {
-    public class PieceOFactory extends Piece.PieceFactory {
-        public int extent = 2;
-
-        public Piece construct(int currentState)
+    private class PieceOFactory extends Piece.PieceFactory {
+        public int getExtent()
         {
-            return new PieceO(currentState);
+            return 2;
+        }
+
+        public Piece construct(Coordinates topLeft, int currentState)
+        {
+            return new PieceO(topLeft, currentState);
         }
     }
 
@@ -21,8 +24,8 @@ public class PieceO extends Piece {
     private static final PieceOFactory factory = new PieceOFactory();
     protected final PieceFactory _factory = factory;
 
-    public PieceO(int currentState)
+    public PieceO(Coordinates topLeft, int currentState)
     {
-        super(currentState);
+        super(topLeft, currentState);
     }
 }

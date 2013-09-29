@@ -17,23 +17,17 @@ public class Board {
     public static final int DEFAULT_WIDTH   = 10;
     public static final int DEFAULT_HEIGHT  = 22;
 
-    public static final Piece.PieceFactory[] AVAILABLE_PIECES = {
-        new PieceI.PieceIFactory(), new PieceJ.PieceJFactory(),
-        new PieceL.PieceLFactory(), new PieceO.PieceOFactory(),
-        new PieceS.PieceSFactory(), new PieceT.PieceTFactory(),
-        new PieceZ.PieceZFactory()
-    };
-
     private final Random _rand;
 
     private final int _width;
     private final int _height;
 
     /** Contains a matrix which maps each cell of the board to the piece which
-     * is there, if any. */
+     * is there, if any.
+     * The first cell of the grid is the top-left point of the board. */
     private final Piece[][] _grid;
 
-    private Piece _current;
+    private Piece _current = null;
 
     private ArrayList<> _listeners = new ArrayList<BoardListener>();
 
@@ -45,8 +39,6 @@ public class Board {
         this._height = DEFAULT_HEIGHT;
 
         this._grid = new Piece[this._height][this._width];
-
-        this._current = this.nextPiece();
     }
 
     /** Initializes an empty board with a specified seed for the random
@@ -66,40 +58,61 @@ public class Board {
         this._height = height;
 
         this._grid = new Piece[height][width];
-
-        this._current = this.nextPiece();
     }
 
-    /** Returns the next random piece and places it at the top of the grid. */
+    /** Returns the next random piece and places it at the top of the grid.
+     * Returns null if the piece can't be placed in the grid (game over). */
     private Piece nextPiece()
     {
-        int factory = AVAILABLE_PIECES[
-            this._rand.nextInt(AVAILABLE_PIECES.length)
+        int factory = Piece.AVAILABLE_PIECES[
+            this._rand.nextInt(Piece.AVAILABLE_PIECES.length)
         ];
 
-        return factory.construct((this._width - factory.extent) / 2, 0, 0);
+        // Puts the last line of the piece on the top-most line of the board.
+        Piece piece = factory.construct(
+            (this._width - factory.getExtent()) / 2, 1 - factory.getExtent(), 0
+        );
+
+        // Checks if the last line is blocked by some piece.
+        Coordinates topLeft = piece.getTopLeft();
+        boolean[][] state = piece.getCurrentState();
+        boolean line = state[state.length - 1];
+
+        for (int j = 0; j < line.length; j++) {
+            Piece cell = this._grid[0][j + topLeft.getX()];
+            if (line[j] && cell != null)
+                return null;
+        }
+
+        return piece;
     }
 
     /** Returns true if the piece doesn't overlap with another piece of the
      * board. */
-    private boolean checkPiece(Piece piece)
+    private Piece movePiece(Piece piece)
     {
-        Coordinates topLeft = piece.getTopLeft();
-        boolean[][] state = piece.getCurrentState();
+        Piece newPiece = piece.translate(0, 1);
 
-        for (int i = 0; i < state.length; i++) {
+        Coordinates topLeft = newPiece.getTopLeft();
+        boolean[][] state = newPiece.getCurrentState();
+
+        // Only checks coordinates of the piece which are inside the grid.
+        int i = topLeft.getY() < 0 ? -topLeft.getY() : 0;
+
+        for (; i < state.length; i++) {
             boolean line = state[i];
 
             for (int j = 0; j < line.length; j++) {
-                if (line[j] && this._grid[i + topLeft.y][j + topLeft.x] != null)
-                    return false;
+                Piece cell = this._grid[i + topLeft.getY()][j + topLeft.getX()];
+                if (line[j] && cell != null && cell != piece)
+                    return null;
             }
         }
 
-        return true;
+        return newPiece;
     }
 
-    public void addBoardListener(BoardListener listener)
+    public void addListener(BoardListener listener)
     {
         this._listeners.add(listener);
     }
@@ -107,7 +120,25 @@ public class Board {
     /** Runs one step of the game: moves the current piece. */
     public void gameTick()
     {
-        
+        if (this._current) { // Needs to introduce a new piece in the grid.
+            Piece piece = this.nextPiece();
+
+            if (piece == null) {
+                for (BoardListener listener : this._listeners)
+                    listener.gameOver();
+            } else {
+
+            }
+        } else { // Moves the piece downward.
+            Piece piece = this.movePiece();
+
+            if (piece == null) {
+                for (BoardListener listener : this._listeners)
+                    listener.gameOver();
+            } else {
+
+            }
+        }
     }
 
     public int getWidth()

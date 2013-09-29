@@ -1,32 +1,27 @@
 package model.piece;
 
 public class PieceS extends Piece {
-    public class PieceSFactory extends Piece.PieceFactory {
-        public int extent = 3;
-
-        public Piece construct(int currentState)
+    private class PieceSFactory extends Piece.PieceFactory {
+        public int getExtent()
         {
-            return new PieceS(currentState);
+            return 3;
+        }
+
+        public Piece construct(Coordinates topLeft, int currentState)
+        {
+            return new PieceS(topLeft, currentState);
         }
     }
 
     // Shares the states between each instances of the Pieces.
     private static final states = { {
-            { false, true,  true  },
-            { true,  true,  false },
-            { false, false, false }
-        }, {
-            { false, true,  false },
-            { false, true,  true  },
-            { false, false, true  }
-        }, {
             { false, false, false },
             { false, true,  true  },
             { true,  true,  false }
         }, {
-            { true,  false, false },
-            { true,  true,  false },
-            { false, true,  false }
+            { false, true,  false },
+            { false, true,  true  },
+            { false, false, true  }
         }
     };
     protected final Boolean[][][] _states = states;
@@ -34,8 +29,8 @@ public class PieceS extends Piece {
     private static final PieceSFactory factory = new PieceSFactory();
     protected final PieceFactory _factory = factory;
 
-    public PieceS(int currentState)
+    public PieceS(Coordinates topLeft, int currentState)
     {
-        super(currentState);
+        super(topLeft, currentState);
     }
 }

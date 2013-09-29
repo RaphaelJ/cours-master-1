@@ -8,18 +8,25 @@ import model.Coordinates;
  * This is useful to check if a piece can be rotated or moved before applying
  * the transformation. */
 public abstract class Piece {
+    public static final Piece.PieceFactory[] AVAILABLE_PIECES = {
+        new PieceI.PieceIFactory(), new PieceJ.PieceJFactory(),
+        new PieceL.PieceLFactory(), new PieceO.PieceOFactory(),
+        new PieceS.PieceSFactory(), new PieceT.PieceTFactory(),
+        new PieceZ.PieceZFactory()
+    };
+
     /** Provides a factory method to create new instances of a piece with
      * different orientations and positions. */
-    public abstract PieceFactory {
+    public interface PieceFactory {
         /** Extent of the square matrix which contains the state of the piece.
          */
-        public final int extent;
+        public int getExtent();
 
-        public Piece construct(int x, int y, int currentState);
+        public Piece construct(Coordinates topLeft, int currentState);
     }
 
     /** Coordinates of the top-left corner of the piece's state matrix. */
-    private Coordinates _topLeft;
+    private final Coordinates _topLeft;
 
     /** Contains the set of matrices for each orientations of the piece.
      * Each matrix contains booleans to indicate if the cell is occupied by the
@@ -30,9 +37,11 @@ public abstract class Piece {
     /** Cycles between each state when a rotation is applied to the piece. */
     private final int _currentState;
 
-    /** Provides a factory to creates new instances of the current piece.
+    /** Provides the factory which can be used to create new instances of the
+     * current piece.
      * This is needed to create new pieces from the same type but at a different
-     * position or orientation, as the methods can't update the current piece.
+     * position or orientation in this abstract class, as the methods can't
+     * update the current piece.
      */
     protected final Piece.PieceFactory _factory;
 
@@ -52,7 +61,16 @@ public abstract class Piece {
     public Piece rotate()
     {
         return this._factory.construct(
-            (this._currentState + 1) % this._states.length
+            this._topLeft, (this._currentState + 1) % this._states.length
+        );
+    }
+
+    public Piece translate(int dX, int dY)
+    {
+        return this._factory.construct(
+            new Coordinates(
+                this._topLeft.getX() + dX, this._topLeft.getY() + dY
+            ), this._currentState
         );
     }
 
