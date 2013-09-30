@@ -4,18 +4,20 @@ package model;
  * changes and game events with the user. */
 public class Board {
     /** Provides an interface to listen to game's board changes. */
-    public interface BoardListener {
+    public interface BoardListener extends EventListener {
         /** Event triggered when a piece move inside the grid. */
-        public void gameChange();
+        public void gridChange();
 
         /** Event triggered when n lines have been removed by the player. */
         public void clearedLines(int n);
 
         public void gameOver();
+
+        public void reset();
     }
 
-    public static final int DEFAULT_WIDTH   = 10;
-    public static final int DEFAULT_HEIGHT  = 22;
+    public static final int DEFAULT_WIDTH  = 10;
+    public static final int DEFAULT_HEIGHT = 22;
 
     private final Random _rand;
 
@@ -58,6 +60,44 @@ public class Board {
         this._height = height;
 
         this._grid = new Piece[height][width];
+    }
+
+    /** Removes every pieces from the grid and emits the reset event. */
+    public void resetBoard()
+    {
+        for (Piece[] line : grid)
+            line.fill(null);
+
+        this._current = null;
+
+        for (BoardListener listener : this._listeners)
+            listener.reset();
+    }
+
+    public void addListener(BoardListener listener)
+    {
+        this._listeners.add(listener);
+    }
+
+    /** Runs one step of the game: moves the current piece.
+      * Returns the current piece or null if the game is over. */
+    public void gameTick()
+    {
+        if (this._current == null) // First piece.
+            this._current = this.nextPiece();
+        else { // Moves the piece downward.
+            this._current = this.movePiece();
+
+            if (this._current == null) // Introduces a new piece.
+                this._current.nextPiece();
+        }
+
+        return this._current;
+    }
+    
+    /** Places a piece on the grid and emits the grid change event. */
+    private void placesPiece(Piece piece)
+    {
     }
 
     /** Returns the next random piece and places it at the top of the grid.
@@ -143,27 +183,6 @@ public class Board {
         return newPiece;
     }
 
-    public void addListener(BoardListener listener)
-    {
-        this._listeners.add(listener);
-    }
-
-    /** Runs one step of the game: moves the current piece.
-      * Returns the current piece or null if the game is over. */
-    public void gameTick()
-    {
-        if (this._current == null) // First piece.
-            this._current = this.nextPiece();
-        else { // Moves the piece downward.
-            this._current = this.movePiece();
-
-            if (this._current == null) // Introduces a new piece.
-                this._current.nextPiece();
-        }
-
-        return this._current;
-    }
-
     public int getWidth()
     {
         return this._width;
@@ -172,5 +191,10 @@ public class Board {
     public int getHeight()
     {
         return this._height;
+    }
+
+    public Piece[][] getGrid()
+    {
+        return this._grid;
     }
 }
