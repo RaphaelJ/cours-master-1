@@ -9,10 +9,8 @@ import model.Coordinates;
  * the transformation. */
 public abstract class Piece {
     public static final Piece.PieceFactory[] AVAILABLE_PIECES = {
-        new PieceI.PieceIFactory(), new PieceJ.PieceJFactory(),
-        new PieceL.PieceLFactory(), new PieceO.PieceOFactory(),
-        new PieceS.PieceSFactory(), new PieceT.PieceTFactory(),
-        new PieceZ.PieceZFactory()
+        PieceI.factory, PieceJ.factory, PieceL.factory, PieceO.factory,
+        PieceS.factory, PieceT.factory, PieceZ.factory
     };
 
     /** Provides a factory method to create new instances of a piece with
@@ -32,7 +30,7 @@ public abstract class Piece {
      * Each matrix contains booleans to indicate if the cell is occupied by the
      * piece or not. Each matrix must be a square matrix and they all must have
      * the same extent. */
-    protected final Boolean[][][] _states;
+    protected final boolean[][][] _states = null;
 
     /** Cycles between each state when a rotation is applied to the piece. */
     private final int _currentState;
@@ -43,7 +41,7 @@ public abstract class Piece {
      * position or orientation in this abstract class, as the methods can't
      * update the current piece.
      */
-    protected final Piece.PieceFactory _factory;
+    protected final Piece.PieceFactory _factory = null;
 
     protected Piece(Coordinates topLeft)
     {
@@ -81,7 +79,7 @@ public abstract class Piece {
 
     /** Returns the boolean matrix with contains the current state of the
      * piece. */
-    public Boolean[][] getCurrentState()
+    public boolean[][] getCurrentState()
     {
         return this._states[this._currentState];
     }

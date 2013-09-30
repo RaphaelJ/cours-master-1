@@ -1,6 +1,8 @@
 package view;
 
-public class SwingInterface extends BoardListener {
+import model.Board;
+
+public class SwingInterface /*extends Piece.BoardListener*/ {
     public SwingInterface()
     {
     }

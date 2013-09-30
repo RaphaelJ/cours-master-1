@@ -12,12 +12,12 @@ public class Coordinates {
 
     public int getX()
     {
-        return x;
+        return this._x;
     }
 
     public int getY()
     {
-        return y;
+        return this._y;
     }
 
     @Override

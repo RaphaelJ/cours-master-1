@@ -1,5 +1,9 @@
 package model;
 
+import java.util.*;
+
+import model.piece.Piece;
+
 /** Saves the current status of the board and communicates with views to share
  * changes and game events with the user. */
 public class Board {
@@ -31,9 +35,9 @@ public class Board {
 
     private Piece _current = null;
 
-    private ArrayList<> _listeners = new ArrayList<BoardListener>();
+    private ArrayList<BoardListener> _listeners = new ArrayList<>();
 
-    public Board();
+    public Board()
     {
         this._rand = new Random();
 
@@ -52,7 +56,7 @@ public class Board {
         this(seed, DEFAULT_WIDTH, DEFAULT_HEIGHT);
     }
 
-    public Board(int seed, int width, int height)
+    public Board(long seed, int width, int height)
     {
         this._rand = new Random(seed);
 
@@ -65,8 +69,8 @@ public class Board {
     /** Removes every pieces from the grid and emits the reset event. */
     public void resetBoard()
     {
-        for (Piece[] line : grid)
-            line.fill(null);
+        for (Piece[] line : this._grid)
+            Arrays.fill(line, null);
 
         this._current = null;
 
@@ -81,20 +85,20 @@ public class Board {
 
     /** Runs one step of the game: moves the current piece.
       * Returns the current piece or null if the game is over. */
-    public void gameTick()
+    public Piece gameTick()
     {
         if (this._current == null) // First piece.
             this._current = this.nextPiece();
         else { // Moves the piece downward.
-            this._current = this.movePiece();
+            this._current = this.movePiece(this._current);
 
             if (this._current == null) // Introduces a new piece.
-                this._current.nextPiece();
+                this._current = this.nextPiece();
         }
 
         return this._current;
     }
-    
+
     /** Places a piece on the grid and emits the grid change event. */
     private void placesPiece(Piece piece)
     {
@@ -105,19 +109,20 @@ public class Board {
      * the grid. */
     private Piece nextPiece()
     {
-        int factory = Piece.AVAILABLE_PIECES[
+        Piece.PieceFactory factory = Piece.AVAILABLE_PIECES[
             this._rand.nextInt(Piece.AVAILABLE_PIECES.length)
         ];
 
         // Puts the last line of the piece on the top-most line of the board.
-        Piece piece = factory.construct(
-            (this._width - factory.getExtent()) / 2, 1 - factory.getExtent(), 0
+        Coordinates coords = new Coordinates(
+            (this._width - factory.getExtent()) / 2, 1 - factory.getExtent()
         );
+        Piece piece = factory.construct(coords , 0);
 
         // Checks if the last line is blocked by some piece.
         Coordinates topLeft = piece.getTopLeft();
         boolean[][] state = piece.getCurrentState();
-        boolean line = state[state.length - 1];
+        boolean[] line = state[state.length - 1];
 
         for (int j = 0; j < line.length; j++) {
             Piece cell = this._grid[0][j + topLeft.getX()];
@@ -137,6 +142,7 @@ public class Board {
     private Piece movePiece(Piece piece)
     {
         Coordinates topLeft = piece.getTopLeft();
+        boolean[][] state = piece.getCurrentState();
 
         Piece newPiece = piece.translate(0, 1);
         Coordinates newTopLeft = newPiece.getTopLeft();
@@ -159,7 +165,7 @@ public class Board {
         // Removes the old piece from the grid.
         i = topLeft.getY() < 0 ? -topLeft.getY() : 0;
         for (; i < state.length; i++) {
-            boolean line = state[i];
+            boolean[] line = state[i];
 
             for (int j = 0; j < line.length; j++) {
                 if (line[j])

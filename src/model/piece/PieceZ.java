@@ -1,20 +1,10 @@
 package model.piece;
 
+import model.Coordinates;
+
 public class PieceZ extends Piece {
-    private class PieceZFactory extends Piece.PieceFactory {
-        public int getExtent()
-        {
-            return 3;
-        }
-
-        public Piece construct(Coordinates topLeft, int currentState)
-        {
-            return new PieceZ(topLeft, currentState);
-        }
-    }
-
     // Shares the states between each instances of the Pieces.
-    private static final states = { {
+    private static final boolean[][][] states = { {
             { false, false, false },
             { true,  true,  false },
             { false, true,  true  }
@@ -24,9 +14,9 @@ public class PieceZ extends Piece {
             { false, true,  false }
         }
     };
-    protected final Boolean[][][] _states = states;
+    protected final boolean[][][] _states = states;
 
-    private static final PieceZFactory factory = new PieceZFactory();
+    public static final PieceZFactory factory = new PieceZFactory();
     protected final PieceFactory _factory = factory;
 
     public PieceZ(Coordinates topLeft, int currentState)
