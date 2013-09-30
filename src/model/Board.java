@@ -5,11 +5,11 @@ package model;
 public class Board {
     /** Provides an interface to listen to game's board changes. */
     public interface BoardListener {
-        /** Event triggered when a piece move in the grid. */
+        /** Event triggered when a piece move inside the grid. */
         public void gameChange();
 
         /** Event triggered when n lines have been removed by the player. */
-        public void newClearedLines(int n);
+        public void clearedLines(int n);
 
         public void gameOver();
     }
@@ -61,7 +61,8 @@ public class Board {
     }
 
     /** Returns the next random piece and places it at the top of the grid.
-     * Returns null if the piece can't be placed in the grid (game over). */
+     * Returns null and emits a game over event if the piece can't be placed in
+     * the grid. */
     private Piece nextPiece()
     {
         int factory = Piece.AVAILABLE_PIECES[
@@ -80,32 +81,62 @@ public class Board {
 
         for (int j = 0; j < line.length; j++) {
             Piece cell = this._grid[0][j + topLeft.getX()];
-            if (line[j] && cell != null)
+            if (line[j] && cell != null) {
+                for (BoardListener listener : this._listeners)
+                    listener.gameOver();
                 return null;
+            }
         }
 
         return piece;
     }
 
-    /** Returns true if the piece doesn't overlap with another piece of the
-     * board. */
+    /** Returns the new translated piece if it doesn't overlap with another
+     * piece of the board.
+     * Returns null if an overlap occurs. */
     private Piece movePiece(Piece piece)
     {
+        Coordinates topLeft = piece.getTopLeft();
+
         Piece newPiece = piece.translate(0, 1);
+        Coordinates newTopLeft = newPiece.getTopLeft();
+        boolean[][] newState = newPiece.getCurrentState();
 
-        Coordinates topLeft = newPiece.getTopLeft();
-        boolean[][] state = newPiece.getCurrentState();
-
+        // Checks if the new piece overlap another piece.
         // Only checks coordinates of the piece which are inside the grid.
-        int i = topLeft.getY() < 0 ? -topLeft.getY() : 0;
+        int i = newTopLeft.getY() < 0 ? -newTopLeft.getY() : 0;
+        for (; i < newState.length; i++) {
+            boolean[] line = newState[i];
 
+            for (int j = 0; j < line.length; j++) {
+                Piece cell = this._grid[i + newTopLeft.getY()]
+                                       [j + newTopLeft.getX()];
+                if (line[j] && cell != null && cell != piece)
+                    return null;
+            }
+        }
+
+        // Removes the old piece from the grid.
+        i = topLeft.getY() < 0 ? -topLeft.getY() : 0;
         for (; i < state.length; i++) {
             boolean line = state[i];
 
             for (int j = 0; j < line.length; j++) {
-                Piece cell = this._grid[i + topLeft.getY()][j + topLeft.getX()];
-                if (line[j] && cell != null && cell != piece)
-                    return null;
+                if (line[j])
+                    this._grid[i + topLeft.getY()][j + topLeft.getX()] = null;
+            }
+        }
+
+        // Places the new piece on the grid.
+        i = newTopLeft.getY() < 0 ? -newTopLeft.getY() : 0;
+        for (; i < newState.length; i++) {
+            boolean[] line = newState[i];
+
+            for (int j = 0; j < line.length; j++) {
+                if (line[j]) {
+                    this._grid[i + newTopLeft.getY()][j + newTopLeft.getX()]
+                        = newPiece;
+                }
             }
         }
 
@@ -117,28 +148,20 @@ public class Board {
         this._listeners.add(listener);
     }
 
-    /** Runs one step of the game: moves the current piece. */
+    /** Runs one step of the game: moves the current piece.
+      * Returns the current piece or null if the game is over. */
     public void gameTick()
     {
-        if (this._current) { // Needs to introduce a new piece in the grid.
-            Piece piece = this.nextPiece();
+        if (this._current == null) // First piece.
+            this._current = this.nextPiece();
+        else { // Moves the piece downward.
+            this._current = this.movePiece();
 
-            if (piece == null) {
-                for (BoardListener listener : this._listeners)
-                    listener.gameOver();
-            } else {
-
-            }
-        } else { // Moves the piece downward.
-            Piece piece = this.movePiece();
-
-            if (piece == null) {
-                for (BoardListener listener : this._listeners)
-                    listener.gameOver();
-            } else {
-
-            }
+            if (this._current == null) // Introduces a new piece.
+                this._current.nextPiece();
         }
+
+        return this._current;
     }
 
     public int getWidth()
