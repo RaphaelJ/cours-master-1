@@ -38,6 +38,7 @@ public class CLIView implements Board.BoardListener {
 
         for (int i = 0; i < width + 1; i++)
             System.out.print("~~");
+        System.out.println();
     }
 
     public void gridChange()

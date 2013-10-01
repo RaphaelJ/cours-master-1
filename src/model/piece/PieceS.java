@@ -1,6 +1,9 @@
 package model.piece;
 
+import java.awt.image.BufferedImage;
+
 import model.Coordinates;
+import util.Lazy;
 
 public class PieceS extends Piece {
     // Shares the states between each instances of the Pieces.
@@ -19,8 +22,15 @@ public class PieceS extends Piece {
     public static final PieceSFactory factory = new PieceSFactory();
     protected final PieceFactory _factory = factory;
 
+    public static final Lazy<BufferedImage> tile = Piece.getTile("green.png");
+
     public PieceS(Coordinates topLeft, int currentState)
     {
         super(topLeft, currentState);
+    }
+
+    public BufferedImage getTile() throws Exception
+    {
+        return PieceS.tile.get();
     }
 }

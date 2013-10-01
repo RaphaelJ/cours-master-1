@@ -137,7 +137,7 @@ public class Board {
     }
 
     /** Returns the new translated piece if it doesn't overlap with another
-     * piece of the board.
+     * piece or if it is out of the board.
      * Returns null if an overlap occurs. */
     private Piece movePiece(Piece piece)
     {
@@ -147,6 +147,10 @@ public class Board {
         Piece newPiece = piece.translate(0, 1);
         Coordinates newTopLeft = newPiece.getTopLeft();
         boolean[][] newState = newPiece.getCurrentState();
+
+        // Checks if it hits the bottom of the grid.
+        if (newTopLeft.getY() + newState.length > this._height)
+            return null;
 
         // Checks if the new piece overlap another piece.
         // Only checks coordinates of the piece which are inside the grid.
