@@ -1,4 +1,4 @@
-package model.timer;
+package util.timer;
 
 public class Timer {
 
@@ -11,6 +11,9 @@ public class Timer {
 		this.timerTask.schedule(delay);
 		
 		this.innerThread = new TimerThread();
+	}
+	
+	public void start() {
 		this.innerThread.start();
 	}
 	

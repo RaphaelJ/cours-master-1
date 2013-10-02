@@ -1,6 +1,8 @@
 package view;
 
 import model.Board;
+import model.Cell;
+import model.Row;
 import model.piece.Piece;
 
 import java.awt.*;
@@ -75,19 +77,19 @@ public class SwingView extends JFrame implements Board.BoardListener {
 
     public void gridChange()
     {
-        Piece[][] grid = this._board.getGrid();
+        Row[] grid = this._board.getGrid();
         int width = this._board.getWidth();
 
         Graphics g = this._playPanel.getGraphics();
 
         int i = 0;
-        for (Piece[] line : grid) {
+        for (Row row : grid) {
             int j = 0;
-            for (Piece piece : line) {
-                if (piece != null) {
+            for (Cell cell : row.getCells()) {
+                if (cell.isBlock()) {
                     try {
                         g.drawImage(
-                            piece.getTile(), j * Piece.TILES_SIZE,
+                            cell.getTile(), j * Piece.TILES_SIZE,
                             i * Piece.TILES_SIZE, this
                         );
                     } catch (Exception e) { // Unable to load the tile.

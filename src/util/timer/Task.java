@@ -1,4 +1,4 @@
-package model.timer;
+package util.timer;
 
 import java.lang.reflect.Method;
 
