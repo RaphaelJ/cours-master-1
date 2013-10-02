@@ -1,17 +1,36 @@
 package model.piece;
 
+import java.awt.image.BufferedImage;
+
 import model.Coordinates;
+import util.Lazy;
 
 public class PieceS extends Piece {
+    // Shares the states between each instances of the Pieces.
+    private static final boolean[][][] states = { {
+            { false, false, false },
+            { false, true,  true  },
+            { true,  true,  false }
+        }, {
+            { false, true,  false },
+            { false, true,  true  },
+            { false, false, true  }
+        }
+    };
+    protected final boolean[][][] _states = states;
 
-	public PieceS(Coordinates initialPosition) {
-		super(initialPosition);
-		
-		rectangle = new RotationRectangle(3, 3, new Coordinates(1, 1));
+    public static final PieceSFactory factory = new PieceSFactory();
+    protected final PieceFactory _factory = factory;
 
-		blocks.add(new Coordinates(1, 1));
-		blocks.add(new Coordinates(2, 1));
-		blocks.add(new Coordinates(0, 2));
-		blocks.add(new Coordinates(1, 2));
-	}
+    public static final Lazy<BufferedImage> tile = Piece.getTile("green.png");
+
+    public PieceS(Coordinates topLeft, int currentState)
+    {
+        super(topLeft, currentState);
+    }
+
+    public BufferedImage getTile() throws Exception
+    {
+        return PieceS.tile.get();
+    }
 }
