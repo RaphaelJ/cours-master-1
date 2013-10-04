@@ -4,7 +4,7 @@ import model.Board;
 import model.piece.Piece;
 
 /** Provides a view which prints the grid to the standard output. */
-public class CLIView implements Board.BoardListener {
+public class CLIView implements GameView {
     private Board _board;
 
     public CLIView(Board board)
