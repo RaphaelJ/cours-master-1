@@ -1,9 +1,5 @@
 package util.timer;
 
-import java.lang.reflect.Method;
-
-import model.piece.Piece;
-
 public abstract class Task implements Runnable {
 	
 	protected long delay;

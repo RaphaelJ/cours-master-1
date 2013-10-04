@@ -2,7 +2,6 @@ package model.piece;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
 import java.util.concurrent.Callable;
 import javax.imageio.ImageIO;
 
@@ -43,18 +42,10 @@ public abstract class Piece {
      * Each matrix contains booleans to indicate if the cell is occupied by the
      * piece or not. Each matrix must be a square matrix and they all must have
      * the same extent. */
-    protected final boolean[][][] _states = null;
+    protected boolean[][][] _states;
 
     /** Cycles between each state when a rotation is applied to the piece. */
-    private final int _currentState;
-
-    /** Provides the factory which can be used to create new instances of the
-     * current piece.
-     * This is needed to create new pieces from the same type but at a different
-     * position or orientation in this abstract class, as the methods can't
-     * update the current piece.
-     */
-    protected final Piece.PieceFactory _factory = null;
+    protected final int _currentState;
 
     protected Piece(Coordinates topLeft)
     {
@@ -71,14 +62,14 @@ public abstract class Piece {
      * Returns a new Piece to allow non-destructive rotations. */
     public Piece rotate()
     {
-        return this._factory.construct(
+        return this.getFactory().construct(
             this._topLeft, (this._currentState + 1) % this._states.length
         );
     }
 
     public Piece translate(int dX, int dY)
     {
-        return this._factory.construct(
+        return this.getFactory().construct(
             new Coordinates(
                 this._topLeft.getX() + dX, this._topLeft.getY() + dY
             ), this._currentState
@@ -92,10 +83,7 @@ public abstract class Piece {
 
     /** Returns the boolean matrix with contains the current state of the
      * piece. */
-    public boolean[][] getCurrentState()
-    {
-        return this._states[this._currentState];
-    }
+    public abstract boolean[][] getCurrentState();
 
     /** Returns the image of each cell of the piece. */
     public abstract BufferedImage getTile() throws Exception;
@@ -114,4 +102,12 @@ public abstract class Piece {
             }
         );
     }
+    
+    /** Provides the factory which can be used to create new instances of the
+     * current piece.
+     * This is needed to create new pieces from the same type but at a different
+     * position or orientation in this abstract class, as the methods can't
+     * update the current piece.
+     */
+    public abstract PieceFactory getFactory();
 }
