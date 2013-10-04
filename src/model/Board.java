@@ -35,7 +35,7 @@ public class Board {
 
     private Piece _current = null;
 
-    private ArrayList<BoardListener> _listeners = new ArrayList<>();
+    private ArrayList<BoardListener> _listeners = new ArrayList<BoardListener>();
 
     public Board()
     {

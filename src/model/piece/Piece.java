@@ -105,7 +105,7 @@ public abstract class Piece {
      * (CLI) don't use them. */
     public static Lazy<BufferedImage> getTile(final String name)
     {
-        return new Lazy<>(
+        return new Lazy<BufferedImage>(
             new Callable<BufferedImage>() {
                 public BufferedImage call() throws Exception
                 {
