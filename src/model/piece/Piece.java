@@ -85,7 +85,7 @@ public abstract class Piece {
      * piece. */
     public abstract boolean[][] getCurrentState();
 
-    /** Returns the image of each cell of the piece. */
+    /** Returns the corresponding image of a cell of the piece. */
     public abstract BufferedImage getTile() throws Exception;
 
     /** Returns the tile corresponding to the given name.

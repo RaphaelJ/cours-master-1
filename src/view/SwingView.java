@@ -5,19 +5,21 @@ import model.piece.Piece;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.util.*;
 import javax.swing.*;
 
 import controller.GameController;
 
-public class SwingView extends JFrame implements Board.BoardListener {
+public class SwingView extends JFrame implements GameView {
 
-	private static final long serialVersionUID = 5270534635032945078L;
-	private Board _board;
-	private GameController _controller;
+    private Board _board;
     private JPanel _playPanel;
     private JLabel _score;
 
-    public SwingView(Board board, GameController controller)
+    private ArrayList<GameController> _controllers
+        = new ArrayList<GameController>();
+
+    public SwingView(Board board)
     {
         super("Tetris MVC");
         this._board = board;
@@ -45,9 +47,6 @@ public class SwingView extends JFrame implements Board.BoardListener {
             )
         );
 
-        newGame.addActionListener(_controller);
-        newGame.setActionCommand("new game");
-        
         rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
         rightPanel.add(newGame);
         rightPanel.add(scoreTitle);
@@ -60,25 +59,29 @@ public class SwingView extends JFrame implements Board.BoardListener {
         newGame.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt)
             {
-                newGameClicked(evt);
+                for (GameController controller : _controllers)
+                    controller.newGame();
             }
         });
 
-        pack();
-    }
+        this.setResizable(false);
 
-    private void newGameClicked(ActionEvent evt) 
-    {
+        pack();
     }
 
     public void run()
     {
         java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() 
+            public void run()
             {
                 setVisible(true);
             }
         });
+    }
+
+    public void addController(GameController controller)
+    {
+        this._controllers.add(controller);
     }
 
     public void gridChange()
@@ -92,7 +95,7 @@ public class SwingView extends JFrame implements Board.BoardListener {
         for (Piece[] row : grid) {
             int j = 0;
             for (Piece piece : row) {
-            	if (piece != null) {
+                if (piece != null) {
                     try {
                         g.drawImage(
                             piece.getTile(), j * Piece.TILES_SIZE,
@@ -100,12 +103,13 @@ public class SwingView extends JFrame implements Board.BoardListener {
                         );
                     } catch (Exception e) { // Unable to load the tile.
                     }
+                } else {
+                    g.setColor(Color.WHITE);
+                    g.fillRect(
+                        j * Piece.TILES_SIZE, i * Piece.TILES_SIZE,
+                        Piece.TILES_SIZE, Piece.TILES_SIZE
+                    );
                 }
-            	
-            	else {
-            		g.setColor(Color.WHITE);
-            		g.fillRect(j * Piece.TILES_SIZE, i * Piece.TILES_SIZE, Piece.TILES_SIZE, Piece.TILES_SIZE);
-            	}
                 j++;
             }
             i++;

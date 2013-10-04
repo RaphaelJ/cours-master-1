@@ -3,24 +3,11 @@ package model;
 import java.util.*;
 
 import model.piece.Piece;
+import view.GameView;
 
 /** Saves the current status of the board and communicates with views to share
  * changes and game events with the user. */
 public class Board {
-	
-    /** Provides an interface to listen to game's board changes. */
-    public interface BoardListener extends EventListener {
-    
-    	/** Event triggered when a piece move inside the grid. */
-        public void gridChange();
-
-        /** Event triggered when n lines have been removed by the player. */
-        public void clearedLines(int n);
-
-        public void gameOver();
-
-        public void reset();
-    }
 
     public static final int DEFAULT_WIDTH  = 10;
     public static final int DEFAULT_HEIGHT = 22;
@@ -37,7 +24,7 @@ public class Board {
 
     private Piece _current = null;
 
-    private ArrayList<BoardListener> _listeners = new ArrayList<BoardListener>();
+    private ArrayList<GameView> _views = new ArrayList<GameView>();
 
     public Board()
     {
@@ -71,18 +58,18 @@ public class Board {
     /** Removes every pieces from the grid and emits the reset event. */
     public void resetBoard()
     {
-    	for (Piece[] line : this._grid)
-    		Arrays.fill(line, null);
+        for (Piece[] line : this._grid)
+                Arrays.fill(line, null);
 
         this._current = null;
 
-        for (BoardListener listener : this._listeners)
-            listener.reset();
+        for (GameView view : this._views)
+            view.reset();
     }
 
-    public void addListener(BoardListener listener)
+    public void addView(GameView view)
     {
-        this._listeners.add(listener);
+        this._views.add(view);
     }
 
     /** Runs one step of the game: moves the current piece.
@@ -129,8 +116,8 @@ public class Board {
         for (int j = 0; j < line.length; j++) {
         	Piece cell = this._grid[0][j + topLeft.getX()];
             if (line[j] && cell != null) {
-                for (BoardListener listener : this._listeners)
-                    listener.gameOver();
+                for (GameView view : this._views)
+                    view.gameOver();
                 return null;
             }
         }
