@@ -1,8 +1,6 @@
 package view;
 
 import model.Board;
-import model.Cell;
-import model.Row;
 import model.piece.Piece;
 
 /** Provides a view which prints the grid to the standard output. */
@@ -18,17 +16,17 @@ public class CLIView implements Board.BoardListener {
 
     private void printBoard()
     {
-        Row[] grid = this._board.getGrid();
+        Piece[][] grid = this._board.getGrid();
         int width = this._board.getWidth();
 
         for (int i = 0; i < width + 1; i++)
             System.out.print("~~");
         System.out.println();
 
-        for (Row row : grid) {
+        for (Piece[] row : grid) {
             System.out.print("!");
-            for (Cell cell : row.getCells()) {
-                if (cell.isBlock())
+            for (Piece piece : row) {
+            	if (piece != null)
                     System.out.print(" #");
                 else
                     System.out.print("  ");

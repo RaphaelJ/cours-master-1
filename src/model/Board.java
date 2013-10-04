@@ -31,7 +31,7 @@ public class Board {
     /** Contains a matrix which maps each cell of the board to the piece which
      * is there, if any.
      * The first cell of the grid is the top-left point of the board. */
-    private final Row[] _grid;
+    private final Piece[][] _grid;
 
     private Piece _current = null;
 
@@ -44,10 +44,7 @@ public class Board {
         this._width = DEFAULT_WIDTH;
         this._height = DEFAULT_HEIGHT;
 
-        this._grid = new Row[this._height];
-        
-        for(int i = 0; i < this._height; i++)
-        	this._grid[i] = new Row(this._width);
+        this._grid = new Piece[this._height][this._width];
     }
 
     /** Initializes an empty board with a specified seed for the random
@@ -66,17 +63,14 @@ public class Board {
         this._width = width;
         this._height = height;
 
-        this._grid = new Row[this._height];
-        
-        for(int i = 0; i < this._height; i++)
-        	this._grid[i] = new Row(this._width);
+        this._grid = new Piece[height][width];
     }
 
     /** Removes every pieces from the grid and emits the reset event. */
     public void resetBoard()
     {
-        for (Row row : this._grid)
-            row.reset();
+    	for (Piece[] line : this._grid)
+    		Arrays.fill(line, null);
 
         this._current = null;
 
@@ -131,20 +125,12 @@ public class Board {
         boolean[] line = state[state.length - 1];
 
         for (int j = 0; j < line.length; j++) {
-            Cell cell;
-
-            try {
-				cell = this._grid[0].getCell(j + topLeft.getX());
-				
-				if (line[j] && cell.isBlock()) {
-	                for (BoardListener listener : this._listeners)
-	                    listener.gameOver();
-	                return null;
-	            }
-				
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+        	Piece cell = this._grid[0][j + topLeft.getX()];
+            if (line[j] && cell != null) {
+                for (BoardListener listener : this._listeners)
+                    listener.gameOver();
+                return null;
+            }
         }
 
         return piece;
@@ -172,16 +158,12 @@ public class Board {
         for (; i < newState.length; i++) {
             boolean[] line = newState[i];
 
-            try {
-	            for (int j = 0; j < line.length; j++) {
-	                Cell cell = this._grid[i + newTopLeft.getY()].getCell(j + newTopLeft.getX());
-	                if (line[j] && cell.isBlock())
-	                    return null;
-	            }
-	            
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+            for (int j = 0; j < line.length; j++) {
+                Piece cell = this._grid[i + newTopLeft.getY()]
+                                       [j + newTopLeft.getX()];
+                if (line[j] && cell != null && cell != piece)
+                    return null;
+            }
         }
 
         // Removes the old piece from the grid.
@@ -189,17 +171,10 @@ public class Board {
         for (; i < state.length; i++) {
             boolean[] line = state[i];
 
-            try {
-	            for (int j = 0; j < line.length; j++)
-	                if (line[j]) {
-						Cell cell = this._grid[i + topLeft.getY()].getCell(j + topLeft.getX());
-						cell.setBlock(false);
-						cell.setTile(null);
-	                }
-	            
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+            for (int j = 0; j < line.length; j++) {
+                if (line[j])
+                    this._grid[i + topLeft.getY()][j + topLeft.getX()] = null;
+            }
         }
 
         // Places the new piece on the grid.
@@ -207,17 +182,12 @@ public class Board {
         for (; i < newState.length; i++) {
             boolean[] line = newState[i];
 	
-            try {
-	            for (int j = 0; j < line.length; j++)
-	                if (line[j]) {
-	                    Cell cell = this._grid[i + newTopLeft.getY()].getCell(j + newTopLeft.getX());
-	                    cell.setBlock(true);
-	                    cell.setTile(piece.getTile());
-	                }
-	            
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+            for (int j = 0; j < line.length; j++) {
+                if (line[j]) {
+                    this._grid[i + newTopLeft.getY()][j + newTopLeft.getX()]
+                        = newPiece;
+                }
+            }
         }
 
         return newPiece;
@@ -233,7 +203,7 @@ public class Board {
         return this._height;
     }
 
-    public Row[] getGrid()
+    public Piece[][] getGrid()
     {
         return this._grid;
     }
