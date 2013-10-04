@@ -7,12 +7,17 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 
+import controller.GameController;
+
 public class SwingView extends JFrame implements Board.BoardListener {
-    private Board _board;
+
+	private static final long serialVersionUID = 5270534635032945078L;
+	private Board _board;
+	private GameController _controller;
     private JPanel _playPanel;
     private JLabel _score;
 
-    public SwingView(Board board)
+    public SwingView(Board board, GameController controller)
     {
         super("Tetris MVC");
         this._board = board;
@@ -40,6 +45,9 @@ public class SwingView extends JFrame implements Board.BoardListener {
             )
         );
 
+        newGame.addActionListener(_controller);
+        newGame.setActionCommand("new game");
+        
         rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
         rightPanel.add(newGame);
         rightPanel.add(scoreTitle);
@@ -81,10 +89,10 @@ public class SwingView extends JFrame implements Board.BoardListener {
         Graphics g = this._playPanel.getGraphics();
 
         int i = 0;
-        for (Piece[] line : grid) {
+        for (Piece[] row : grid) {
             int j = 0;
-            for (Piece piece : line) {
-                if (piece != null) {
+            for (Piece piece : row) {
+            	if (piece != null) {
                     try {
                         g.drawImage(
                             piece.getTile(), j * Piece.TILES_SIZE,
@@ -93,6 +101,11 @@ public class SwingView extends JFrame implements Board.BoardListener {
                     } catch (Exception e) { // Unable to load the tile.
                     }
                 }
+            	
+            	else {
+            		g.setColor(Color.WHITE);
+            		g.fillRect(j * Piece.TILES_SIZE, i * Piece.TILES_SIZE, Piece.TILES_SIZE, Piece.TILES_SIZE);
+            	}
                 j++;
             }
             i++;

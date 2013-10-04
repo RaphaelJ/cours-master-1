@@ -1,8 +1,4 @@
-package model.timer;
-
-import java.lang.reflect.Method;
-
-import model.piece.Piece;
+package util.timer;
 
 public abstract class Task implements Runnable {
 	

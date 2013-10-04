@@ -33,4 +33,15 @@ public class PieceZ extends Piece {
     {
         return PieceZ.tile.get();
     }
+    
+    @Override
+	public boolean[][] getCurrentState() {
+		
+        return states[this._currentState];
+	}
+
+	@Override
+	public PieceFactory getFactory() {
+		return factory;
+	}
 }

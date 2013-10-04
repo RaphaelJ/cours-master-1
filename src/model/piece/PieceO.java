@@ -28,4 +28,15 @@ public class PieceO extends Piece {
     {
         return PieceO.tile.get();
     }
+    
+    @Override
+	public boolean[][] getCurrentState() {
+		
+        return states[this._currentState];
+	}
+
+	@Override
+	public PieceFactory getFactory() {
+		return factory;
+	}
 }

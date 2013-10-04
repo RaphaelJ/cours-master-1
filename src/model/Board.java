@@ -7,9 +7,11 @@ import model.piece.Piece;
 /** Saves the current status of the board and communicates with views to share
  * changes and game events with the user. */
 public class Board {
+	
     /** Provides an interface to listen to game's board changes. */
     public interface BoardListener extends EventListener {
-        /** Event triggered when a piece move inside the grid. */
+    
+    	/** Event triggered when a piece move inside the grid. */
         public void gridChange();
 
         /** Event triggered when n lines have been removed by the player. */
@@ -35,7 +37,7 @@ public class Board {
 
     private Piece _current = null;
 
-    private ArrayList<BoardListener> _listeners = new ArrayList<>();
+    private ArrayList<BoardListener> _listeners = new ArrayList<BoardListener>();
 
     public Board()
     {
@@ -69,8 +71,8 @@ public class Board {
     /** Removes every pieces from the grid and emits the reset event. */
     public void resetBoard()
     {
-        for (Piece[] line : this._grid)
-            Arrays.fill(line, null);
+    	for (Piece[] line : this._grid)
+    		Arrays.fill(line, null);
 
         this._current = null;
 
@@ -125,7 +127,7 @@ public class Board {
         boolean[] line = state[state.length - 1];
 
         for (int j = 0; j < line.length; j++) {
-            Piece cell = this._grid[0][j + topLeft.getX()];
+        	Piece cell = this._grid[0][j + topLeft.getX()];
             if (line[j] && cell != null) {
                 for (BoardListener listener : this._listeners)
                     listener.gameOver();
@@ -181,7 +183,7 @@ public class Board {
         i = newTopLeft.getY() < 0 ? -newTopLeft.getY() : 0;
         for (; i < newState.length; i++) {
             boolean[] line = newState[i];
-
+	
             for (int j = 0; j < line.length; j++) {
                 if (line[j]) {
                     this._grid[i + newTopLeft.getY()][j + newTopLeft.getX()]

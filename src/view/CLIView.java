@@ -23,10 +23,10 @@ public class CLIView implements Board.BoardListener {
             System.out.print("~~");
         System.out.println();
 
-        for (Piece[] line : grid) {
+        for (Piece[] row : grid) {
             System.out.print("!");
-            for (Piece piece : line) {
-                if (piece != null)
+            for (Piece piece : row) {
+            	if (piece != null)
                     System.out.print(" #");
                 else
                     System.out.print("  ");

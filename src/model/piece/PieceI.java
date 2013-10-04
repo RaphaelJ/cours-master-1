@@ -19,10 +19,8 @@ public class PieceI extends Piece {
             { false, false, false, false }
         }
     };
-    protected final boolean[][][] _states = states;
 
     public static final PieceIFactory factory = new PieceIFactory();
-    protected final PieceFactory _factory = PieceI.factory;
 
     public static final Lazy<BufferedImage> tile = Piece.getTile("cyan.png");
 
@@ -35,4 +33,15 @@ public class PieceI extends Piece {
     {
         return PieceI.tile.get();
     }
+
+	@Override
+	public boolean[][] getCurrentState() {
+		
+        return states[this._currentState];
+	}
+
+	@Override
+	public PieceFactory getFactory() {
+		return factory;
+	}
 }
