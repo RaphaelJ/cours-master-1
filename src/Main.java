@@ -1,4 +1,4 @@
-import controller.GameController;
+import controller.*;
 import model.Board;
 import view.*;
 

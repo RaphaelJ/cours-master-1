@@ -116,8 +116,8 @@ public class Board {
         for (int j = 0; j < line.length; j++) {
         	Piece cell = this._grid[0][j + topLeft.getX()];
             if (line[j] && cell != null) {
-                for (BoardListener listener : this._listeners)
-                    listener.gameOver();
+                for (GameView view : this._views)
+                    view.gameOver();
                 return null;
             }
         }

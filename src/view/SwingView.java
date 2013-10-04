@@ -5,6 +5,7 @@ import model.piece.Piece;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.util.*;
 import javax.swing.*;
 
 import controller.GameController;
@@ -46,9 +47,6 @@ public class SwingView extends JFrame implements GameView {
             )
         );
 
-        newGame.addActionListener(_controller);
-        newGame.setActionCommand("new game");
-
         rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
         rightPanel.add(newGame);
         rightPanel.add(scoreTitle);
@@ -61,7 +59,7 @@ public class SwingView extends JFrame implements GameView {
         newGame.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt)
             {
-                for (GameController controller : this._controllers)
+                for (GameController controller : _controllers)
                     controller.newGame();
             }
         });

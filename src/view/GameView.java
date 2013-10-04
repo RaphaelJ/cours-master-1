@@ -1,4 +1,6 @@
-package views;
+package view;
+
+import java.util.*;
 
 /** Provides an interface for views which are object which listen to game's
  * board changes. */
