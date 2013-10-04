@@ -7,9 +7,11 @@ import model.piece.Piece;
 /** Saves the current status of the board and communicates with views to share
  * changes and game events with the user. */
 public class Board {
+	
     /** Provides an interface to listen to game's board changes. */
     public interface BoardListener extends EventListener {
-        /** Event triggered when a piece move inside the grid. */
+    
+    	/** Event triggered when a piece move inside the grid. */
         public void gridChange();
 
         /** Event triggered when n lines have been removed by the player. */
