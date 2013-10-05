@@ -1,0 +1,60 @@
+\documentclass[a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage[babel=true]{csquotes}
+
+\pagestyle{headings}
+
+\title{Computer Network Architectures and Multimedia: Assignement 1}
+\author{Julien Nix and Raphaël Javaux}
+\date{}
+
+\begin{document}
+\maketitle
+
+ \section{Question 1}
+
+   \subsection{TCP behavior}
+
+    \paragraph{}TCP starts sending a packet at a time, waiting for a single ACK.
+By increasing the transmission window size, TCP gets its maximum throughput
+after around 0.5 second.
+
+   \subsection{n0 to n1 throughput}
+
+    \paragraph{}TCP achives a constant 5.42 Mbps/sec throughput during the last
+3 seconds, which is quite close to the maximum bandwidth of the links (6 Mbps).
+This confirms our previous observation that TCP reaches its maximum throughput
+after half a second.
+
+    \paragraph{}The script can be run with this command :
+    \begin{verbatim}
+        runhaskell Q1_2.hs < Q1_1.tr
+    \end{verbatim}
+
+   \subsection{n0 to n2 falls down}
+
+   \paragraph{}Every packets which were on the n0 to n2 link have been lost.
+New packets have been redirected to n2 over the n0 to n1 link (which is already
+used by the TCP flow), resulting in the n0's queue overflow.
+
+    \paragraph{}As TCP detected the loss of packets and promptly restarted its
+throughput detection algorithm to accommodates itself to the new available
+bandwidth of the n0 to n1 link.
+
+   \subsection{Network recovery}
+
+   \paragraph{}The last packet drop happened at 3.23 sec, but TCP only recovers
+a ideal throughput around 3.6 sec, after a few iterations of its congestion
+detection algorithm.
+
+   \subsection{Packets dropped}
+
+   \paragraph{}
+
+    \paragraph{}The script can be run with this command :
+    \begin{verbatim}
+        runhaskell Q1_5.hs < Q1_3.tr
+    \end{verbatim}
+
+\end{document}
