@@ -14,7 +14,7 @@ public class Main {
 
         // Controller which listen to GUI events and transmits them to the
         // game's board.
-        GameController controller = new LocalController(board, 100);
+        GameController controller = new LocalController(board);
         gui.addController(controller);
 
         gui.run();
