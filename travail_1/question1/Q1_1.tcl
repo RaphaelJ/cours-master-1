@@ -104,7 +104,8 @@ $ns duplex-link-op $n1 $n5 orient right-up
 $ns duplex-link-op $n2 $n5 orient left-up
 
 # Show the queues between these nodes in nam
-$ns duplex-link-op $n2 $n0 queuePos 0.5
+$ns duplex-link-op $n0 $n1 queuePos 0.5
+$ns duplex-link-op $n0 $n2 queuePos 0.5
 
 # Start the simulation
 $ns run

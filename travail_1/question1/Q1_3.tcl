@@ -98,7 +98,7 @@ $ns color 0 blue
 $ns color 1 red
 $ns color 2 green
 
-# Create layout for nam 
+# Create layout for nam
 $ns duplex-link-op $n4 $n0 orient right-up
 $ns duplex-link-op $n3 $n0 orient left-up
 $ns duplex-link-op $n0 $n1 orient left-up
@@ -107,7 +107,8 @@ $ns duplex-link-op $n1 $n5 orient right-up
 $ns duplex-link-op $n2 $n5 orient left-up
 
 # Show the queues between these nodes in nam
-$ns duplex-link-op $n2 $n0 queuePos 0.5
+$ns duplex-link-op $n0 $n1 queuePos 0.5
+$ns duplex-link-op $n0 $n2 queuePos 0.5
 
 # Start the simulation
 $ns run
