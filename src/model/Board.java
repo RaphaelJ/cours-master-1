@@ -201,6 +201,9 @@ public class Board {
 			}
 		};
 		
+		if(this._timer != null)
+			this._timer.cancel();
+		
 		this._timer = new Timer();
     	this._timer.scheduleAtFixedRate(task, 0, this._clockSpeed);
     }
