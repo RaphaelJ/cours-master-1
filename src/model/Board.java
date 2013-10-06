@@ -84,6 +84,9 @@ public class Board {
             if (this._current == null) // Introduces a new piece.
                 this._current = this.nextPiece();
         }
+        
+        for(GameView view : _views)
+        	view.gridChange();
 
         return this._current;
     }

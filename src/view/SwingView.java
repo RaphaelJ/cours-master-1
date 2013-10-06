@@ -124,6 +124,8 @@ public class SwingView extends JFrame implements GameView {
 
     public void gameOver()
     {
+    	JOptionPane.showMessageDialog(this, "Game over !", "Game Over",
+    			JOptionPane.INFORMATION_MESSAGE);
     }
 
     public void reset()
