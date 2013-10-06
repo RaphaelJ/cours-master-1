@@ -1,7 +1,8 @@
 package controller;
 
-import util.timer.Task;
-import util.timer.Timer;
+import java.util.Timer;
+import java.util.TimerTask;
+
 import model.Board;
 
 /** Basic controller which tramits event to the game's board and manages
@@ -10,20 +11,21 @@ public class LocalController implements GameController {
 
     private Board _board;
     private Timer _timer;
+    private TimerTask _tickTask;
+    private int _clockSpeed;
 
     public LocalController(Board board, int clockSpeed)
     {
         this._board = board;
-        
-        Task task = new Task(true) {
+        this._timer = new Timer();
+        this._tickTask = new TimerTask() {
 			
 			@Override
 			public void run() {
 				_board.gameTick();
 			}
 		};
-		
-        this._timer = new Timer(task, clockSpeed);
+		this._clockSpeed = clockSpeed;
     }
 
     public void newGame()
@@ -31,6 +33,6 @@ public class LocalController implements GameController {
         /* timer.cancel(); */
         /* this._board.resetBoard(); */
         /* new Timer({ this._board.gameTick() }).start(); */
-    	this._timer.start();
+    	this._timer.scheduleAtFixedRate(this._tickTask, 0, this._clockSpeed);
     }
 }
