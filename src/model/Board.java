@@ -11,6 +11,8 @@ public class Board {
 
     public static final int DEFAULT_WIDTH  = 10;
     public static final int DEFAULT_HEIGHT = 22;
+    
+    public static final int DEFAULT_SPEED = 1000;
 
     private final Random _rand;
 
@@ -25,6 +27,9 @@ public class Board {
     private Piece _current = null;
 
     private ArrayList<GameView> _views = new ArrayList<GameView>();
+    
+    private Timer _timer;
+    private int _clockSpeed;
 
     public Board()
     {
@@ -32,6 +37,8 @@ public class Board {
 
         this._width = DEFAULT_WIDTH;
         this._height = DEFAULT_HEIGHT;
+        
+        this._clockSpeed = DEFAULT_SPEED;
 
         this._grid = new Piece[this._height][this._width];
     }
@@ -42,15 +49,17 @@ public class Board {
      * between two remote processes. */
     public Board(long seed)
     {
-        this(seed, DEFAULT_WIDTH, DEFAULT_HEIGHT);
+        this(seed, DEFAULT_WIDTH, DEFAULT_HEIGHT, DEFAULT_SPEED);
     }
 
-    public Board(long seed, int width, int height)
+    public Board(long seed, int width, int height, int clockSpeed)
     {
         this._rand = new Random(seed);
 
         this._width = width;
         this._height = height;
+        
+        this._clockSpeed = clockSpeed;
 
         this._grid = new Piece[height][width];
     }
@@ -82,15 +91,14 @@ public class Board {
             this._current = this.movePiece(this._current);
 
             if (this._current == null) // Introduces a new piece.
-                this._current = this.nextPiece();
+                stop();
+            	// TODO: this._current = this.nextPiece();
         }
+        
+        for(GameView view : _views)
+        	view.gridChange();
 
         return this._current;
-    }
-
-    /** Places a piece on the grid and emits the grid change event. */
-    private void placesPiece(Piece piece)
-    {
     }
 
     /** Returns the next random piece and places it at the top of the grid.
@@ -116,8 +124,7 @@ public class Board {
         for (int j = 0; j < line.length; j++) {
         	Piece cell = this._grid[0][j + topLeft.getX()];
             if (line[j] && cell != null) {
-                for (GameView view : this._views)
-                    view.gameOver();
+                gameOver();
                 return null;
             }
         }
@@ -181,6 +188,38 @@ public class Board {
 
         return newPiece;
     }
+    
+    public void start() {
+    	
+    	resetBoard();
+    	
+    	TimerTask task = new TimerTask() {
+			
+			@Override
+			public void run() {
+				gameTick();
+			}
+		};
+		
+		if(this._timer != null)
+			this._timer.cancel();
+		
+		this._timer = new Timer();
+    	this._timer.scheduleAtFixedRate(task, 0, this._clockSpeed);
+    }
+    
+    public void stop() {
+    	
+    	this._timer.cancel();
+    }
+    
+    private void gameOver() {
+    	
+    	for (GameView view : this._views)
+            view.gameOver();
+
+    	stop();
+    }
 
     public int getWidth()
     {
@@ -195,5 +234,13 @@ public class Board {
     public Piece[][] getGrid()
     {
         return this._grid;
+    }
+    
+    public int getClockSpeed() {
+		return _clockSpeed;
+	}
+    
+    public void setClockSpeed(int clockSpeed) {
+    	this._clockSpeed = clockSpeed;
     }
 }

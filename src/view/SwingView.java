@@ -4,7 +4,6 @@ import model.Board;
 import model.piece.Piece;
 
 import java.awt.*;
-import java.awt.event.*;
 import java.util.*;
 import javax.swing.*;
 
@@ -12,7 +11,8 @@ import controller.GameController;
 
 public class SwingView extends JFrame implements GameView {
 
-    private Board _board;
+	private static final long serialVersionUID = -6459070709025180654L;
+	private Board _board;
     private JPanel _playPanel;
     private JLabel _score;
 
@@ -87,7 +87,6 @@ public class SwingView extends JFrame implements GameView {
     public void gridChange()
     {
         Piece[][] grid = this._board.getGrid();
-        int width = this._board.getWidth();
 
         Graphics g = this._playPanel.getGraphics();
 
@@ -124,6 +123,8 @@ public class SwingView extends JFrame implements GameView {
 
     public void gameOver()
     {
+    	JOptionPane.showMessageDialog(this, "Game over !", "Game Over",
+    			JOptionPane.INFORMATION_MESSAGE);
     }
 
     public void reset()

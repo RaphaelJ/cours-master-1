@@ -16,7 +16,8 @@ public class LocalController implements GameController {
     public void newGame()
     {
         /* timer.cancel(); */
-        this._board.resetBoard();
+        /* this._board.resetBoard(); */
         /* new Timer({ this._board.gameTick() }).start(); */
+    	this._board.start();
     }
 }
