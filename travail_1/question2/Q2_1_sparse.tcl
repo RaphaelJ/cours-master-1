@@ -1,18 +1,23 @@
 ################################################################################
-# File: Q1_1.tcl                                                               #
+# File: Q2_1.tcl                                                               #
 ################################################################################
 
 # Create a new simulator object
-set ns [new Simulator]
+set ns [new Simulator -multicast on]
 
 # Ask NS to model the routing with a distance vector algorithm
 $ns rtproto DV
 
 # Create an output and a nam trace datafile
-set tracefile [open Q1_1.tr w]
+set tracefile [open Q2_1.tr w]
 $ns trace-all $tracefile
-set namfile [open Q1_1.nam w]
+set namfile [open Q2_1.nam w]
 $ns namtrace-all $namfile
+
+# Create a multicast group.
+set grp [Node allocaddr]
+
+$ns mrtproto DM
 
 # Create all the nodes
 set n0 [$ns node]
@@ -21,17 +26,35 @@ set n2 [$ns node]
 set n3 [$ns node]
 set n4 [$ns node]
 set n5 [$ns node]
+set n6 [$ns node]
+set n7 [$ns node]
+set n8 [$ns node]
+set n9 [$ns node]
+set n10 [$ns node]
+set n11 [$ns node]
+set n12 [$ns node]
 
 # Create the links going in both directions
-$ns duplex-link $n0 $n2 5Mb 22ms DropTail
-$ns duplex-link $n0 $n4 5Mb 22ms DropTail
-$ns duplex-link $n1 $n5 5Mb 22ms DropTail
-$ns duplex-link $n2 $n5 5Mb 22ms DropTail
-$ns duplex-link $n0 $n1 6Mb 22ms DropTail
-$ns duplex-link $n0 $n3 6Mb 22ms DropTail
+$ns duplex-link $n0 $n1 3.5Mb 10ms DropTail
+$ns duplex-link $n1 $n2 3.5Mb 10ms DropTail
+$ns duplex-link $n1 $n7 3.5Mb 10ms DropTail
+$ns duplex-link $n2 $n3 3.5Mb 10ms DropTail
+$ns duplex-link $n2 $n5 3.5Mb 10ms DropTail
+$ns duplex-link $n2 $n8 3.5Mb 10ms DropTail
+$ns duplex-link $n3 $n4 3.5Mb 10ms DropTail
+$ns duplex-link $n3 $n9 3.5Mb 10ms DropTail
+$ns duplex-link $n4 $n5 3.5Mb 10ms DropTail
+$ns duplex-link $n4 $n10 3.5Mb 10ms DropTail
+$ns duplex-link $n5 $n6 3.5Mb 10ms DropTail
+$ns duplex-link $n5 $n7 3.5Mb 35ms DropTail
+$ns duplex-link $n6 $n7 3.5Mb 20.5ms DropTail
+$ns duplex-link $n6 $n11 3.5Mb 10ms DropTail
+$ns duplex-link $n6 $n12 5Mb 10ms DropTail
+$ns duplex-link $n7 $n1 3.5Mb 10ms DropTail
 
-# Change the Queue Size of link n0-n1 to 10
-$ns queue-limit $n0 $n1 10
+# Change the Queue Size of links
+$ns queue-limit $n7 $n5 35
+$ns queue-limit $n6 $n5 5
 
 # Create an UDP transport agent 
 set udp [new Agent/UDP]
@@ -83,9 +106,10 @@ proc finish {} {
     close $namfile
 
     puts "running nam ..."
-    exec nam Q1_1.nam &
+    exec nam Q2_1.nam &
     exit 0
 }
+
 ################################################################################
 #                                   NAM                                        #
 ################################################################################
@@ -96,16 +120,21 @@ $ns color 1 red
 $ns color 2 green
 
 # Create layout for nam 
-$ns duplex-link-op $n4 $n0 orient right-up
-$ns duplex-link-op $n3 $n0 orient left-up
-$ns duplex-link-op $n0 $n1 orient left-up
-$ns duplex-link-op $n0 $n2 orient right-up
-$ns duplex-link-op $n1 $n5 orient right-up
-$ns duplex-link-op $n2 $n5 orient left-up
-
-# Show the queues between these nodes in nam
-$ns duplex-link-op $n0 $n1 queuePos 0.5
-$ns duplex-link-op $n0 $n2 queuePos 0.5
+$ns duplex-link-op $n0 $n1 orient right
+$ns duplex-link-op $n1 $n2 orient right-up
+$ns duplex-link-op $n1 $n7 orient down
+$ns duplex-link-op $n2 $n3 orient right
+$ns duplex-link-op $n2 $n5 orient right-down
+$ns duplex-link-op $n2 $n8 orient up
+$ns duplex-link-op $n3 $n4 orient right-down
+$ns duplex-link-op $n3 $n9 orient up
+$ns duplex-link-op $n4 $n5 orient left
+$ns duplex-link-op $n4 $n10 orient down
+$ns duplex-link-op $n5 $n6 orient down
+$ns duplex-link-op $n5 $n7 orient left-down
+$ns duplex-link-op $n6 $n7 orient left
+$ns duplex-link-op $n6 $n11 orient down
+$ns duplex-link-op $n6 $n12 orient left-down
 
 # Start the simulation
 $ns run
