@@ -11,7 +11,8 @@ public class Board {
 
     public static final int DEFAULT_WIDTH  = 10;
     public static final int DEFAULT_HEIGHT = 22;
-    
+
+    /** "Ticks" duration in milliseconds. */
     public static final int DEFAULT_SPEED = 1000;
 
     private final Random _rand;
@@ -27,7 +28,7 @@ public class Board {
     private Piece _current = null;
 
     private ArrayList<GameView> _views = new ArrayList<GameView>();
-    
+
     private Timer _timer;
     private int _clockSpeed;
 
@@ -37,7 +38,7 @@ public class Board {
 
         this._width = DEFAULT_WIDTH;
         this._height = DEFAULT_HEIGHT;
-        
+
         this._clockSpeed = DEFAULT_SPEED;
 
         this._grid = new Piece[this._height][this._width];
@@ -58,7 +59,7 @@ public class Board {
 
         this._width = width;
         this._height = height;
-        
+
         this._clockSpeed = clockSpeed;
 
         this._grid = new Piece[height][width];
@@ -92,11 +93,11 @@ public class Board {
 
             if (this._current == null) // Introduces a new piece.
                 stop();
-            	// TODO: this._current = this.nextPiece();
+                // TODO: this._current = this.nextPiece();
         }
-        
+
         for(GameView view : _views)
-        	view.gridChange();
+            view.gridChange();
 
         return this._current;
     }
@@ -122,12 +123,14 @@ public class Board {
         boolean[] line = state[state.length - 1];
 
         for (int j = 0; j < line.length; j++) {
-        	Piece cell = this._grid[0][j + topLeft.getX()];
+            Piece cell = this._grid[0][j + topLeft.getX()];
             if (line[j] && cell != null) {
                 gameOver();
                 return null;
             }
         }
+
+        this.placePiece(piece);
 
         return piece;
     }
@@ -177,7 +180,7 @@ public class Board {
         i = newTopLeft.getY() < 0 ? -newTopLeft.getY() : 0;
         for (; i < newState.length; i++) {
             boolean[] line = newState[i];
-	
+
             for (int j = 0; j < line.length; j++) {
                 if (line[j]) {
                     this._grid[i + newTopLeft.getY()][j + newTopLeft.getX()]
@@ -188,37 +191,55 @@ public class Board {
 
         return newPiece;
     }
-    
-    public void start() {
-    	
-    	resetBoard();
-    	
-    	TimerTask task = new TimerTask() {
-			
-			@Override
-			public void run() {
-				gameTick();
-			}
-		};
-		
-		if(this._timer != null)
-			this._timer.cancel();
-		
-		this._timer = new Timer();
-    	this._timer.scheduleAtFixedRate(task, 0, this._clockSpeed);
+
+    /** Places a new piece on the grid. */
+    private void placePiece(Piece piece)
+    {
+        Coordinates topLeft = piece.getTopLeft();
+        boolean[][] state = piece.getCurrentState();
+
+        // Only draws coordinates of the piece which are inside the grid.
+        int i = topLeft.getY() < 0 ? -topLeft.getY() : 0;
+        for (; i < state.length; i++) {
+            boolean[] line = state[i];
+
+            for (int j = 0; j < line.length; j++) {
+                if (line[j])
+                    this._grid[i + topLeft.getY()][j + topLeft.getX()] = piece;
+            }
+        }
     }
-    
-    public void stop() {
-    	
-    	this._timer.cancel();
+
+    public void start()
+    {
+        this.resetBoard();
+
+        TimerTask task = new TimerTask() {
+            @Override
+            public void run()
+            {
+                gameTick();
+            }
+        };
+
+        if(this._timer != null)
+            this.stop();
+
+        this._timer = new Timer();
+        this._timer.scheduleAtFixedRate(task, 0, this._clockSpeed);
     }
-    
-    private void gameOver() {
-    	
-    	for (GameView view : this._views)
+
+    public void stop()
+    {
+        this._timer.cancel();
+    }
+
+    private void gameOver()
+    {
+        for (GameView view : this._views)
             view.gameOver();
 
-    	stop();
+        this.stop();
     }
 
     public int getWidth()
@@ -235,12 +256,14 @@ public class Board {
     {
         return this._grid;
     }
-    
-    public int getClockSpeed() {
-		return _clockSpeed;
-	}
-    
-    public void setClockSpeed(int clockSpeed) {
-    	this._clockSpeed = clockSpeed;
+
+    public int getClockSpeed()
+    {
+        return this._clockSpeed;
+    }
+
+    public void setClockSpeed(int clockSpeed)
+    {
+        this._clockSpeed = clockSpeed;
     }
 }

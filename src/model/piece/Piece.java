@@ -38,12 +38,6 @@ public abstract class Piece {
     /** Coordinates of the top-left corner of the piece's state matrix. */
     private final Coordinates _topLeft;
 
-    /** Contains the set of matrices for each orientations of the piece.
-     * Each matrix contains booleans to indicate if the cell is occupied by the
-     * piece or not. Each matrix must be a square matrix and they all must have
-     * the same extent. */
-    protected boolean[][][] _states;
-
     /** Cycles between each state when a rotation is applied to the piece. */
     protected final int _currentState;
 
@@ -58,12 +52,18 @@ public abstract class Piece {
         this._currentState = currentState;
     }
 
+    /** Returns the set of matrices for each orientations of the piece.
+     * Each matrix contains booleans to indicate if the cell is occupied by the
+     * piece or not. Each matrix must be a square matrix and they all must have
+     * the same extent. */
+    public abstract boolean[][][] getStates();
+
     /** Performs a rotation of the piece by cycling to the next state.
      * Returns a new Piece to allow non-destructive rotations. */
     public Piece rotate()
     {
         return this.getFactory().construct(
-            this._topLeft, (this._currentState + 1) % this._states.length
+            this._topLeft, (this._currentState + 1) % this.getStates().length
         );
     }
 
@@ -83,7 +83,10 @@ public abstract class Piece {
 
     /** Returns the boolean matrix with contains the current state of the
      * piece. */
-    public abstract boolean[][] getCurrentState();
+    public boolean[][] getCurrentState()
+    {
+        return this.getStates()[this._currentState];
+    }
 
     /** Returns the corresponding image of a cell of the piece. */
     public abstract BufferedImage getTile() throws Exception;
@@ -102,7 +105,7 @@ public abstract class Piece {
             }
         );
     }
-    
+
     /** Provides the factory which can be used to create new instances of the
      * current piece.
      * This is needed to create new pieces from the same type but at a different
