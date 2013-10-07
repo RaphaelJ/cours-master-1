@@ -6,8 +6,7 @@ import model.Coordinates;
 import util.Lazy;
 
 public class PieceO extends Piece {
-    // Shares the states between each instances of the Pieces.
-    private static final boolean[][][] states = { {
+    public static final boolean[][][] states = { {
             { true, true },
             { true, true }
         }
@@ -15,7 +14,6 @@ public class PieceO extends Piece {
     protected final boolean[][][] _states = states;
 
     public static final PieceOFactory factory = new PieceOFactory();
-    protected final PieceFactory _factory = factory;
 
     public static final Lazy<BufferedImage> tile = Piece.getTile("yellow.png");
 
@@ -24,19 +22,21 @@ public class PieceO extends Piece {
         super(topLeft, currentState);
     }
 
+    @Override
+    public boolean[][][] getStates()
+    {
+        return states;
+    }
+
+    @Override
     public BufferedImage getTile() throws Exception
     {
-        return PieceO.tile.get();
+        return tile.get();
     }
-    
-    @Override
-	public boolean[][] getCurrentState() {
-		
-        return states[this._currentState];
-	}
 
-	@Override
-	public PieceFactory getFactory() {
-		return factory;
-	}
+    @Override
+    public PieceFactory getFactory()
+    {
+        return factory;
+    }
 }
