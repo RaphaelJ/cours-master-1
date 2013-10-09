@@ -1,19 +1,39 @@
+<<<<<<< HEAD
 source /usr/local/ns-allinone-2.35/ns-2.35/tcl/mcast/ST.tcl
 
+=======
+>>>>>>> f8ce873c19c4522778e9c6f643881168f571cf42
 ################################################################################
 # File: Q2_1.tcl                                                               #
 ################################################################################
 
+<<<<<<< HEAD
 
 # Create a new simulator object
 set ns [new Simulator -multicast on]
 
+=======
+# Create a new simulator object
+set ns [new Simulator -multicast on]
+
+# Ask NS to model the routing with a distance vector algorithm
+$ns rtproto DV
+
+>>>>>>> f8ce873c19c4522778e9c6f643881168f571cf42
 # Create an output and a nam trace datafile
 set tracefile [open Q2_1.tr w]
 $ns trace-all $tracefile
 set namfile [open Q2_1.nam w]
 $ns namtrace-all $namfile
 
+<<<<<<< HEAD
+=======
+# Create a multicast group.
+set grp [Node allocaddr]
+
+$ns mrtproto DM
+
+>>>>>>> f8ce873c19c4522778e9c6f643881168f571cf42
 # Create all the nodes
 set n0 [$ns node]
 set n1 [$ns node]
@@ -47,14 +67,18 @@ $ns duplex-link $n6 $n11 3.5Mb 10ms DropTail
 $ns duplex-link $n6 $n12 5Mb 10ms DropTail
 $ns duplex-link $n7 $n1 3.5Mb 10ms DropTail
 
+<<<<<<< HEAD
 # Allocate group addresses
 set group1 [Node allocaddr]
 
+=======
+>>>>>>> f8ce873c19c4522778e9c6f643881168f571cf42
 # Change the Queue Size of links
 $ns queue-limit $n7 $n5 35
 $ns queue-limit $n6 $n5 5
 
 # Create an UDP transport agent 
+<<<<<<< HEAD
 set udp0 [new Agent/UDP]
 $ns attach-agent $n0 $udp0       ;# Attach agent udp0 to node n0
 $udp0 set fid_ 0
@@ -112,6 +136,44 @@ $ns at 4.6 "$n8 leave-group $rcvr8 $group1"
 # Start the traffic generators at different times
 $ns at 0.0 "$cbr0 start"
 $ns at 0.0 "$cbr9 start"
+=======
+set udp [new Agent/UDP]
+$ns attach-agent $n4 $udp       ;# Attach agent udp0 to node n4
+$udp set class_ 0
+
+# Create a constant bitrate traffic generator
+set cbr [new Application/Traffic/CBR]
+$cbr attach-agent $udp          ;# Attach the traffic generator to the UDP agent
+$cbr set packetSize_ 1000       ;# Set the size of generated packets (will be the size of UDP packets)
+$cbr set rate_ 1.5Mb
+
+# Creates sinks for UDP agent
+set null [new Agent/Null]
+$ns attach-agent $n2 $null
+
+# Connects UDP sources to sinks
+$ns connect $udp $null
+
+# Create a TCP transport agent (TCP Tahoe)
+set tcp [new Agent/TCP]
+$tcp set class_ 2               ;# Define the class, will use color 2 (green)
+$tcp set window_ 64             ;# max bound on window size (simulate the receiver's window)
+$tcp set packetSize_ 960        ;# packet size used by sender
+$ns attach-agent $n3 $tcp
+
+# Creates sink for TCP
+set sink [new Agent/TCPSink]
+$ns attach-agent $n1 $sink
+$ns connect $tcp $sink
+
+# Create a FTP traffic generator (simulates bulk data transfers)
+set ftp [new Application/FTP]
+$ftp attach-agent $tcp
+
+# Start the traffic generators at different times
+$ns at 0.5 "$cbr start"
+$ns at 0.5 "$ftp start"
+>>>>>>> f8ce873c19c4522778e9c6f643881168f571cf42
 
 # End simulation at time 5 and call the finish procedure
 $ns at 5.0 "finish"
@@ -155,7 +217,10 @@ $ns duplex-link-op $n6 $n7 orient left
 $ns duplex-link-op $n6 $n11 orient down
 $ns duplex-link-op $n6 $n12 orient left-down
 
+<<<<<<< HEAD
 ST set RP_($group1) $n5
 $ns mrtproto ST
+=======
+>>>>>>> f8ce873c19c4522778e9c6f643881168f571cf42
 # Start the simulation
 $ns run

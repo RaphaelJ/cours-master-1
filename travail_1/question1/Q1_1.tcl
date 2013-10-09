@@ -42,7 +42,7 @@ $udp set class_ 0
 set cbr [new Application/Traffic/CBR]
 $cbr attach-agent $udp          ;# Attach the traffic generator to the UDP agent
 $cbr set packetSize_ 1000       ;# Set the size of generated packets (will be the size of UDP packets)
-$cbr set rate_ 1536Kb
+$cbr set rate_ 1.5Mb
 
 # Creates sinks for UDP agent
 set null [new Agent/Null]
