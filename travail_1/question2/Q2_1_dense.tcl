@@ -1,5 +1,5 @@
 ################################################################################
-# File: Q2_1.tcl                                                               #
+# File: Q2_1_dense.tcl                                                         #
 ################################################################################
 
 # Create a new simulator object
@@ -9,9 +9,9 @@ set ns [new Simulator -multicast on]
 $ns rtproto DV
 
 # Create an output and a nam trace datafile
-set tracefile [open Q2_1.tr w]
+set tracefile [open Q2_1_dense.tr w]
 $ns trace-all $tracefile
-set namfile [open Q2_1.nam w]
+set namfile [open Q2_1_dense.nam w]
 $ns namtrace-all $namfile
 
 set mproto DM
@@ -122,7 +122,7 @@ proc finish {} {
     close $namfile
 
     puts "running nam ..."
-    exec nam Q2_1.nam &
+    exec nam Q2_1_dense.nam &
     exit 0
 }
 
@@ -154,5 +154,3 @@ $ns duplex-link-op $n6 $n12 orient left-down
 
 # Start the simulation
 $ns run
-
-
