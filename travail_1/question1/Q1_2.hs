@@ -10,6 +10,6 @@ import TraceParser
 main = do
     traces <- parse <$> getContents
     let transfered = sum [ tSize t | t <- dropWhile ((> 2.0) . tTime) traces
-                                   , tName t == "tcp", tSrcLink t == 0
-                                   , tDstLink t == 1 ]
+                                   , tSrcLink t == 0
+                                   , tDstLink t == 1, tType t == LeaveQueue ]
     printf "Bytes par second : %d\n" (transfered `quot` 3)
