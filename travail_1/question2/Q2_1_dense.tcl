@@ -14,9 +14,6 @@ $ns trace-all $tracefile
 set namfile [open Q2_1_dense.nam w]
 $ns namtrace-all $namfile
 
-set mproto DM
-set mrthandle [$ns mrtproto $mproto {}]
-
 # Create all the nodes
 set n0 [$ns node]
 set n1 [$ns node]
@@ -65,14 +62,16 @@ $ns queue-limit $n6 $n5 5
 # Create an UDP transport agent 
 set udp0 [new Agent/UDP]
 $ns attach-agent $n0 $udp0       ;# Attach agent udp0 to node n4
+$udp0 set fid_ 0
 $udp0 set class_ 0
 $udp0 set dst_addr_ $group1
 $udp0 set dst_port_ 0
 
-# Create an UDP transport agent 
+# Create an UDP transport agent
 set udp9 [new Agent/UDP]
 $ns attach-agent $n9 $udp9       ;# Attach agent udp0 to node n4
-$udp9 set class_ 0
+$udp9 set fid_ 1
+$udp9 set class_ 1
 $udp9 set dst_addr_ $group1
 $udp9 set dst_port_ 0
 
@@ -91,16 +90,15 @@ $cbr9 set rate_ 1.5Mb
 # Create receivers and leavers
 set rcvr8 [new Agent/Null]
 $ns attach-agent $n8 $rcvr8
-$ns at 0.2 "$n8 join-group $rcvr8 $group1"
 set rcvr10 [new Agent/Null]
 $ns attach-agent $n10 $rcvr10
-$ns at 0.4 "$n10 join-group $rcvr10 $group1"
-$ns at 2.0 "$n8 leave-group $rcvr8 $group1"
 set rcvr11 [new Agent/Null]
 $ns attach-agent $n11 $rcvr11
+
+$ns at 0.2 "$n8 join-group $rcvr8 $group1"
+$ns at 0.4 "$n10 join-group $rcvr10 $group1"
+$ns at 2.0 "$n8 leave-group $rcvr8 $group1"
 $ns at 2.2 "$n11 join-group $rcvr11 $group1"
-set rcvr8 [new Agent/Null]
-$ns attach-agent $n8 $rcvr8
 $ns at 2.2 "$n8 join-group $rcvr8 $group1"
 $ns at 4.0 "$n10 leave-group $rcvr10 $group1"
 $ns at 4.5 "$n11 leave-group $rcvr11 $group1"
@@ -151,6 +149,9 @@ $ns duplex-link-op $n5 $n7 orient left-down
 $ns duplex-link-op $n6 $n7 orient left
 $ns duplex-link-op $n6 $n11 orient down
 $ns duplex-link-op $n6 $n12 orient left-down
+
+set mproto DM
+set mrthandle [$ns mrtproto $mproto {}]
 
 # Start the simulation
 $ns run

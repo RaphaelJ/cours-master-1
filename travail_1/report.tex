@@ -36,7 +36,7 @@ throughput after half a second.
 
    \subsection{n0 to n2 falls down}
 
-   \paragraph{}Every packet which was on the n0 to n2 link has been lost.
+   \paragraph{}Each packet which was on the n0 to n2 link has been lost.
 New packets have been redirected to n2 over the n0 to n1 link (which is already
 used by the TCP flow), resulting in the n0's queue overflow.
 
@@ -77,6 +77,90 @@ and correctly took into account the new UDP traffic on the n0 to n1 link.
     \paragraph{}The script can be run with this command :
     \begin{verbatim}
         runhaskell Q1_6.hs < Q1_3.tr | gnuplot --persist
+    \end{verbatim}
+
+  \section{Question 2}
+
+    \subsection{RDV point selection}
+
+    \paragraph{}The fifth node is at the center of the network and thus is a
+good choice for a rendez-vous point.
+However from an empirical point of view, the second node is a better choice
+because even if there are as many hops to reach nodes 8, 10 and 11, the eighth
+node is closer to the second node than the fifth one and is the largest
+\enquote{customer} (longer alive) of the multicast group.
+
+  \subsection{Number of hops from n9}
+
+   \subsubsection{Unicast}
+
+    \paragraph{}The following table gives the minimum number of hops needed to
+reach n8, n10 and n11 from n9.
+
+    \begin{center}
+            \begin{tabular}{|l|l|l|}
+                \hline
+                From & To & \# of hops \\
+                \hline
+                n9 & n8  & 2 \\
+                n9 & n10 & 2 \\
+                n9 & n11 & 4 \\
+                \hline
+            \end{tabular}
+    \end{center}
+
+   \subsubsection{Sparse mode}
+
+    \paragraph{}Packets take two hops to go to the n5 RDV point and then one
+hops to reach n8, n10 and n11 from n5. Thus n8, n10 and n11 are each 4 hops
+away from n9\footnote{The RDV point has been accounted as an additional hop.} in
+this multicast configuration. This is less efficient in number of hops than
+using unicast but it saves the n0 to n1 and n1 to n2 links by avoiding
+duplicates.
+
+   \subsubsection{Dense mode}
+
+    \paragraph{}In dense mode, the protocol succeeds to learn the shortest
+paths for each of the three destinations, thus the number of crossed hops is
+the same as in the unicast mode.
+
+    \paragraph{}When the dense mode has been stabilized, the way packets are
+transmitted is optimal, as every packets take the shortest path (by contrast to
+the sparse mode) and there is no duplicate on a single link (by contrast the
+unicast scenario).
+\newline However there is a stabilization overhead as the default router policy
+is to broadcast multicast packets before receiving a prune.
+
+  \subsection{Prunes and grafts}
+  
+    \begin{center}
+        \begin{tabular}{|l|l|l|}
+            \hline
+            Mode   & \# of prunes & \# of grafts \\
+            \hline
+            Sparse & 197          & 8 \\
+            Dense  & 2721         & 11 \\
+            \hline
+        \end{tabular}
+    \end{center}
+
+    \paragraph{}In sparse mode, grafts are sent when a node needs to join the
+group (8 grafts because 2 grafts are needed for each of the 4 joins, as
+there is an additional router from each node to n5).
+\newline Prunes are sent when a node leaves the group (the number is quite huge
+because multiple prunes are sent before being propagated in the network).
+
+    \paragraph{}In dense mode, a lot of prunes are sent during the network
+stabilization (because of the default policy to propagate packets in every
+routers). Grafts are only sent when a node join the group. Grafts are propagated
+in the whole network and are so more numerous than in the sparse mode
+simulation.
+
+
+    \paragraph{}The script can be run with these commands :
+    \begin{verbatim}
+        runhaskell Q2_3.hs < Q2_1_sparse.tr
+        runhaskell Q2_3.hs < Q2_1_dense.tr
     \end{verbatim}
 
 \end{document}

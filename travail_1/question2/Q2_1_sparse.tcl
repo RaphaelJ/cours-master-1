@@ -1,4 +1,4 @@
-source /usr/local/ns-allinone-2.35/ns-2.35/tcl/mcast/ST.tcl
+source ST.tcl
 
 ################################################################################
 # File: Q2_1_sparse.tcl                                                        #
@@ -65,19 +65,10 @@ $udp0 set dst_port_ 0
 # Create an UDP transport agent 
 set udp9 [new Agent/UDP]
 $ns attach-agent $n9 $udp9       ;# Attach agent udp9 to node n9
-$udp9 set fid_ 0
-$udp9 set class_ 0
+$udp9 set fid_ 2
+$udp9 set class_ 2
 $udp9 set dst_addr_ $group1
 $udp9 set dst_port_ 0
-
-set rcvr0 [new Agent/Null]
-$ns attach-agent $n0 $rcvr0
-
-set rcvr9 [new Agent/Null]
-$ns attach-agent $n9 $rcvr9
-
-set rcvr5 [new Agent/Null]
-$ns attach-agent $n5 $rcvr5
 
 # Create a constant bitrate traffic generator
 set cbr0 [new Application/Traffic/CBR]
@@ -94,16 +85,14 @@ $cbr9 set rate_ 1.5Mb
 # Create receivers and leavers
 set rcvr8 [new Agent/Null]
 $ns attach-agent $n8 $rcvr8
-$ns at 0.2 "$n8 join-group $rcvr8 $group1"
 set rcvr10 [new Agent/Null]
 $ns attach-agent $n10 $rcvr10
-$ns at 0.4 "$n10 join-group $rcvr10 $group1"
-$ns at 2.0 "$n8 leave-group $rcvr8 $group1"
 set rcvr11 [new Agent/Null]
 $ns attach-agent $n11 $rcvr11
+$ns at 0.2 "$n8 join-group $rcvr8 $group1"
+$ns at 0.4 "$n10 join-group $rcvr10 $group1"
+$ns at 2.0 "$n8 leave-group $rcvr8 $group1"
 $ns at 2.2 "$n11 join-group $rcvr11 $group1"
-set rcvr8 [new Agent/Null]
-$ns attach-agent $n8 $rcvr8
 $ns at 2.2 "$n8 join-group $rcvr8 $group1"
 $ns at 4.0 "$n10 leave-group $rcvr10 $group1"
 $ns at 4.5 "$n11 leave-group $rcvr11 $group1"
@@ -157,5 +146,6 @@ $ns duplex-link-op $n6 $n12 orient left-down
 
 ST set RP_($group1) $n5
 $ns mrtproto ST
+
 # Start the simulation
 $ns run
