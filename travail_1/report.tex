@@ -17,7 +17,7 @@
 
    \subsection{TCP behavior}
 
-    \paragraph{}TCP starts sending by packet at a time, waiting for a single ACK.
+    \paragraph{}TCP starts sending by packet at a moment, waiting for a single ACK.
 By increasing the transmission window size, TCP gets its maximum throughput
 after around 0.5 second.
 
@@ -26,7 +26,7 @@ after around 0.5 second.
     \paragraph{}TCP achieves a constant 5.4 Mbps/sec throughput during the last
 3 seconds, which is quite close to the maximal bandwidth of the link (6 Mbps).
 This confirms our previous observation that TCP Tahoe reaches its maximum
-throughput after half a second.
+throughput after half a second. We also can notice some the particularities of the TAHOE algorithm which manages to avoid congestion (slowstart and lowering the windows size).
 
     \paragraph{}The script can be run with this command :
     \begin{verbatim}
@@ -40,7 +40,7 @@ New packets have been redirected to n2 over the n0 to n1 link (which is already
 used by the TCP flow), resulting in the n0's queue overflow.
 
     \paragraph{}As TCP detected the loss of packets, it promptly restarted its
-congestion detection algorithm to accommodates itself to the new available
+congestion detection algorithm to accommodate itself to the new available
 bandwidth of the n0 to n1 link.
 
    \subsection{Network recovery}
@@ -48,7 +48,7 @@ bandwidth of the n0 to n1 link.
 
    \paragraph{}The last packet loss happened at 3.23 sec, but TCP only recovers
 an ideal throughput at around 3.6 sec, after a few iterations of its congestion
-detection algorithm.
+detection algorithm (TAHOE).
 
    \subsection{Packets dropped}
 
@@ -155,7 +155,7 @@ because multiple prunes are sent before being propagated in the network).
 
     \paragraph{}In dense mode, a lot of prunes are sent during the network
 stabilization (because of the default policy to propagate packets in every
-routers). Grafts are only sent when a node join the group. Grafts are propagated
+routers). Grafts are only sent when a node joins the group. Grafts are propagated
 in the whole network and are so more numerous than in the sparse mode
 simulation.
 
@@ -167,8 +167,8 @@ simulation.
 
   \subsection{FTP flow}
 
-    \paragraph{}The FTP flow hasn't any consequence on the sparse simulation as
-they don't use any link in common.
+    \paragraph{}The FTP flow has not any consequence on the sparse simulation as
+they do not use any link in common.
 
     \paragraph{}However in the dense simulation, the default broadcast policy
 has an undesirable side-effect on the TCP flow : the sudden yet short increase
@@ -186,12 +186,15 @@ only of 2.2 Mbps in the dense simulation.
   \subsection{UDP flow}
 
     \paragraph{}The aggressive UDP flow creates buffer overflows in n6.
-Sometimes, it can result in the unpredictable loss of the graft packet, as in
+Sometimes, it can result in a unpredictable loss of the graft packet, as in
 the sparse simulation.
 
     \paragraph{}This problem could be avoided by implementing a reliable
 graft protocol, by notifying the sender of the delivery of the graft.
 
-  \subsection{Sparse vs dense mode}
+  \subsection{Dense mode or Sparse mode}
+	 \paragraph{} First, we can say that the dense mode is better in a small network. It is due to the fact that packets do not have to reach the RDV point (the network's traffic is decentralized). Thus, there is less bandwidth needed because packets go directly to their recievers but it has a stabilization time. Furthermore, dense mode is better when multiple routers want to be in the group (Sparse mode can assume, relatively, just a few revievers). Opposed to those advantages, the dense mode re-flood  the multicast traffic periodically so it uses some bandwidth and could cause trouble. Here, the dense mode is obviously more convenient.
+
+	\paragraph{} Secondly, the sparse mode is quite different for multicasting because it uses an explicit request approach. Thus, the traffic is more ordered and so, a larger amount of data could be sent. This mode suits better for a bigger network with more than 12 nodes. Moreover, the RDV point have to deal with a very high amount of data but those packets only go directly where they are needed. So it leaves certain routers alone which do not have to treat those packets.
 
 \end{document}
