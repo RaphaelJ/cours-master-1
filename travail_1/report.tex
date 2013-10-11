@@ -23,7 +23,7 @@ after around 0.5 second.
 
    \subsection{n0 to n1 throughput}
 
-    \paragraph{}TCP achives a constant 2.7 Mbps/sec throughput during the last
+    \paragraph{}TCP achieves a constant 2.7 Mbps/sec throughput during the last
 3 seconds, which is quite close to the half of the bandwidth of the links
 (6 Mbps).
 This confirms our previous observation that TCP Tahoe reaches its maximum
@@ -69,10 +69,14 @@ detection algorithm.
 
     \paragraph{}All along the simulation, we can see TCP Tahoe running its
 congestion-avoidance algorithm. \newline
-Soon after 3.0 sec, when the n0 to n2 link falls down, TCP reinitialised its
+Soon after 3.0 sec, when the n0 to n2 link falls down, TCP reinitialized its
 sending window and its congestion-detection algorithm. As said in
 \ref{Network recovery}, TCP recovered an ideal throughput shortly after 3.5 sec
 and correctly took into account the new UDP traffic on the n0 to n1 link.
+
+    \paragraph{}After the traffic has been redirected on the n0 to n1
+link, this last becomes a bottleneck in the network as the total throughput is
+approximately 5 Mbps, the bandwidth of the link.
 
     \paragraph{}The script can be run with this command :
     \begin{verbatim}
@@ -132,7 +136,7 @@ unicast scenario).
 is to broadcast multicast packets before receiving a prune.
 
   \subsection{Prunes and grafts}
-  
+
     \begin{center}
         \begin{tabular}{|l|l|l|}
             \hline
@@ -156,11 +160,37 @@ routers). Grafts are only sent when a node join the group. Grafts are propagated
 in the whole network and are so more numerous than in the sparse mode
 simulation.
 
-
     \paragraph{}The script can be run with these commands :
     \begin{verbatim}
         runhaskell Q2_3.hs < Q2_1_sparse.tr
         runhaskell Q2_3.hs < Q2_1_dense.tr
     \end{verbatim}
+
+  \subsection{FTP flow}
+
+    \paragraph{}The FTP flow hasn't any consequence on the sparse simulation as
+they don't use any link in common.
+
+    \paragraph{}However in the dense simulation, the default broadcast policy
+has an undesirable side-effect on the TCP flow : the sudden yet short increase
+in traffic generates some packet loss and resets the congestion control
+algorithm. This implies a noticeable decline in the TCP throughput :
+\newline In sparse mode, the TCP throughput is equal to 3.3 Mbps whereas it is
+only of 2.7 Mbps in the dense simulation.
+
+    \paragraph{}The script can be run with these commands :
+    \begin{verbatim}
+        runhaskell Q2_4.hs < Q2_4_sparse.tr
+        runhaskell Q2_4.hs < Q2_4_dense.tr
+    \end{verbatim}
+
+  \subsection{UDP flow}
+
+    \paragraph{}The aggressive UDP flow creates buffer overflows in n6.
+Sometimes, it can result in the unpredictable loss of the graft packet, as in
+the sparse simulation.
+
+    \paragraph{}This problem could be avoided by implementing a reliable
+graft protocol, by notifying the sender of the delivery of the graft.
 
 \end{document}

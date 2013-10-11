@@ -9,9 +9,9 @@ source ST.tcl
 set ns [new Simulator -multicast on]
 
 # Create an output and a nam trace datafile
-set tracefile [open Q2_1.tr w]
+set tracefile [open Q2_4_sparse.tr w]
 $ns trace-all $tracefile
-set namfile [open Q2_1.nam w]
+set namfile [open Q2_4_sparse.nam w]
 $ns namtrace-all $namfile
 
 # Create all the nodes
@@ -65,8 +65,8 @@ $udp0 set dst_port_ 0
 # Create an UDP transport agent 
 set udp9 [new Agent/UDP]
 $ns attach-agent $n9 $udp9       ;# Attach agent udp9 to node n9
-$udp9 set fid_ 0
-$udp9 set class_ 0
+$udp9 set fid_ 1
+$udp9 set class_ 1
 $udp9 set dst_addr_ $group1
 $udp9 set dst_port_ 0
 
@@ -86,7 +86,7 @@ $cbr9 set rate_ 1.5Mb
 set tcp [new Agent/TCP]
 $tcp set class_ 2               ;# Define the class, will use color 2 (green)
 $tcp set window_ 64             ;# max bound on window size (simulate the receiver's window)
-$tcp set packetSize_ 1040        ;# packet size used by sender
+$tcp set packetSize_ 1000       ;# packet size used by sender
 $ns attach-agent $n7 $tcp
 
 # Creates sink for TCP
@@ -133,7 +133,7 @@ proc finish {} {
     close $namfile
 
     puts "running nam ..."
-    exec nam Q2_1.nam &
+    exec nam Q2_4_sparse.nam &
     exit 0
 }
 

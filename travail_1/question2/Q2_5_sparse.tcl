@@ -9,9 +9,9 @@ source ST.tcl
 set ns [new Simulator -multicast on]
 
 # Create an output and a nam trace datafile
-set tracefile [open Q2_1.tr w]
+set tracefile [open Q2_5_sparse.tr w]
 $ns trace-all $tracefile
-set namfile [open Q2_1.nam w]
+set namfile [open Q2_5_sparse.nam w]
 $ns namtrace-all $namfile
 
 # Create all the nodes
@@ -65,16 +65,16 @@ $udp0 set dst_port_ 0
 # Create an UDP transport agent 
 set udp9 [new Agent/UDP]
 $ns attach-agent $n9 $udp9       ;# Attach agent udp9 to node n9
-$udp9 set fid_ 0
-$udp9 set class_ 0
+$udp9 set fid_ 1
+$udp9 set class_ 1
 $udp9 set dst_addr_ $group1
 $udp9 set dst_port_ 0
 
 # Create an UDP transport agent 
 set udp12 [new Agent/UDP]
 $ns attach-agent $n12 $udp12       ;# Attach agent udp0 to node n0
-$udp0 set fid_ 0
-$udp0 set class_ 0
+$udp0 set fid_ 2
+$udp0 set class_ 2
 $udp0 set dst_addr_ $group1
 $udp0 set dst_port_ 0
 
@@ -138,7 +138,7 @@ proc finish {} {
     close $namfile
 
     puts "running nam ..."
-    exec nam Q2_1.nam &
+    exec nam Q2_5_sparse.nam &
     exit 0
 }
 

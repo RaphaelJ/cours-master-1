@@ -1,7 +1,5 @@
-source ST.tcl
-
 ################################################################################
-# File: Q2_5_dense.tcl                                                         #
+# File: Q2_4_dense.tcl                                                         #
 ################################################################################
 
 
@@ -9,9 +7,9 @@ source ST.tcl
 set ns [new Simulator -multicast on]
 
 # Create an output and a nam trace datafile
-set tracefile [open Q2_5_dense.tr w]
+set tracefile [open Q2_4_dense.tr w]
 $ns trace-all $tracefile
-set namfile [open Q2_5_dense.nam w]
+set namfile [open Q2_4_dense.nam w]
 $ns namtrace-all $namfile
 
 # Create all the nodes
@@ -70,14 +68,6 @@ $udp9 set class_ 1
 $udp9 set dst_addr_ $group1
 $udp9 set dst_port_ 0
 
-# Create an UDP transport agent 
-set udp12 [new Agent/UDP]
-$ns attach-agent $n12 $udp12       ;# Attach agent udp0 to node n0
-$udp0 set fid_ 2
-$udp0 set class_ 2
-$udp0 set dst_addr_ $group1
-$udp0 set dst_port_ 0
-
 # Create a constant bitrate traffic generator
 set cbr0 [new Application/Traffic/CBR]
 $cbr0 attach-agent $udp0          ;# Attach the traffic generator to the UDP agent
@@ -90,18 +80,21 @@ $cbr9 attach-agent $udp9          ;# Attach the traffic generator to the UDP age
 $cbr9 set packetSize_ 512      ;# Set the size of generated packets (will be the size of UDP packets)
 $cbr9 set rate_ 1.5Mb
 
-# Create a constant bitrate traffic generator
-set cbr12 [new Application/Traffic/CBR]
-$cbr12 attach-agent $udp12          ;# Attach the traffic generator to the UDP agent
-$cbr12 set packetSize_ 1000      ;# Set the size of generated packets (will be the size of UDP packets)
-$cbr12 set rate_ 3.8Mb
+# Create a TCP transport agent (TCP Tahoe)
+set tcp [new Agent/TCP]
+$tcp set class_ 2               ;# Define the class, will use color 2 (green)
+$tcp set window_ 64             ;# max bound on window size (simulate the receiver's window)
+$tcp set packetSize_ 1000       ;# packet size used by sender
+$ns attach-agent $n7 $tcp
 
-# Creates sinks for UDP agent
-set null [new Agent/Null]
-$ns attach-agent $n5 $null
+# Creates sink for TCP
+set sink [new Agent/TCPSink]
+$ns attach-agent $n5 $sink
+$ns connect $tcp $sink
 
-# Connects UDP sources to sinks
-$ns connect $udp12 $null
+# Create a FTP traffic generator (simulates bulk data transfers)
+set ftp [new Application/FTP]
+$ftp attach-agent $tcp
 
 # Create receivers and leavers
 set rcvr8 [new Agent/Null]
@@ -122,9 +115,9 @@ $ns at 4.5 "$n11 leave-group $rcvr11 $group1"
 $ns at 4.6 "$n8 leave-group $rcvr8 $group1"
 
 # Start the traffic generators at different times
+$ns at 0.0 "$ftp start"
 $ns at 0.0 "$cbr0 start"
 $ns at 0.0 "$cbr9 start"
-$ns at 0.0 "$cbr12 start"
 
 # End simulation at time 5 and call the finish procedure
 $ns at 5.0 "finish"
@@ -138,7 +131,7 @@ proc finish {} {
     close $namfile
 
     puts "running nam ..."
-    exec nam Q2_5_dense.nam &
+    exec nam Q2_4_dense.nam &
     exit 0
 }
 

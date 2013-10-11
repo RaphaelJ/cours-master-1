@@ -11,25 +11,26 @@ import TraceParser
 
 main = do
     traces <- parse <$> getContents
-    let packets = [ t | t <- traces, tSrcLink t == 0, tTime t >= 2.0 ]
+    let packets = [ t | t <- traces, tSrcLink t == 0, tTime t >= 2.0
+                      , tType t == Received ]
         groupedSize = groupCenti packets 2.0
 
-    putStrLn "plot '-' with lines title 'TCP bandwidth (Mbps)' lt rgb 'green', \
-                  \'-' with lines title 'UDP bandwidth (Mbps)' lt rgb 'blue', \
-                  \'-' with lines title 'Total bandwidth (Mbps)' lt rgb 'red'"
+    putStrLn "plot '-' with lines title 'TCP throughput (Mbps)' lt rgb 'green', \
+                  \'-' with lines title 'UDP throughput (Mbps)' lt rgb 'blue', \
+                  \'-' with lines title 'Total throughput (Mbps)' lt rgb 'red'"
 
+    putStrLn "# centisecond tcp"
     forM_ groupedSize $ \(centi, sumTcp, _, _) -> do
-        putStrLn "# centisecond tcp"
         printf "%.2f %f\n" centi (toMbps sumTcp)
     putStrLn "e"
 
+    putStrLn "# centisecond udp"
     forM_ groupedSize $ \(centi, _, sumUdp, _) -> do
-        putStrLn "# centisecond udp"
         printf "%.2f %f\n" centi (toMbps sumUdp)
     putStrLn "e"
 
+    putStrLn "# centisecond total"
     forM_ groupedSize $ \(centi, _, _, sumTotal) -> do
-        putStrLn "# centisecond total"
         printf "%.2f %f\n" centi (toMbps sumTotal)
     putStrLn "e"
   where
@@ -48,4 +49,4 @@ main = do
     double :: Integral a => a -> Double
     double = fromIntegral
 
-    toMbps bits = double (bits * 100) / 1024^2
+    toMbps bits = double (bits * 100) / 1024^2 * 8
