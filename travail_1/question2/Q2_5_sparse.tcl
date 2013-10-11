@@ -45,7 +45,6 @@ $ns duplex-link $n5 $n7 3.5Mb 35ms DropTail
 $ns duplex-link $n6 $n7 3.5Mb 20.5ms DropTail
 $ns duplex-link $n6 $n11 3.5Mb 10ms DropTail
 $ns duplex-link $n6 $n12 5Mb 10ms DropTail
-$ns duplex-link $n7 $n1 3.5Mb 10ms DropTail
 
 # Allocate group addresses
 set group1 [Node allocaddr]

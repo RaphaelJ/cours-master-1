@@ -5,9 +5,6 @@
 # Create a new simulator object
 set ns [new Simulator -multicast on]
 
-# Ask NS to model the routing with a distance vector algorithm with the dense mode protocol
-$ns rtproto DV
-
 # Create an output and a nam trace datafile
 set tracefile [open Q2_1_dense.tr w]
 $ns trace-all $tracefile
@@ -45,7 +42,6 @@ $ns duplex-link $n5 $n7 3.5Mb 35ms DropTail
 $ns duplex-link $n6 $n7 3.5Mb 20.5ms DropTail
 $ns duplex-link $n6 $n11 3.5Mb 10ms DropTail
 $ns duplex-link $n6 $n12 5Mb 10ms DropTail
-$ns duplex-link $n7 $n1 3.5Mb 10ms DropTail
 
 # Routing protocol: say distance vector
 #Protocols: CtrMcast, DM, ST, BST
