@@ -6,7 +6,7 @@
 
 \pagestyle{headings}
 
-\title{Computer Network Architectures and Multimedia: Assignement 1}
+\title{Computer Network Architectures and Multimedia: Assignment 1}
 \author{Julien Nix and Raphaël Javaux}
 \date{}
 
@@ -17,16 +17,17 @@
 
    \subsection{TCP behavior}
 
-    \paragraph{}TCP starts sending by packet at a moment, waiting for a single ACK.
-By increasing the transmission window size, TCP gets its maximum throughput
-after around 0.5 second.
+    \paragraph{}TCP starts sending one packet at a time, waiting for a single
+ACK.
+By increasing the transmission window size, TCP manages to detect congestion and
+reaches its maximum throughput after around 0.5 second.
 
    \subsection{n0 to n1 throughput}
 
-    \paragraph{}TCP achieves a constant 5.4 Mbps/sec throughput during the last
+    \paragraph{}TCP achieves a constant 5.4 Mbps throughput during the last
 3 seconds, which is quite close to the maximal bandwidth of the link (6 Mbps).
 This confirms our previous observation that TCP Tahoe reaches its maximum
-throughput after half a second. We also can notice some the particularities of the TAHOE algorithm which manages to avoid congestion (slowstart and lowering the windows size).
+throughput after half a second.
 
     \paragraph{}The script can be run with this command :
     \begin{verbatim}
@@ -40,7 +41,7 @@ New packets have been redirected to n2 over the n0 to n1 link (which is already
 used by the TCP flow), resulting in the n0's queue overflow.
 
     \paragraph{}As TCP detected the loss of packets, it promptly restarted its
-congestion detection algorithm to accommodate itself to the new available
+congestion detection algorithm to accommodate itself to the new remaining
 bandwidth of the n0 to n1 link.
 
    \subsection{Network recovery}
@@ -48,7 +49,7 @@ bandwidth of the n0 to n1 link.
 
    \paragraph{}The last packet loss happened at 3.23 sec, but TCP only recovers
 an ideal throughput at around 3.6 sec, after a few iterations of its congestion
-detection algorithm (TAHOE).
+detection algorithm.
 
    \subsection{Packets dropped}
 
@@ -68,13 +69,13 @@ detection algorithm (TAHOE).
 
     \paragraph{}All along the simulation, we can see TCP Tahoe running its
 congestion-avoidance algorithm. \newline
-Soon after 3.0 sec, when the n0 to n2 link falls down, TCP reinitialized its
+Soon after 3.0 sec, when the n0 to n2 link falls down, TCP reinitialised its
 sending window and its congestion-detection algorithm. As said in
 \ref{Network recovery}, TCP recovered an ideal throughput shortly after 3.5 sec
 and correctly took into account the new UDP traffic on the n0 to n1 link.
 
     \paragraph{}After the traffic has been redirected on the n0 to n1
-link, this last becomes a bottleneck in the network as the total throughput is
+link, this last becomes a bottleneck in the network as the global throughput is
 approximately 5 Mbps, the bandwidth of the link.
 
     \paragraph{}The script can be run with this command :
@@ -114,11 +115,11 @@ reach n8, n10 and n11 from n9.
 
    \subsubsection{Sparse mode}
 
-    \paragraph{}Packets take two hops to go to the n5 RDV point and then one
-hops to reach n8, n10 and n11 from n5. Thus n8, n10 and n11 are each 4 hops
-away from n9\footnote{The RDV point has been accounted as an additional hop.} in
-this multicast configuration. This is less efficient in number of hops than
-using unicast but it saves the n0 to n1 and n1 to n2 links by avoiding
+    \paragraph{}Packets take two hops to be tunnelled to the n5 RDV point and
+then one hop to reach n8, n10 and n11 from n5. Thus n8, n10 and n11 are each 4
+hops away from n9\footnote{The RDV point has been accounted as an additional
+hop.} in this multicast configuration. This is less efficient in number of hops
+than unicast but it saves the n0 to n1 and n1 to n2 links by avoiding
 duplicates.
 
    \subsubsection{Dense mode}
@@ -127,11 +128,11 @@ duplicates.
 paths for each of the three destinations, thus the number of crossed hops is
 the same as in the unicast mode.
 
-    \paragraph{}When the dense mode has been stabilized, the way packets are
+    \paragraph{}When the dense mode has been stabilised, the way packets are
 transmitted is optimal, as every packets take the shortest path (by contrast to
 the sparse mode) and there is no duplicate on a single link (by contrast the
 unicast scenario).
-\newline However there is a stabilization overhead as the default router policy
+\newline However there is a stabilisation overhead as the default router policy
 is to broadcast multicast packets before receiving a prune.
 
   \subsection{Prunes and grafts}
@@ -149,14 +150,14 @@ is to broadcast multicast packets before receiving a prune.
 
     \paragraph{}In sparse mode, grafts are sent when a node needs to join the
 group (8 grafts because 2 grafts are needed for each of the 4 joins, as
-there is an additional router from each node to n5).
+there is an intermediate router from each node to n5).
 \newline Prunes are sent when a node leaves the group (the number is quite huge
 because multiple prunes are sent before being propagated in the network).
 
     \paragraph{}In dense mode, a lot of prunes are sent during the network
-stabilization (because of the default policy to propagate packets in every
+stabilisation (because of the default policy to propagate packets in every
 routers). Grafts are only sent when a node joins the group. Grafts are propagated
-in the whole network and are so more numerous than in the sparse mode
+over the whole network and are so more numerous than in the sparse mode
 simulation.
 
     \paragraph{}The script can be run with these commands :
@@ -190,11 +191,29 @@ Sometimes, it can result in a unpredictable loss of the graft packet, as in
 the sparse simulation.
 
     \paragraph{}This problem could be avoided by implementing a reliable
-graft protocol, by notifying the sender of the delivery of the graft.
+graft protocol, which notify the sender of the delivery of the graft.
 
   \subsection{Dense mode or Sparse mode}
-	 \paragraph{} First, we can say that the dense mode is better in a small network. It is due to the fact that packets do not have to reach the RDV point (the network's traffic is decentralized). Thus, there is less bandwidth needed because packets go directly to their recievers but it has a stabilization time. Furthermore, dense mode is better when multiple routers want to be in the group (Sparse mode can assume, relatively, just a few revievers). Opposed to those advantages, the dense mode re-flood  the multicast traffic periodically so it uses some bandwidth and could cause trouble. Here, the dense mode is obviously more convenient.
 
-	\paragraph{} Secondly, the sparse mode is quite different for multicasting because it uses an explicit request approach. Thus, the traffic is more ordered and so, a larger amount of data could be sent. This mode suits better for a bigger network with more than 12 nodes. Moreover, the RDV point have to deal with a very high amount of data but those packets only go directly where they are needed. So it leaves certain routers alone which do not have to treat those packets.
+    \paragraph{}First, we can say that the dense mode is better in a small
+network. It is due to the fact that packets do not have to reach the RDV
+point (the network's traffic is decentralised). Thus, there is a smaller
+bandwidth requirement because packets go directly to their destinations.
+But it comes at the cost of a stabilisation delay.
+Dense mode is better suited when a large proportion of the hosts joined the
+group.
+\newline The main disadvantage of dense mode is the periodic broadcasting of
+multicast packets (when a prune expires). This can cause an huge
+overhead on a large network on which only a few hosts are in the multicast
+group.
+\newline Moreover, the first packet sent on a network will be diffused
+everywhere. Thus dense mode is very inefficient on contents which are rarely
+diffused.
+
+    \paragraph{}Secondly, the sparse mode is quite different for multicasting
+because it uses an explicit approach. So the traffic is more structured.
+This mode suits better for a larger network.
+\newline However, the RDV point may have to deal with a very high amount of data
+as this structure is very centralised.
 
 \end{document}
