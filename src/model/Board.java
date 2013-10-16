@@ -23,9 +23,10 @@ public class Board {
     /** Contains a matrix which maps each cell of the board to the piece which
      * is there, if any.
      * The first cell of the grid is the top-left point of the board. */
-    private final Piece[][] _grid;
+    private final Row[] _grid;
 
     private Piece _current = null;
+    private Piece _next;
 
     private ArrayList<GameView> _views = new ArrayList<GameView>();
 
@@ -41,7 +42,12 @@ public class Board {
 
         this._clockSpeed = DEFAULT_SPEED;
 
-        this._grid = new Piece[this._height][this._width];
+        this._grid = new Row[this._height];
+        
+        for(int i = 0; i < this._height; i++)
+        	this._grid[i] = new Row(this._width);
+        
+        this._next = this.getRandomPiece();
     }
 
     /** Initializes an empty board with a specified seed for the random
@@ -62,14 +68,20 @@ public class Board {
 
         this._clockSpeed = clockSpeed;
 
-        this._grid = new Piece[height][width];
+        this._grid = new Row[this._height];
+        
+        for(int i = 0; i < this._height; i++)
+        	this._grid[i] = new Row(this._width);
+        
+        this._next = this.getRandomPiece();
     }
 
     /** Removes every pieces from the grid and emits the reset event. */
     public void resetBoard()
     {
-        for (Piece[] line : this._grid)
-                Arrays.fill(line, null);
+
+    	for(int i = 0; i < this._height; i++)
+        	this._grid[i] = new Row(this._width);
 
         this._current = null;
 
@@ -89,11 +101,10 @@ public class Board {
         if (this._current == null) // First piece.
             this._current = this.nextPiece();
         else { // Moves the piece downward.
-            this._current = this.movePiece(this._current);
+            this._current = this.movePiece(this._current, new Coordinates(0, 1));
 
             if (this._current == null) // Introduces a new piece.
-                stop();
-                // TODO: this._current = this.nextPiece();
+                this._current = this.nextPiece();
         }
 
         for(GameView view : _views)
@@ -101,21 +112,27 @@ public class Board {
 
         return this._current;
     }
+    
+    private Piece getRandomPiece() {
+    	
+    	Piece.PieceFactory factory = Piece.AVAILABLE_PIECES[
+            this._rand.nextInt(Piece.AVAILABLE_PIECES.length)
+        ];
+    	
+    	Coordinates coords = new Coordinates(
+            (this._width - factory.getExtent()) / 2, 1 - factory.getExtent()
+        );
+    	
+    	return factory.construct(coords, 0);
+    }
 
     /** Returns the next random piece and places it at the top of the grid.
      * Returns null and emits a game over event if the piece can't be placed in
      * the grid. */
     private Piece nextPiece()
     {
-        Piece.PieceFactory factory = Piece.AVAILABLE_PIECES[
-            this._rand.nextInt(Piece.AVAILABLE_PIECES.length)
-        ];
-
-        // Puts the last line of the piece on the top-most line of the board.
-        Coordinates coords = new Coordinates(
-            (this._width - factory.getExtent()) / 2, 1 - factory.getExtent()
-        );
-        Piece piece = factory.construct(coords , 0);
+        Piece piece = this._next;
+        this._next = getRandomPiece();
 
         // Checks if the last line is blocked by some piece.
         Coordinates topLeft = piece.getTopLeft();
@@ -123,81 +140,162 @@ public class Board {
         boolean[] line = state[state.length - 1];
 
         for (int j = 0; j < line.length; j++) {
-            Piece cell = this._grid[0][j + topLeft.getX()];
+            Piece cell = this._grid[0].getPiece(j + topLeft.getX());
             if (line[j] && cell != null) {
                 gameOver();
                 return null;
             }
         }
 
-        this.placePiece(piece);
+        this.placePiece(piece, topLeft, state);
 
+        updateViewsNewPiece(this._next);
+        
         return piece;
     }
 
     /** Returns the new translated piece if it doesn't overlap with another
      * piece or if it is out of the board.
      * Returns null if an overlap occurs. */
-    private Piece movePiece(Piece piece)
+    private Piece movePiece(Piece piece, Coordinates offset)
     {
-        Coordinates topLeft = piece.getTopLeft();
-        boolean[][] state = piece.getCurrentState();
+        Piece newPiece = piece.translate(offset.getX(), offset.getY());
 
-        Piece newPiece = piece.translate(0, 1);
-        Coordinates newTopLeft = newPiece.getTopLeft();
-        boolean[][] newState = newPiece.getCurrentState();
-
-        // Checks if it hits the bottom of the grid.
-        if (newTopLeft.getY() + newState.length > this._height)
-            return null;
-
-        // Checks if the new piece overlap another piece.
-        // Only checks coordinates of the piece which are inside the grid.
-        int i = newTopLeft.getY() < 0 ? -newTopLeft.getY() : 0;
-        for (; i < newState.length; i++) {
-            boolean[] line = newState[i];
-
-            for (int j = 0; j < line.length; j++) {
-                Piece cell = this._grid[i + newTopLeft.getY()]
-                                       [j + newTopLeft.getX()];
-                if (line[j] && cell != null && cell != piece)
-                    return null;
-            }
+        if(isPieceCollide(newPiece, piece)) {
+        	clearLines();
+        	return null;
         }
 
         // Removes the old piece from the grid.
-        i = topLeft.getY() < 0 ? -topLeft.getY() : 0;
+        this.placePiece(null, piece.getTopLeft(), piece.getCurrentState());
+
+        // Places the new piece on the grid.
+        this.placePiece(newPiece, newPiece.getTopLeft(), newPiece.getCurrentState());
+
+        return newPiece;
+    }
+    
+    private boolean isPieceCollide(Piece newPiece, Piece oldPiece) {
+    	
+    	Coordinates topLeft = newPiece.getTopLeft();
+    	boolean[][] state = newPiece.getCurrentState();
+    	
+    	// Checks if the new piece overlap another piece.
+        // Only checks coordinates of the piece which are inside the grid.
+    	int i = topLeft.getY() < 0 ? -topLeft.getY() : 0;
         for (; i < state.length; i++) {
             boolean[] line = state[i];
 
             for (int j = 0; j < line.length; j++) {
-                if (line[j])
-                    this._grid[i + topLeft.getY()][j + topLeft.getX()] = null;
+            	if(line[j]) {
+            		
+            		if(i + topLeft.getY() >= this._height ||
+            				j + topLeft.getX() < 0 ||
+            				j + topLeft.getX() >= this._width)
+            			return true; // TODO : Handle this separately
+            		
+	                Piece cell = this._grid[i + topLeft.getY()].getPiece(j + topLeft.getX());
+	                if (cell != null && cell != oldPiece)
+	                    return true;
+            	}
             }
         }
+        
+        return false;
+    }
+    
+    public void moveLeft() {
+    	
+    	Piece movedPiece = movePiece(this._current, new Coordinates(-1, 0));
+    	
+    	if(movedPiece != null) {
+    		this._current = movedPiece;
+	    	this.updateViewsGridChange();
+    	}
+    }
+    
+    public void moveRight() {
+    	
+    	Piece movedPiece = movePiece(this._current, new Coordinates(1, 0));
+    	
+    	if(movedPiece != null) {
+    		this._current = movedPiece;
+	    	this.updateViewsGridChange();
+    	}
+    }
+    
+    public void softDrop() {
+    	
+		Piece movedPiece = movePiece(this._current, new Coordinates(0, 1));
+    	
+    	if(movedPiece != null) {
+    		this._current = movedPiece;
+	    	this.updateViewsGridChange();
+    	}
+    }
+    
+    public void hardDrop() {
+    	
+    	Piece finalPiece = this._current;
+    	Piece movedPiece = this._current;
+    	
+    	
+    	do {
+    		movedPiece = movePiece(movedPiece, new Coordinates(0, 1));
+    		
+    		if(movedPiece != null)
+    			finalPiece = movedPiece;
+		
+    	} while (movedPiece != null);
+    	
+    	this._current = finalPiece;
+    	this.updateViewsGridChange();
+    }
+    
+    public void rotate() {
+    	
+    	Piece rotatedPiece = this._current.rotate();
+    	
+    	if(isPieceCollide(rotatedPiece, this._current))
+    		return;
+    	
+    	// Removes the old piece from the grid.
+        this.placePiece(null, this._current.getTopLeft(), this._current.getCurrentState());
 
         // Places the new piece on the grid.
-        i = newTopLeft.getY() < 0 ? -newTopLeft.getY() : 0;
-        for (; i < newState.length; i++) {
-            boolean[] line = newState[i];
+        this.placePiece(rotatedPiece, rotatedPiece.getTopLeft(), rotatedPiece.getCurrentState());
+
+    	
+    	this._current = rotatedPiece;
+    	this.updateViewsGridChange();
+    }
+    
+    private void clearLines() {
+    	
+    	Coordinates topLeft = this._current.getTopLeft();
+    	boolean[][] state = this._current.getCurrentState();
+    	
+    	int i = topLeft.getY() < 0 ? -topLeft.getY() : 0;
+        for (; i < state.length; i++) {
+        	
+        	boolean[] line = state[i];
 
             for (int j = 0; j < line.length; j++) {
-                if (line[j]) {
-                    this._grid[i + newTopLeft.getY()][j + newTopLeft.getX()]
-                        = newPiece;
-                }
+        	
+	        	if(line[j] && this._grid[i + topLeft.getY()].isRowComplete()) {
+	        		
+	        		for (int k = i + topLeft.getY(); k > 0; k--)
+	        			this._grid[k] = this._grid[k-1];
+	        		
+	        		this._grid[0] = new Row(this._width);
+	        	}
             }
         }
-
-        return newPiece;
     }
 
     /** Places a new piece on the grid. */
-    private void placePiece(Piece piece)
+    private void placePiece(Piece piece, Coordinates topLeft, boolean[][] state)
     {
-        Coordinates topLeft = piece.getTopLeft();
-        boolean[][] state = piece.getCurrentState();
-
         // Only draws coordinates of the piece which are inside the grid.
         int i = topLeft.getY() < 0 ? -topLeft.getY() : 0;
         for (; i < state.length; i++) {
@@ -205,7 +303,7 @@ public class Board {
 
             for (int j = 0; j < line.length; j++) {
                 if (line[j])
-                    this._grid[i + topLeft.getY()][j + topLeft.getX()] = piece;
+                    this._grid[i + topLeft.getY()].setPiece(piece, j + topLeft.getX());
             }
         }
     }
@@ -241,6 +339,18 @@ public class Board {
 
         this.stop();
     }
+    
+    private void updateViewsGridChange() {
+    	
+    	for(GameView view : _views)
+            view.gridChange();
+    }
+    
+    private void updateViewsNewPiece(Piece piece) {
+    	
+    	for(GameView view : _views)
+            view.newPiece(piece);
+    }
 
     public int getWidth()
     {
@@ -252,7 +362,7 @@ public class Board {
         return this._height;
     }
 
-    public Piece[][] getGrid()
+    public Row[] getGrid()
     {
         return this._grid;
     }
@@ -265,5 +375,9 @@ public class Board {
     public void setClockSpeed(int clockSpeed)
     {
         this._clockSpeed = clockSpeed;
+    }
+    
+    public Piece getNextPiece() {
+    	return this._next;
     }
 }

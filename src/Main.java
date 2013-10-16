@@ -7,9 +7,9 @@ public class Main {
     {
         Board board = new Board();
 
-        CLIView   cli = new CLIView(board);
+        //CLIView   cli = new CLIView(board);
         SwingView gui = new SwingView(board);
-        board.addView(cli); // Listen to board changes.
+        //board.addView(cli); // Listen to board changes.
         board.addView(gui);
 
         // Controller which listen to GUI events and transmits them to the

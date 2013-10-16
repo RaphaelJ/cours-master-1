@@ -2,6 +2,8 @@ package view;
 
 import java.util.*;
 
+import model.piece.Piece;
+
 /** Provides an interface for views which are object which listen to game's
  * board changes. */
 public interface GameView extends EventListener {
@@ -14,4 +16,6 @@ public interface GameView extends EventListener {
     public void gameOver();
 
     public void reset();
+    
+    public void newPiece(Piece piece);
 }

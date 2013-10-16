@@ -1,6 +1,7 @@
 package view;
 
 import model.Board;
+import model.Row;
 import model.piece.Piece;
 
 /** Provides a view which prints the grid to the standard output. */
@@ -16,16 +17,16 @@ public class CLIView implements GameView {
 
     private void printBoard()
     {
-        Piece[][] grid = this._board.getGrid();
+        Row[] grid = this._board.getGrid();
         int width = this._board.getWidth();
 
         for (int i = 0; i < width + 1; i++)
             System.out.print("~~");
         System.out.println();
 
-        for (Piece[] row : grid) {
+        for (Row row : grid) {
             System.out.print("!");
-            for (Piece piece : row) {
+            for (Piece piece : row.getPieces()) {
             	if (piece != null)
                     System.out.print(" #");
                 else
@@ -59,5 +60,8 @@ public class CLIView implements GameView {
     public void reset()
     {
         this.printBoard();
+    }
+    
+    public void newPiece(Piece piece) {
     }
 }
