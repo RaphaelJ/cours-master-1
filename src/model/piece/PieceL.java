@@ -15,15 +15,14 @@ public class PieceL extends Piece {
             { false, true, false },
             { false, true, true  }
         }, {
-
-            { true,  true, false },
-            { false, true, false },
-            { false, true, false }
-        }, {
             { false, false, true  },
             { true,  true,  true  },
             { false, false, false }
-        }, 
+        }, {
+            { true,  true, false },
+            { false, true, false },
+            { false, true, false }
+        },
     };
 
     public static final PieceLFactory factory = new PieceLFactory();
