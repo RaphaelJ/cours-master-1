@@ -16,6 +16,6 @@ public interface GameView extends EventListener {
     public void gameOver();
 
     public void reset();
-    
+
     public void newPiece(Piece piece);
 }
