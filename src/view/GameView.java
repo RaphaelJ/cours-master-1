@@ -13,9 +13,11 @@ public interface GameView extends EventListener {
     /** Event triggered when n lines have been removed by the player. */
     public void clearedLines(int n);
 
+    /** When a new piece has been randomly chosen (not yet introduced in the
+     * grid). */
+    public void newPiece(Piece piece);
+
     public void gameOver();
 
     public void reset();
-
-    public void newPiece(Piece piece);
 }

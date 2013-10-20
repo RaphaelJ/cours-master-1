@@ -22,7 +22,9 @@ public class Board {
 
     /** Contains a matrix which maps each cell of the board to the piece which
      * is there, if any.
-     * The first cell of the grid is the top-left point of the board. */
+     * The first row is the top-most row of the board.
+     * Complete rows can be easily removed from the grid by applying a shift
+     * of references. */
     private final Row[] _grid;
 
     private Piece _current = null;
@@ -31,7 +33,7 @@ public class Board {
     private ArrayList<GameView> _views = new ArrayList<GameView>();
 
     private Timer _timer;
-    private final int _clockSpeed;
+    private int _clockSpeed;
 
     public Board()
     {
@@ -121,8 +123,7 @@ public class Board {
                 this._current = this.nextPiece();
         }
 
-        for(GameView view : _views)
-            view.gridChange();
+        this.emitGridChange();
 
         return this._current;
     }
@@ -131,9 +132,9 @@ public class Board {
     {
         Piece movedPiece = this.movePiece(this._current, -1, 0);
 
-        if(movedPiece != null) {
+        if (movedPiece != null) {
             this._current = movedPiece;
-            this.updateViewsGridChange();
+            this.emitGridChange();
         }
     }
 
@@ -141,9 +142,9 @@ public class Board {
     {
         Piece movedPiece = this.movePiece(this._current, 1, 0);
 
-        if(movedPiece != null) {
+        if (movedPiece != null) {
             this._current = movedPiece;
-            this.updateViewsGridChange();
+            this.emitGridChange();
         }
     }
 
@@ -154,7 +155,7 @@ public class Board {
 
         if (movedPiece != null) {
             this._current = movedPiece;
-            this.updateViewsGridChange();
+            this.emitGridChange();
         }
     }
 
@@ -170,26 +171,25 @@ public class Board {
                 finalPiece = movedPiece;
         } while (movedPiece != null);
 
-        this._current = finalPiece;
-        this.updateViewsGridChange();
+        if (finalPiece != this._current) {
+            this._current = finalPiece;
+            this.emitGridChange();
+        }
     }
 
+    /** Tries to rotate the piece. Does nothing if a collision occurs. */
     public void rotate()
     {
         Piece rotatedPiece = this._current.rotate();
-        
-        if(isPieceCollide(rotatedPiece, this._current))
-                return;
-        
-        // Removes the old piece from the grid.
-        this.placePiece(null, this._current.getTopLeft(), this._current.getCurrentState());
 
-        // Places the new piece on the grid.
-        this.placePiece(rotatedPiece, rotatedPiece.getTopLeft(), rotatedPiece.getCurrentState());
+        if (isPieceCollide(rotatedPiece, this._current))
+            return;
 
-        
+        this.removePiece(this._current);
+        this.placePiece(rotatedPiece);
+
         this._current = rotatedPiece;
-        this.updateViewsGridChange();
+        this.emitGridChange();
     }
 
     /*********************** Internals ***********************/
@@ -203,7 +203,7 @@ public class Board {
         this._next = this.getRandomPiece();
     }
 
-    /** Returns the next random piece without placing it on the grid. */
+    /** Choose the next random piece without placing it on the grid. */
     private Piece getRandomPiece()
     {
         Piece.PieceFactory factory = Piece.AVAILABLE_PIECES[
@@ -233,35 +233,33 @@ public class Board {
         for (int j = 0; j < line.length; j++) {
             Piece cell = this._grid[0].getPiece(j + topLeft.getX());
             if (line[j] && cell != null) {
-                this.gameOver();
+                this.stop();
+                this.emitGameOver();
                 return null;
             }
         }
 
-        this.placePiece(piece, topLeft, state);
+        this.placePiece(piece);
 
-        updateViewsNewPiece(this._next);
+        this.emitNewPiece(this._next);
 
         return piece;
     }
 
     /** Returns the new translated piece if it doesn't overlap with another
      * piece or if it is out of the board.
-     * Returns null if an overlap occurs. */
+     * Returns null and does nothing if an collision occurs. */
     private Piece movePiece(Piece piece, int dX, int dY)
     {
         Piece newPiece = piece.translate(dX, dY);
 
         if (this.isPieceCollide(newPiece, piece)) {
-            clearLines();
+            this.clearLines();
             return null;
         }
 
-        // Removes the old piece from the grid.
-        this.placePiece(null, piece.getTopLeft(), piece.getCurrentState());
-
-        // Places the new piece on the grid.
-        this.placePiece(newPiece, newPiece.getTopLeft(), newPiece.getCurrentState());
+        this.removePiece(piece);
+        this.placePiece(newPiece);
 
         return newPiece;
     }
@@ -276,20 +274,21 @@ public class Board {
         // Checks if the new piece overlap another piece.
         // Only checks coordinates of the piece which are inside the grid as the
         // top-most line can still be out of the board.
-        int i = topLeft.getY() < 0 ? -topLeft.getY() : 0;
-
         int topX = topLeft.getX(), topY = topLeft.getY();
+        int i = topY < 0 ? -topY : 0;
         for (; i < state.length; i++) {
             boolean[] line = state[i];
+            int y = topY + i;
 
             for (int j = 0; j < line.length; j++) {
                 if (line[j]) {
-                    // Checks the left and right border.
+                    // Checks the left, right and bottom border.
                     int x = topX + j;
-                    if (x < 0 || x >= this._width)
+                    if (x < 0 || x >= this._width || y >= this._height)
                         return true;
 
-                    Piece cell = this._grid[topY + i].getPiece(x);
+                    // Checks if the cell is free.
+                    Piece cell = this._grid[y].getPiece(x);
                     if (cell != null && cell != oldPiece)
                         return true;
                 }
@@ -299,55 +298,85 @@ public class Board {
         return false;
     }
 
-    
-    private void clearLines() {
-    	
-    	Coordinates topLeft = this._current.getTopLeft();
-    	boolean[][] state = this._current.getCurrentState();
-    	
-    	int i = topLeft.getY() < 0 ? -topLeft.getY() : 0;
-        for (; i < state.length; i++) {
-        	
-        	boolean[] line = state[i];
-
-            for (int j = 0; j < line.length; j++) {
-        	
-	        	if(line[j] && this._grid[i + topLeft.getY()].isRowComplete()) {
-	        		
-	        		for (int k = i + topLeft.getY(); k > 0; k--)
-	        			this._grid[k] = this._grid[k-1];
-	        		
-	        		this._grid[0] = new Row(this._width);
-	        	}
-            }
-        }
-    }
-
-    /** Places a new piece on the grid. */
-    private void placePiece(Piece piece, Coordinates topLeft, boolean[][] state)
+    /** Places a new piece on the grid. Doesn't check for collisions. */
+    private void placePiece(Piece piece)
     {
+        int topX = piece.getTopLeft().getX()
+          , topY = piece.getTopLeft().getY();
+
+        boolean[][] state = piece.getCurrentState();
+
         // Only draws coordinates of the piece which are inside the grid.
-        int i = topLeft.getY() < 0 ? -topLeft.getY() : 0;
+        int i = topY < 0 ? -topY : 0;
         for (; i < state.length; i++) {
             boolean[] line = state[i];
 
             for (int j = 0; j < line.length; j++) {
                 if (line[j])
-                    this._grid[i + topLeft.getY()].setPiece(piece, j + topLeft.getX());
+                    this._grid[topY + i].setPiece(piece, topX + j);
             }
         }
     }
 
-    /*********************** Events ***********************/
-
-    /** Emits the game over event and stops the timer. */
-    private void emitGameOver()
+    /** Removes a piece from the grid. */
+    private void removePiece(Piece piece)
     {
-        for (GameView view : this._views)
-            view.gameOver();
+        int topX = piece.getTopLeft().getX()
+          , topY = piece.getTopLeft().getY();
 
-        this.stop();
+        boolean[][] state = piece.getCurrentState();
+
+        // Only clean coordinates of the piece which are inside the grid.
+        int i = topY < 0 ? -topY : 0;
+        for (; i < state.length; i++) {
+            boolean[] line = state[i];
+
+            for (int j = 0; j < line.length; j++) {
+                if (line[j])
+                    this._grid[topY + i].setPiece(null, topX + j);
+            }
+        }
     }
+
+    /** Checks every line where the current piece is to be cleared.
+     * Emits the clear lines event when some lines have been removed. */
+    private void clearLines()
+    {
+        int topX = this._current.getTopLeft().getX()
+          , topY = this._current.getTopLeft().getY();
+
+        boolean[][] state = this._current.getCurrentState();
+
+        int nLines = 0;
+
+        // Only clean coordinates of the piece which are inside the grid.
+        int i = topY < 0 ? -topY : 0;
+        for (; i < state.length; i++) {
+            boolean[] line = state[i];
+
+            // Checks for at least one occupied cell.
+            for (int j = 0; j < line.length; j++) {
+                if (line[j]) {
+                    if (this._grid[i + topY].isComplete()) {
+                        // Shifts line references to the bottom and adds a new
+                        // line at the top of the grid.
+                        for (int k = i + topY; k > 0; k--)
+                            this._grid[k] = this._grid[k-1];
+
+                        this._grid[0] = new Row(this._width);
+                        nLines++;
+                    }
+
+                    break;
+                }
+            }
+        }
+
+        if (nLines > 0)
+            this.emitClearedLines(nLines);
+    }
+
+    /*********************** Events ***********************/
 
     private void emitGridChange()
     {
@@ -355,10 +384,28 @@ public class Board {
             view.gridChange();
     }
 
+    private void emitClearedLines(int n)
+    {
+        for(GameView view : _views)
+            view.clearedLines(n);
+    }
+
     private void emitNewPiece(Piece piece)
     {
         for(GameView view : _views)
             view.newPiece(piece);
+    }
+
+    private void emitGameOver()
+    {
+        for (GameView view : this._views)
+            view.gameOver();
+    }
+
+    private void emitReset()
+    {
+        for (GameView view : this._views)
+            view.reset();
     }
 
     /*********************** Getters/Setters ***********************/
