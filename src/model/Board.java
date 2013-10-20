@@ -31,7 +31,7 @@ public class Board {
     private ArrayList<GameView> _views = new ArrayList<GameView>();
 
     private Timer _timer;
-    private int _clockSpeed;
+    private final int _clockSpeed;
 
     public Board()
     {
@@ -75,6 +75,30 @@ public class Board {
 
     /*********************** User actions ***********************/
 
+    /** Starts the timer which controls the game. */
+    public void start()
+    {
+        if (this._timer != null)
+            this.stop();
+
+        TimerTask task = new TimerTask() {
+            @Override
+            public void run()
+            {
+                gameTick();
+            }
+        };
+
+        this._timer = new Timer();
+        this._timer.scheduleAtFixedRate(task, 0, this._clockSpeed);
+    }
+
+    /** Stops the timer. */
+    public void stop()
+    {
+        this._timer.cancel();
+    }
+
     /** Removes every pieces from the grid and emits the reset event. */
     public void resetBoard()
     {
@@ -105,7 +129,7 @@ public class Board {
 
     public void moveLeft()
     {
-        Piece movedPiece = movePiece(this._current, -1, 0);
+        Piece movedPiece = this.movePiece(this._current, -1, 0);
 
         if(movedPiece != null) {
             this._current = movedPiece;
@@ -115,7 +139,7 @@ public class Board {
 
     public void moveRight()
     {
-        Piece movedPiece = movePiece(this._current, 1, 0);
+        Piece movedPiece = this.movePiece(this._current, 1, 0);
 
         if(movedPiece != null) {
             this._current = movedPiece;
@@ -126,9 +150,9 @@ public class Board {
     /** Push the piece one line down. */
     public void softDrop()
     {
-        Piece movedPiece = movePiece(this._current, new Coordinates(0, 1));
+        Piece movedPiece = this.movePiece(this._current, 0, 1);
 
-        if(movedPiece != null) {
+        if (movedPiece != null) {
             this._current = movedPiece;
             this.updateViewsGridChange();
         }
@@ -140,10 +164,10 @@ public class Board {
         Piece movedPiece = this._current;
 
         do {
-            movedPiece = movePiece(movedPiece, new Coordinates(0, 1));
+            movedPiece = this.movePiece(movedPiece, 0, 1);
 
-            if(movedPiece != null)
-                    finalPiece = movedPiece;
+            if (movedPiece != null)
+                finalPiece = movedPiece;
         } while (movedPiece != null);
 
         this._current = finalPiece;
@@ -152,7 +176,6 @@ public class Board {
 
     public void rotate()
     {
-        
         Piece rotatedPiece = this._current.rotate();
         
         if(isPieceCollide(rotatedPiece, this._current))
@@ -210,7 +233,7 @@ public class Board {
         for (int j = 0; j < line.length; j++) {
             Piece cell = this._grid[0].getPiece(j + topLeft.getX());
             if (line[j] && cell != null) {
-                gameOver();
+                this.gameOver();
                 return null;
             }
         }
@@ -315,31 +338,10 @@ public class Board {
         }
     }
 
-    public void start()
-    {
-        this.resetBoard();
+    /*********************** Events ***********************/
 
-        TimerTask task = new TimerTask() {
-            @Override
-            public void run()
-            {
-                gameTick();
-            }
-        };
-
-        if(this._timer != null)
-            this.stop();
-
-        this._timer = new Timer();
-        this._timer.scheduleAtFixedRate(task, 0, this._clockSpeed);
-    }
-
-    public void stop()
-    {
-        this._timer.cancel();
-    }
-
-    private void gameOver()
+    /** Emits the game over event and stops the timer. */
+    private void emitGameOver()
     {
         for (GameView view : this._views)
             view.gameOver();
@@ -347,17 +349,19 @@ public class Board {
         this.stop();
     }
 
-    private void updateViewsGridChange()
+    private void emitGridChange()
     {
         for(GameView view : _views)
             view.gridChange();
     }
 
-    private void updateViewsNewPiece(Piece piece)
+    private void emitNewPiece(Piece piece)
     {
         for(GameView view : _views)
             view.newPiece(piece);
     }
+
+    /*********************** Getters/Setters ***********************/
 
     public int getWidth()
     {
@@ -379,9 +383,11 @@ public class Board {
         return this._clockSpeed;
     }
 
+    /** Changes the speed of the game. */
     public void setClockSpeed(int clockSpeed)
     {
         this._clockSpeed = clockSpeed;
+        this.start();
     }
 
     public Piece getNextPiece()
