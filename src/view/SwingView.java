@@ -1,6 +1,7 @@
 package view;
 
 import model.Board;
+import model.Board.GameState;
 import model.Row;
 import model.piece.Piece;
 
@@ -106,6 +107,25 @@ public class SwingView extends JFrame implements GameView, KeyListener {
         this._controllers.add(controller);
     }
 
+    public void stateChange(GameState newState)
+    {
+        switch (newState) {
+        case INITIALIZED: case PAUSED:
+            this.cleanBoards();
+            break;
+        case RUNNING:
+            this.gridChange();
+            this.newPiece(this._board.getNextPiece());
+            break;
+        case GAMEOVER:
+            JOptionPane.showMessageDialog(
+                this, "Game over !", "Game Over",
+                JOptionPane.INFORMATION_MESSAGE
+            );
+            break;
+        }
+    }
+
     public void gridChange()
     {
         Row[] grid = this._board.getGrid();
@@ -139,20 +159,7 @@ public class SwingView extends JFrame implements GameView, KeyListener {
         g.finalize();
     }
 
-    public void clearedLines(int n)
-    {
-    }
-
-    public void gameOver()
-    {
-        JOptionPane.showMessageDialog(
-            this, "Game over !", "Game Over", JOptionPane.INFORMATION_MESSAGE
-        );
-    }
-
-    public void reset()
-    {
-    }
+    public void clearedLines(int n) { }
 
     public void newPiece(Piece piece)
     {
@@ -162,7 +169,7 @@ public class SwingView extends JFrame implements GameView, KeyListener {
         boolean[][] state = piece.getCurrentState();
 
         // Erases the next piece panel
-        g.setColor(Color.RED);
+        g.setColor(Color.WHITE);
         g.fillRect(0, 0, Piece.TILES_SIZE * 4, Piece.TILES_SIZE * 4);
 
         // Draws the next piece at the center of the panel.
@@ -182,30 +189,51 @@ public class SwingView extends JFrame implements GameView, KeyListener {
         }
     }
 
+    /** Removes every drawing for the board and the next piece panels. */
+    private void cleanBoards()
+    {
+        // Hides the board
+        Graphics g = this._playPanel.getGraphics();
+        g.setColor(Color.WHITE);
+        g.fillRect(
+            0, 0, this._board.getWidth() * Piece.TILES_SIZE,
+            this._board.getHeight() * Piece.TILES_SIZE
+        );
+
+        // Hides the next piece panel
+        g = this._nextPiecePanel.getGraphics();
+        g.setColor(Color.WHITE);
+        g.fillRect(0, 0, Piece.TILES_SIZE * 4, Piece.TILES_SIZE * 4);
+    }
+
     @Override
     public void keyPressed(KeyEvent event)
     {
         switch(event.getKeyCode()) {
-            case KeyEvent.VK_LEFT:
-                for (GameController controller : this._controllers)
-                    controller.left();
-                break;
-            case KeyEvent.VK_RIGHT:
-                for (GameController controller : this._controllers)
-                    controller.right();
-                break;
-            case KeyEvent.VK_UP:
-                for (GameController controller : this._controllers)
-                    controller.rotate();
-                break;
-            case KeyEvent.VK_DOWN:
-                for (GameController controller : this._controllers)
-                    controller.softDrop();
-                break;
-            case KeyEvent.VK_SPACE:
-                for (GameController controller : this._controllers)
-                    controller.hardDrop();
-                break;
+        case KeyEvent.VK_P:
+            for (GameController controller : this._controllers)
+                controller.pause();
+            break;
+        case KeyEvent.VK_LEFT:
+            for (GameController controller : this._controllers)
+                controller.moveLeft();
+            break;
+        case KeyEvent.VK_RIGHT:
+            for (GameController controller : this._controllers)
+                controller.moveRight();
+            break;
+        case KeyEvent.VK_DOWN:
+            for (GameController controller : this._controllers)
+                controller.softDrop();
+            break;
+        case KeyEvent.VK_SPACE:
+            for (GameController controller : this._controllers)
+                controller.hardDrop();
+            break;
+        case KeyEvent.VK_UP:
+            for (GameController controller : this._controllers)
+                controller.rotate();
+            break;
         }
     }
 

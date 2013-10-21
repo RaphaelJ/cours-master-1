@@ -15,16 +15,20 @@ public class LocalController implements GameController {
 
     public void newGame()
     {
-        this._board.resetBoard();
-        this._board.start();
+        this._board.newGame();
     }
 
-    public void left()
+    public void pause()
+    {
+        this._board.pause();
+    }
+
+    public void moveLeft()
     {
         this._board.moveLeft();
     }
 
-    public void right()
+    public void moveRight()
     {
         this._board.moveRight();
     }

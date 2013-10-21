@@ -9,6 +9,15 @@ import view.GameView;
  * changes and game events with the user. */
 public class Board {
 
+    public enum GameState {
+          INITIALIZED // The board is empty and the timer hasn't been started.
+                      // This is the initial state when the Board is instanced.
+        , RUNNING     // The timer and the game are running.
+        , PAUSED      // The game is running but the timer has been stopped.
+        , GAMEOVER    // The game as been finished. The board need to be
+                      // reinitialised before being started.
+    }
+
     public static final int DEFAULT_WIDTH  = 10;
     public static final int DEFAULT_HEIGHT = 22;
 
@@ -26,6 +35,8 @@ public class Board {
      * Complete rows can be easily removed from the grid by applying a shift
      * of references. */
     private final Row[] _grid;
+
+    private GameState _currentState;
 
     private Piece _current = null;
     private Piece _next = null;
@@ -78,49 +89,53 @@ public class Board {
 
     /*********************** User actions ***********************/
 
-    /** Starts the timer which controls the game. */
-    public void start()
+    /** Starts the timer which controls the game.
+     * Resets the game if needed. */
+    public void newGame()
     {
-        if (this._isRunning)
-            return;
+        if (this._currentState != GameState.INITIALIZED)
+            this.reset();
 
-        TimerTask task = new TimerTask() {
-            @Override
-            public void run()
-            {
-                gameTick();
-            }
-        };
+        this.startTimer();
 
-        this._timer = new Timer();
-        this._timer.scheduleAtFixedRate(task, 0, this._clockSpeed);
-
-        this._isRunning = true;
+        this.changeState(GameState.RUNNING);
     }
 
-    /** Stops the timer. */
-    public void stop()
+    /** Pauses/Unpauses the timer if the game is running/in pause.
+     * Does nothing otherwise. */
+    public void pause()
     {
-        if (this._isRunning) {
+        switch (this._currentState) {
+        case RUNNING:
             this._timer.cancel();
-            this._isRunning = false;
+            this.changeState(GameState.PAUSED);
+            break;
+        case PAUSED:
+            this.startTimer();
+            this.changeState(GameState.RUNNING);
+            break;
         }
     }
 
-    /** Removes every pieces from the grid and emits the reset event. */
-    public void resetBoard()
+    /** Reinitialises the grid and stops the game if needed. */
+    public void reset()
     {
+        if (this._currentState == GameState.RUNNING)
+            this._timer.cancel();
+
         this.initBoard();
 
-        for (GameView view : this._views)
-            view.reset();
+        this.emitGridChange();
+        this.changeState(GameState.INITIALIZED);
     }
 
     /** Runs one step of the game: moves the current piece.
-     * Returns the current piece or null if the game is over.
      * Usually called by the timer. */
-    public Piece gameTick()
+    public void gameTick()
     {
+        if (this._currentState != GameState.RUNNING)
+            return;
+
         if (this._current == null) // First piece.
             this._current = this.nextPiece();
         else { // Moves the piece downward.
@@ -135,18 +150,17 @@ public class Board {
                 this._current = newPiece;
         }
 
-        if (this._current != null) {
+        if (this._current != null)
             this.emitGridChange();
-        } else {
-            this.stop();
-            this.emitGameOver();
-        }
-
-        return this._current;
+        else
+            this.gameOver();
     }
 
     public void moveLeft()
     {
+        if (this._currentState != GameState.RUNNING)
+            return;
+
         Piece movedPiece = this.movePiece(this._current, -1, 0);
 
         if (movedPiece != null) {
@@ -157,6 +171,9 @@ public class Board {
 
     public void moveRight()
     {
+        if (this._currentState != GameState.RUNNING)
+            return;
+
         Piece movedPiece = this.movePiece(this._current, 1, 0);
 
         if (movedPiece != null) {
@@ -168,6 +185,9 @@ public class Board {
     /** Push the piece one line down. */
     public void softDrop()
     {
+        if (this._currentState != GameState.RUNNING)
+            return;
+
         Piece movedPiece = this.movePiece(this._current, 0, 1);
 
         if (movedPiece != null) {
@@ -177,7 +197,11 @@ public class Board {
     }
 
     /** Push the piece down to the last free line. */
-    public void hardDrop() {
+    public void hardDrop() 
+    {
+        if (this._currentState != GameState.RUNNING)
+            return;
+
         Piece finalPiece = this._current;
         Piece movedPiece = this._current;
 
@@ -197,6 +221,9 @@ public class Board {
     /** Tries to rotate the piece. Does nothing if a collision occurs. */
     public void rotate()
     {
+        if (this._currentState != GameState.RUNNING)
+            return;
+
         Piece rotatedPiece = this._current.rotate();
 
         if (this.pieceCollide(rotatedPiece, this._current))
@@ -211,10 +238,13 @@ public class Board {
 
     /*********************** Internals ***********************/
 
+    /** Fills the board with empty lines. */
     private void initBoard()
     {
-        for(int i = 0; i < this._height; i++)
+        for (int i = 0; i < this._height; i++)
             this._grid[i] = new Row(this._width);
+
+        this._currentState = GameState.INITIALIZED;
 
         this._current = null;
         this._next = this.getRandomPiece();
@@ -234,6 +264,34 @@ public class Board {
         return factory.construct(coords, 0);
     }
 
+    private void startTimer()
+    {
+        TimerTask task = new TimerTask() {
+            @Override
+            public void run()
+            {
+                gameTick();
+            }
+        };
+
+        this._timer = new Timer();
+        this._timer.scheduleAtFixedRate(
+            task, this._clockSpeed, this._clockSpeed
+        );
+    }
+
+    private void gameOver()
+    {
+        this._timer.cancel();
+        this.changeState(GameState.GAMEOVER);
+    }
+
+    private void changeState(GameState newState)
+    {
+        this._currentState = newState;
+        this.emitStateChange(newState);
+    }
+
     /** Returns the next random piece and places it at the top of the grid.
      * Returns null and emits a game over event if the piece can't be placed in
      * the grid. */
@@ -250,8 +308,7 @@ public class Board {
         for (int j = 0; j < line.length; j++) {
             Piece cell = this._grid[0].getPiece(j + topLeft.getX());
             if (line[j] && cell != null) {
-                this.stop();
-                this.emitGameOver();
+                this.gameOver();
                 return null;
             }
         }
@@ -395,34 +452,28 @@ public class Board {
 
     /*********************** Events ***********************/
 
+    private void emitStateChange(GameState newState)
+    {
+        for (GameView view : _views)
+            view.stateChange(newState);
+    }
+
     private void emitGridChange()
     {
-        for(GameView view : _views)
+        for (GameView view : _views)
             view.gridChange();
     }
 
     private void emitClearedLines(int n)
     {
-        for(GameView view : _views)
+        for (GameView view : _views)
             view.clearedLines(n);
     }
 
     private void emitNewPiece(Piece piece)
     {
-        for(GameView view : _views)
+        for (GameView view : _views)
             view.newPiece(piece);
-    }
-
-    private void emitGameOver()
-    {
-        for (GameView view : this._views)
-            view.gameOver();
-    }
-
-    private void emitReset()
-    {
-        for (GameView view : this._views)
-            view.reset();
     }
 
     /*********************** Getters/Setters ***********************/
@@ -442,14 +493,14 @@ public class Board {
         return this._grid;
     }
 
+    public GameState getCurrentState()
+    {
+        return this._currentState;
+    }
+
     public Piece getNextPiece()
     {
         return this._next;
-    }
-
-    public boolean isRunning()
-    {
-        return this._isRunning;
     }
 
     public int getClockSpeed()
@@ -461,7 +512,7 @@ public class Board {
     public void setClockSpeed(int clockSpeed)
     {
         this._clockSpeed = clockSpeed;
-        this.stop();
-        this.start();
+        this._timer.cancel();
+        this.startTimer();
     }
 }

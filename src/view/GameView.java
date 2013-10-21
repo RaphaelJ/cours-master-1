@@ -3,10 +3,13 @@ package view;
 import java.util.*;
 
 import model.piece.Piece;
+import model.Board;
 
 /** Provides an interface for views which are object which listen to game's
  * board changes. */
 public interface GameView extends EventListener {
+    public void stateChange(Board.GameState newState);
+
     /** Event triggered when a piece move inside the grid. */
     public void gridChange();
 
@@ -16,8 +19,4 @@ public interface GameView extends EventListener {
     /** When a new piece has been randomly chosen (not yet introduced in the
      * grid). */
     public void newPiece(Piece piece);
-
-    public void gameOver();
-
-    public void reset();
 }
