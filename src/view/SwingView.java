@@ -161,7 +161,6 @@ public class SwingView extends JFrame implements GameView, KeyListener {
         int dimension = piece.getFactory().getExtent();
         boolean[][] state = piece.getCurrentState();
 
-
         // Erases the next piece panel
         g.setColor(Color.RED);
         g.fillRect(0, 0, Piece.TILES_SIZE * 4, Piece.TILES_SIZE * 4);

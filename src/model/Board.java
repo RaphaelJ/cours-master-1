@@ -33,6 +33,7 @@ public class Board {
     private ArrayList<GameView> _views = new ArrayList<GameView>();
 
     private Timer _timer;
+    private boolean _isRunning = false;
     private int _clockSpeed;
 
     public Board()
@@ -80,8 +81,8 @@ public class Board {
     /** Starts the timer which controls the game. */
     public void start()
     {
-        if (this._timer != null)
-            this.stop();
+        if (this._isRunning)
+            return;
 
         TimerTask task = new TimerTask() {
             @Override
@@ -93,12 +94,17 @@ public class Board {
 
         this._timer = new Timer();
         this._timer.scheduleAtFixedRate(task, 0, this._clockSpeed);
+
+        this._isRunning = true;
     }
 
     /** Stops the timer. */
     public void stop()
     {
-        this._timer.cancel();
+        if (this._isRunning) {
+            this._timer.cancel();
+            this._isRunning = false;
+        }
     }
 
     /** Removes every pieces from the grid and emits the reset event. */
@@ -111,19 +117,30 @@ public class Board {
     }
 
     /** Runs one step of the game: moves the current piece.
-      * Returns the current piece or null if the game is over. */
+     * Returns the current piece or null if the game is over.
+     * Usually called by the timer. */
     public Piece gameTick()
     {
         if (this._current == null) // First piece.
             this._current = this.nextPiece();
         else { // Moves the piece downward.
-            this._current = this.movePiece(this._current, 0, 1);
+            Piece newPiece = this.movePiece(this._current, 0, 1);
 
-            if (this._current == null) // Introduces a new piece.
-                this._current = this.nextPiece();
+            if (newPiece == null) { // Piece blocked.
+                if (!this._current.isFullyIntroduced())
+                    this._current = null;
+                else // Introduces a new piece.
+                    this._current = this.nextPiece();
+            } else
+                this._current = newPiece;
         }
 
-        this.emitGridChange();
+        if (this._current != null) {
+            this.emitGridChange();
+        } else {
+            this.stop();
+            this.emitGameOver();
+        }
 
         return this._current;
     }
@@ -182,7 +199,7 @@ public class Board {
     {
         Piece rotatedPiece = this._current.rotate();
 
-        if (isPieceCollide(rotatedPiece, this._current))
+        if (this.pieceCollide(rotatedPiece, this._current))
             return;
 
         this.removePiece(this._current);
@@ -253,7 +270,7 @@ public class Board {
     {
         Piece newPiece = piece.translate(dX, dY);
 
-        if (this.isPieceCollide(newPiece, piece)) {
+        if (this.pieceCollide(newPiece, piece)) {
             this.clearLines();
             return null;
         }
@@ -266,7 +283,7 @@ public class Board {
 
     /** Returns true if the piece collide with the left/right/bottom border or
      * with another piece. Ignore oldPiece collisions. */
-    private boolean isPieceCollide(Piece newPiece, Piece oldPiece)
+    private boolean pieceCollide(Piece newPiece, Piece oldPiece)
     {
         Coordinates topLeft = newPiece.getTopLeft();
         boolean[][] state = newPiece.getCurrentState();
@@ -425,6 +442,16 @@ public class Board {
         return this._grid;
     }
 
+    public Piece getNextPiece()
+    {
+        return this._next;
+    }
+
+    public boolean isRunning()
+    {
+        return this._isRunning;
+    }
+
     public int getClockSpeed()
     {
         return this._clockSpeed;
@@ -434,11 +461,7 @@ public class Board {
     public void setClockSpeed(int clockSpeed)
     {
         this._clockSpeed = clockSpeed;
+        this.stop();
         this.start();
-    }
-
-    public Piece getNextPiece()
-    {
-        return this._next;
     }
 }
