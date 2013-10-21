@@ -53,11 +53,11 @@ public class SwingView extends JFrame implements GameView, KeyListener {
                 this._board.getHeight() * Piece.TILES_SIZE
             )
         );
-        
+
         rightPanel.setBorder(
             BorderFactory.createLineBorder(new Color(0, 0, 0))
         );
-        
+
         this._nextPiecePanel.setBackground(new java.awt.Color(255, 255, 255));
         this._nextPiecePanel.setPreferredSize(
             new Dimension(
@@ -81,7 +81,7 @@ public class SwingView extends JFrame implements GameView, KeyListener {
             {
                 for (GameController controller : _controllers)
                     controller.newGame();
-                
+
                 requestFocus();
             }
         });
@@ -153,78 +153,66 @@ public class SwingView extends JFrame implements GameView, KeyListener {
     public void reset()
     {
     }
-    
+
     public void newPiece(Piece piece)
     {
-    	Graphics g = this._nextPiecePanel.getGraphics();
-    	
-    	int dimension = piece.getFactory().getExtent();
-    	boolean[][] state = piece.getCurrentState();
-    	
-    	// Erase the next piece panel
-    	for(int i = 0; i < 4; i++) {
-    		for(int j = 0; j < 4; j++) {
-    			g.setColor(Color.WHITE);
-                g.fillRect(
-                    j * Piece.TILES_SIZE, i * Piece.TILES_SIZE,
-                    Piece.TILES_SIZE, Piece.TILES_SIZE
-                );
-    		}
-    	}
+        Graphics g = this._nextPiecePanel.getGraphics();
 
-    	// Draw the next piece
-    	for(int i = 0; i < dimension; i++) {
-    		for(int j = 0; j < dimension; j++) {
-    			if(state[i][j])
-    				try {
-						g.drawImage(
-								piece.getTile(),
-								((4 / dimension) - 1 + j) * Piece.TILES_SIZE,
-								((4 / dimension) - 1 + i) * Piece.TILES_SIZE,
-								this
-		                );
-    				} catch (Exception e) { // Unable to load the tile.
+        int dimension = piece.getFactory().getExtent();
+        boolean[][] state = piece.getCurrentState();
+
+
+        // Erases the next piece panel
+        g.setColor(Color.RED);
+        g.fillRect(0, 0, Piece.TILES_SIZE * 4, Piece.TILES_SIZE * 4);
+
+        // Draws the next piece at the center of the panel.
+        int offset = (Piece.TILES_SIZE * 4 - Piece.TILES_SIZE * dimension) / 2;
+        for (int i = 0; i < dimension; i++) {
+            for (int j = 0; j < dimension; j++) {
+                if (state[i][j]) {
+                    try {
+                        g.drawImage(
+                            piece.getTile(), offset + j * Piece.TILES_SIZE,
+                            offset + i * Piece.TILES_SIZE, this
+                        );
+                    } catch (Exception e) { // Unable to load the tile.
                     }
-    		}
-    	}
+                }
+            }
+        }
     }
 
-	@Override
-	public void keyPressed(KeyEvent event) {
-		
-		switch(event.getKeyCode()) {
-		
-			case KeyEvent.VK_LEFT:
-				_board.moveLeft();
-				break;
-				
-			case KeyEvent.VK_RIGHT:
-				_board.moveRight();
-				break;
-				
-			case KeyEvent.VK_UP:
-				_board.rotate();
-				break;
-				
-			case KeyEvent.VK_DOWN:
-				_board.softDrop();
-				break;
-				
-			case KeyEvent.VK_SPACE:
-				_board.hardDrop();
-				break;
-		}
-	}
+    @Override
+    public void keyPressed(KeyEvent event)
+    {
+        switch(event.getKeyCode()) {
+            case KeyEvent.VK_LEFT:
+                for (GameController controller : this._controllers)
+                    controller.left();
+                break;
+            case KeyEvent.VK_RIGHT:
+                for (GameController controller : this._controllers)
+                    controller.right();
+                break;
+            case KeyEvent.VK_UP:
+                for (GameController controller : this._controllers)
+                    controller.rotate();
+                break;
+            case KeyEvent.VK_DOWN:
+                for (GameController controller : this._controllers)
+                    controller.softDrop();
+                break;
+            case KeyEvent.VK_SPACE:
+                for (GameController controller : this._controllers)
+                    controller.hardDrop();
+                break;
+        }
+    }
 
-	@Override
-	public void keyReleased(KeyEvent event) {
-		// TODO Auto-generated method stub
-		
-	}
+    @Override
+    public void keyReleased(KeyEvent e) { }
 
-	@Override
-	public void keyTyped(KeyEvent event) {
-		// TODO Auto-generated method stub
-		
-	}
+    @Override
+    public void keyTyped(KeyEvent e) { }
 }

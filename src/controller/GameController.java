@@ -9,10 +9,15 @@ import java.util.*;
 public interface GameController extends EventListener {
     public void newGame();
 
-    /*
     public void left();
+
     public void right();
-    public void down();
+
+    /** Push the piece one line down. */
+    public void softDrop();
+
+    /** Push the piece down to the last free line. */
+    public void hardDrop();
+
     public void rotate();
-    */
 }
