@@ -1,8 +1,12 @@
 package model;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import model.piece.Piece;
+import util.random.LCGRandom;
+import util.random.Random;
 import view.GameView;
 
 /** Saves the current status of the board and communicates with views to share
@@ -37,7 +41,7 @@ public class Board {
 
     public Board()
     {
-        this._rand = new Random();
+        this._rand = new LCGRandom();
 
         this._width = DEFAULT_WIDTH;
         this._height = DEFAULT_HEIGHT;
@@ -52,14 +56,14 @@ public class Board {
      * generator. Using a common seed for two Board instances ensures that
      * pieces will come in the same order. i.e. can avoid some synchronization
      * between two remote processes. */
-    public Board(long seed)
+    public Board(Random rand)
     {
-        this(seed, DEFAULT_WIDTH, DEFAULT_HEIGHT, DEFAULT_SPEED);
+        this(rand, DEFAULT_WIDTH, DEFAULT_HEIGHT, DEFAULT_SPEED);
     }
 
-    public Board(long seed, int width, int height, int clockSpeed)
+    public Board(Random rand, int width, int height, int clockSpeed)
     {
-        this._rand = new Random(seed);
+        this._rand = rand;
 
         this._width = width;
         this._height = height;
