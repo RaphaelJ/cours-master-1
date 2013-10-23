@@ -9,9 +9,11 @@ import java.util.*;
 public interface GameController extends EventListener {
     public void newGame();
 
-    public void left();
+    public void pause();
 
-    public void right();
+    public void moveLeft();
+
+    public void moveRight();
 
     /** Push the piece one line down. */
     public void softDrop();

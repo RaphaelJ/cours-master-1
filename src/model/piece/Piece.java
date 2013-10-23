@@ -88,6 +88,23 @@ public abstract class Piece {
         return this.getStates()[this._currentState];
     }
 
+    /** Returns true if the piece has been completely introduced in the grid
+     * (i.e. no block is above the first line of the board).
+     * This is used to check for game over when the piece is blocked. */
+    public boolean isFullyIntroduced()
+    {
+        for (int i = 0; i < -this._topLeft.getY(); i++) {
+            boolean[] line = this.getCurrentState()[i];
+
+            for (int j = 0; j < line.length; j++) {
+                if (line[j]) 
+                    return false;
+            }
+        }
+
+        return true;
+    }
+
     /** Returns the corresponding image of a cell of the piece. */
     public abstract BufferedImage getTile() throws Exception;
 
