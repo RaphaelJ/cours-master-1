@@ -1,6 +1,10 @@
 package gameplay;
 
+import java.util.ArrayList;
+
 import model.Board;
+import model.Board.GameState;
+import model.piece.Piece;
 import view.GameView;
 
 /** Implements the traditional Marathon mode from the Game Boy tetris.
@@ -39,7 +43,7 @@ public class NintendoGameBoy implements GamePlay, GameView {
 
     public void addListener(GamePlayListener listener)
     {
-        this._listener.add(listener);
+        this._listeners.add(listener);
     }
 
     public void stateChange(GameState newState)
@@ -48,6 +52,10 @@ public class NintendoGameBoy implements GamePlay, GameView {
         case INITIALIZED:
             this.initGame();
             break;
+        case PAUSED:
+        case RUNNING:
+        case GAMEOVER:
+        	break;
         }
     }
 

@@ -1,7 +1,6 @@
 package view;
 
 import model.Board;
-import model.Board.GameState;
 import model.Row;
 import model.piece.Piece;
 
@@ -52,6 +51,9 @@ public class CLIView implements GameView {
         case GAMEOVER:
             System.out.println("Game over");
             break;
+        case PAUSED:
+        case RUNNING:
+        	break;
         }
     }
 

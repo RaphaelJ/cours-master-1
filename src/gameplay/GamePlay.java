@@ -8,11 +8,11 @@ import model.Board;
 public interface GamePlay {
     /** Events a GamePlay instance can emit to change the game behaviour. */
     public interface GamePlayListener {
-        public scoreChange(int newScore);
+        public void scoreChange(int newScore);
 
-        public levelChange(int newLevel);
+        public void levelChange(int newLevel);
 
-        public speedChange(int newClockSpeed);
+        public void speedChange(int newClockSpeed);
     }
 
     public void setGame(Board board);
