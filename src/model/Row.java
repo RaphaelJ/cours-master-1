@@ -1,7 +1,5 @@
 package model;
 
-import java.util.Arrays;
-
 import model.piece.Piece;
 
 /** Maps every cell of a line to an piece. */

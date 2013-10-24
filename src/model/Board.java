@@ -48,7 +48,6 @@ public class Board {
     private ArrayList<GameView> _views = new ArrayList<GameView>();
 
     private Timer _timer;
-    private boolean _isRunning = false;
     private int _clockSpeed;
 
     public Board()
@@ -118,6 +117,9 @@ public class Board {
             this.startTimer();
             this.changeState(GameState.RUNNING);
             break;
+        case INITIALIZED:
+        case GAMEOVER:
+        	break;
         }
     }
 
@@ -420,8 +422,7 @@ public class Board {
      * Emits the clear lines event when some lines have been removed. */
     private void clearLines()
     {
-        int topX = this._current.getTopLeft().getX()
-          , topY = this._current.getTopLeft().getY();
+        int topY = this._current.getTopLeft().getY();
 
         boolean[][] state = this._current.getCurrentState();
 

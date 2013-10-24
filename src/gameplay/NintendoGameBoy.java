@@ -52,6 +52,10 @@ public class NintendoGameBoy implements GamePlay, GameView {
         case INITIALIZED:
             this.initGame();
             break;
+        case PAUSED:
+        case RUNNING:
+        case GAMEOVER:
+        	break;
         }
     }
 
