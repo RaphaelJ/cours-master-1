@@ -1,5 +1,6 @@
 package view;
 
+import gameplay.GamePlayListener;
 import model.Board;
 import model.Board.GameState;
 import model.Row;
@@ -13,10 +14,9 @@ import javax.swing.*;
 
 import controller.GameController;
 
-@SuppressWarnings("serial")
-public class SwingView extends JFrame implements GameView, KeyListener {
-
-	private Board _board;
+public class SwingView extends JFrame
+                       implements GameView, GamePlayListener, KeyListener {
+    private Board _board;
     private JPanel _playPanel;
     private JLabel _score;
     private JPanel _nextPiecePanel;
@@ -28,6 +28,7 @@ public class SwingView extends JFrame implements GameView, KeyListener {
     {
         super("Tetris MVC");
         this._board = board;
+        this._board.getGameplay().addListener(this);
         initComponents();
 
         this.setFocusable(true);
@@ -186,6 +187,17 @@ public class SwingView extends JFrame implements GameView, KeyListener {
             }
         }
     }
+
+    public void scoreChange(int newScore)
+    {
+        this._score.setText(Integer.toString(newScore));
+    }
+
+    public void levelChange(int newLevel)
+    {
+    }
+
+    public void speedChange(int newClockSpeed) { }
 
     /** Removes every drawing for the board and the next piece panels. */
     private void cleanBoards()

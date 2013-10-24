@@ -10,7 +10,7 @@ import view.GameView;
 /** Implements the traditional Marathon mode from the Game Boy tetris.
  * Read http://tetris.wikia.com/wiki/Tetris_(Game_Boy) for a complete
  * documentation. */
-public class NintendoGameBoy implements GamePlay, GameView {
+public class NintendoGameBoy implements GamePlay {
     /** Clock's speed for each level. */
     private static int[] _levels = {
         883, 817, 750, 683, 617, 550, 467, 367, 283, 183, 167, 150, 133, 117,
@@ -51,11 +51,17 @@ public class NintendoGameBoy implements GamePlay, GameView {
         switch (newState) {
         case INITIALIZED:
             this.initGame();
+
+            for (GamePlayListener listener : this._listeners) {
+                listener.scoreChange(this.getScore());
+                listener.levelChange(this.getLevel());
+                listener.speedChange(this.getSpeed());
+            }
             break;
         case PAUSED:
         case RUNNING:
         case GAMEOVER:
-        	break;
+            break;
         }
     }
 
@@ -73,6 +79,13 @@ public class NintendoGameBoy implements GamePlay, GameView {
                 listener.speedChange(this.getSpeed());
             }
         }
+
+        // Gives more points when groups of lines are erased.
+        int[] points = { 40, 100, 300, 1200 };
+        this._score += points[n - 1] * (this.getLevel() + 1);
+
+        for (GamePlayListener listener : this._listeners)
+            listener.scoreChange(this.getScore());
     }
 
     public void newPiece(Piece piece) { }
