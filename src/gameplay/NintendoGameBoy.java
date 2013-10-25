@@ -73,7 +73,7 @@ public class NintendoGameBoy implements GamePlay {
         int oldClearedLines = this._nClearedLines;
         this._nClearedLines += n;
 
-        if (this._nClearedLines % 10 > oldClearedLines % 10) {
+        if (this._nClearedLines / 10 > oldClearedLines / 10) {
             for (GamePlayListener listener : this._listeners) {
                 listener.levelChange(this.getLevel());
                 listener.speedChange(this.getSpeed());

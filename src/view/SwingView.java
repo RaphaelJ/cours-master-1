@@ -1,6 +1,6 @@
 package view;
 
-import gameplay.GamePlayListener;
+import gameplay.*;
 import model.Board;
 import model.Board.GameState;
 import model.Row;
@@ -19,6 +19,7 @@ public class SwingView extends JFrame
     private Board _board;
     private JPanel _playPanel;
     private JLabel _score;
+    private JLabel _level;
     private JPanel _nextPiecePanel;
 
     private ArrayList<GameController> _controllers
@@ -39,10 +40,16 @@ public class SwingView extends JFrame
     {
         this._playPanel = new JPanel();
         JPanel rightPanel = new JPanel();
-        JButton newGame = new JButton("Start a new game");
+
+        GamePlay gameplay = this._board.getGameplay();
         JLabel scoreTitle = new JLabel("Score :");
-        this._score = new JLabel("");
+        this._score = new JLabel(Integer.toString(gameplay.getScore()));
+
+        JLabel levelTitle = new JLabel("Level :");
+        this._level = new JLabel(Integer.toString(gameplay.getLevel()));
+
         this._nextPiecePanel = new JPanel();
+        JButton newGame = new JButton("Start a new game");
 
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
@@ -60,17 +67,16 @@ public class SwingView extends JFrame
 
         this._nextPiecePanel.setBackground(new java.awt.Color(255, 255, 255));
         this._nextPiecePanel.setPreferredSize(
-            new Dimension(
-                4 * Piece.TILES_SIZE,
-                4 * Piece.TILES_SIZE
-            )
+            new Dimension(4 * Piece.TILES_SIZE, 4 * Piece.TILES_SIZE)
         );
 
         rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
-        rightPanel.add(newGame);
         rightPanel.add(scoreTitle);
         rightPanel.add(this._score);
+        rightPanel.add(levelTitle);
+        rightPanel.add(this._level);
         rightPanel.add(this._nextPiecePanel);
+        rightPanel.add(newGame);
 
         this.setLayout(new BorderLayout());
         this.add(this._playPanel, BorderLayout.CENTER);
@@ -195,6 +201,7 @@ public class SwingView extends JFrame
 
     public void levelChange(int newLevel)
     {
+        this._level.setText(Integer.toString(newLevel));
     }
 
     public void speedChange(int newClockSpeed) { }

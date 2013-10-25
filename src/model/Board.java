@@ -57,6 +57,7 @@ public class Board implements GamePlayListener {
     {
         this._gameplay = gameplay;
         this.addView(gameplay);
+        gameplay.addListener(this);
         this._rand = new LCGRandom();
 
         this._width = DEFAULT_WIDTH;
@@ -82,6 +83,7 @@ public class Board implements GamePlayListener {
     {
         this._gameplay = gameplay;
         this.addView(gameplay);
+        gameplay.addListener(this);
         this._rand = rand;
 
         this._width = width;
@@ -369,12 +371,9 @@ public class Board implements GamePlayListener {
         Coordinates topLeft = newPiece.getTopLeft();
         boolean[][] state = newPiece.getCurrentState();
 
-        // Checks if the new piece overlap another piece.
-        // Only checks coordinates of the piece which are inside the grid as the
-        // top-most line can still be out of the board.
+        // Checks if the new piece overlap another piece or touch a border.
         int topX = topLeft.getX(), topY = topLeft.getY();
-        int i = topY < 0 ? -topY : 0;
-        for (; i < state.length; i++) {
+        for (int i = 0; i < state.length; i++) {
             boolean[] line = state[i];
             int y = topY + i;
 
@@ -385,10 +384,13 @@ public class Board implements GamePlayListener {
                     if (x < 0 || x >= this._width || y >= this._height)
                         return true;
 
-                    // Checks if the cell is free.
-                    Piece cell = this._grid[y].getPiece(x);
-                    if (cell != null && cell != oldPiece)
-                        return true;
+                    // Checks if the cell is free, for cells which have been
+                    // inserted inside the board.
+                    if (y >= 0) {
+                        Piece cell = this._grid[y].getPiece(x);
+                        if (cell != null && cell != oldPiece)
+                            return true;
+                    }
                 }
             }
         }
