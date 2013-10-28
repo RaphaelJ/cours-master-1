@@ -1,26 +1,25 @@
 package view;
 
+import gameplay.*;
 import model.Board;
 import model.Board.GameState;
 import model.Row;
 import model.piece.Piece;
 
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.beans.PropertyChangeListener;
 import java.util.*;
 import javax.swing.*;
 
 import controller.GameController;
 
-@SuppressWarnings("serial")
-public class SwingView extends JFrame implements GameView, KeyListener {
-
-	private Board _board;
+public class SwingView extends JFrame
+                       implements GameView, GamePlayListener, KeyListener {
+    private Board _board;
     private JPanel _playPanel;
     private JLabel _score;
+    private JLabel _level;
     private JPanel _nextPiecePanel;
 
     private ArrayList<GameController> _controllers
@@ -30,6 +29,7 @@ public class SwingView extends JFrame implements GameView, KeyListener {
     {
         super("Tetris MVC");
         this._board = board;
+        this._board.getGameplay().addListener(this);
         initComponents();
 
         this.setFocusable(true);
@@ -40,10 +40,16 @@ public class SwingView extends JFrame implements GameView, KeyListener {
     {
         this._playPanel = new JPanel();
         JPanel rightPanel = new JPanel();
-        JButton newGame = new JButton("Start a new game");
+
+        GamePlay gameplay = this._board.getGameplay();
         JLabel scoreTitle = new JLabel("Score :");
-        this._score = new JLabel("");
+        this._score = new JLabel(Integer.toString(gameplay.getScore()));
+
+        JLabel levelTitle = new JLabel("Level :");
+        this._level = new JLabel(Integer.toString(gameplay.getLevel()));
+
         this._nextPiecePanel = new JPanel();
+        JButton newGame = new JButton("Start a new game");
 
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
@@ -61,17 +67,16 @@ public class SwingView extends JFrame implements GameView, KeyListener {
 
         this._nextPiecePanel.setBackground(new java.awt.Color(255, 255, 255));
         this._nextPiecePanel.setPreferredSize(
-            new Dimension(
-                4 * Piece.TILES_SIZE,
-                4 * Piece.TILES_SIZE
-            )
+            new Dimension(4 * Piece.TILES_SIZE, 4 * Piece.TILES_SIZE)
         );
 
         rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
-        rightPanel.add(newGame);
         rightPanel.add(scoreTitle);
         rightPanel.add(this._score);
+        rightPanel.add(levelTitle);
+        rightPanel.add(this._level);
         rightPanel.add(this._nextPiecePanel);
+        rightPanel.add(newGame);
 
         this.setLayout(new BorderLayout());
         this.add(this._playPanel, BorderLayout.CENTER);
@@ -188,6 +193,18 @@ public class SwingView extends JFrame implements GameView, KeyListener {
             }
         }
     }
+
+    public void scoreChange(int newScore)
+    {
+        this._score.setText(Integer.toString(newScore));
+    }
+
+    public void levelChange(int newLevel)
+    {
+        this._level.setText(Integer.toString(newLevel));
+    }
+
+    public void speedChange(int newClockSpeed) { }
 
     /** Removes every drawing for the board and the next piece panels. */
     private void cleanBoards()

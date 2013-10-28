@@ -1,11 +1,13 @@
 import controller.*;
+import gameplay.*;
 import model.Board;
 import view.*;
 
 public class Main {
     public static void main(String[] args)
     {
-        Board board = new Board();
+        GamePlay rules = new NintendoGameBoy();
+        Board board = new Board(rules);
 
         //CLIView   cli = new CLIView(board);
         SwingView gui = new SwingView(board);

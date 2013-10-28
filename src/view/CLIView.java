@@ -42,6 +42,21 @@ public class CLIView implements GameView {
         System.out.println();
     }
 
+    public void stateChange(Board.GameState newState)
+    {
+        switch (newState) {
+        case INITIALIZED:
+            this.printBoard();
+            break;
+        case GAMEOVER:
+            System.out.println("Game over");
+            break;
+        case PAUSED:
+        case RUNNING:
+        	break;
+        }
+    }
+
     public void gridChange()
     {
         this.printBoard();
@@ -52,16 +67,6 @@ public class CLIView implements GameView {
         System.out.println("You cleared " + n + " line(s)");
     }
 
-    public void gameOver()
-    {
-        System.out.println("Game over");
-    }
-
-    public void reset()
-    {
-        this.printBoard();
-    }
-    
     public void newPiece(Piece piece) {
     }
 }

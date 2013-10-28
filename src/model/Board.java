@@ -1,13 +1,18 @@
 package model;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
 
+import gameplay.*;
 import model.piece.Piece;
+import util.random.LCGRandom;
+import util.random.Random;
 import view.GameView;
 
 /** Saves the current status of the board and communicates with views to share
  * changes and game events with the user. */
-public class Board {
+public class Board implements GamePlayListener {
 
     public enum GameState {
           INITIALIZED // The board is empty and the timer hasn't been started.
@@ -25,6 +30,8 @@ public class Board {
     public static final int DEFAULT_SPEED = 1000;
 
     private final Random _rand;
+
+    private final GamePlay _gameplay;
 
     private final int _width;
     private final int _height;
@@ -44,12 +51,14 @@ public class Board {
     private ArrayList<GameView> _views = new ArrayList<GameView>();
 
     private Timer _timer;
-    private boolean _isRunning = false;
     private int _clockSpeed;
 
-    public Board()
+    public Board(GamePlay gameplay)
     {
-        this._rand = new Random();
+        this._gameplay = gameplay;
+        this.addView(gameplay);
+        gameplay.addListener(this);
+        this._rand = new LCGRandom();
 
         this._width = DEFAULT_WIDTH;
         this._height = DEFAULT_HEIGHT;
@@ -64,14 +73,18 @@ public class Board {
      * generator. Using a common seed for two Board instances ensures that
      * pieces will come in the same order. i.e. can avoid some synchronization
      * between two remote processes. */
-    public Board(long seed)
+    public Board(GamePlay gameplay, Random rand)
     {
-        this(seed, DEFAULT_WIDTH, DEFAULT_HEIGHT, DEFAULT_SPEED);
+        this(gameplay, rand, DEFAULT_WIDTH, DEFAULT_HEIGHT, DEFAULT_SPEED);
     }
 
-    public Board(long seed, int width, int height, int clockSpeed)
+    public Board(GamePlay gameplay, Random rand, int width, int height,
+                 int clockSpeed)
     {
-        this._rand = new Random(seed);
+        this._gameplay = gameplay;
+        this.addView(gameplay);
+        gameplay.addListener(this);
+        this._rand = rand;
 
         this._width = width;
         this._height = height;
@@ -91,7 +104,7 @@ public class Board {
 
     /** Starts the timer which controls the game.
      * Resets the game if needed. */
-    public void newGame()
+    public synchronized void newGame()
     {
         if (this._currentState != GameState.INITIALIZED)
             this.reset();
@@ -99,11 +112,12 @@ public class Board {
         this.startTimer();
 
         this.changeState(GameState.RUNNING);
+        this.gameTick();
     }
 
     /** Pauses/Unpauses the timer if the game is running/in pause.
      * Does nothing otherwise. */
-    public void pause()
+    public synchronized void pause()
     {
         switch (this._currentState) {
         case RUNNING:
@@ -114,11 +128,14 @@ public class Board {
             this.startTimer();
             this.changeState(GameState.RUNNING);
             break;
+        case INITIALIZED:
+        case GAMEOVER:
+        	break;
         }
     }
 
     /** Reinitialises the grid and stops the game if needed. */
-    public void reset()
+    public synchronized void reset()
     {
         if (this._currentState == GameState.RUNNING)
             this._timer.cancel();
@@ -131,7 +148,7 @@ public class Board {
 
     /** Runs one step of the game: moves the current piece.
      * Usually called by the timer. */
-    public void gameTick()
+    public synchronized void gameTick()
     {
         if (this._currentState != GameState.RUNNING)
             return;
@@ -156,7 +173,7 @@ public class Board {
             this.gameOver();
     }
 
-    public void moveLeft()
+    public synchronized void moveLeft()
     {
         if (this._currentState != GameState.RUNNING)
             return;
@@ -169,7 +186,7 @@ public class Board {
         }
     }
 
-    public void moveRight()
+    public synchronized void moveRight()
     {
         if (this._currentState != GameState.RUNNING)
             return;
@@ -183,7 +200,7 @@ public class Board {
     }
 
     /** Push the piece one line down. */
-    public void softDrop()
+    public synchronized void softDrop()
     {
         if (this._currentState != GameState.RUNNING)
             return;
@@ -197,7 +214,7 @@ public class Board {
     }
 
     /** Push the piece down to the last free line. */
-    public void hardDrop() 
+    public synchronized void hardDrop() 
     {
         if (this._currentState != GameState.RUNNING)
             return;
@@ -219,7 +236,7 @@ public class Board {
     }
 
     /** Tries to rotate the piece. Does nothing if a collision occurs. */
-    public void rotate()
+    public synchronized void rotate()
     {
         if (this._currentState != GameState.RUNNING)
             return;
@@ -234,6 +251,15 @@ public class Board {
 
         this._current = rotatedPiece;
         this.emitGridChange();
+    }
+
+    public void scoreChange(int newScore) { }
+
+    public void levelChange(int newLevel) { }
+
+    public void speedChange(int newClockSpeed)
+    {
+        this.setClockSpeed(newClockSpeed);
     }
 
     /*********************** Internals ***********************/
@@ -345,12 +371,9 @@ public class Board {
         Coordinates topLeft = newPiece.getTopLeft();
         boolean[][] state = newPiece.getCurrentState();
 
-        // Checks if the new piece overlap another piece.
-        // Only checks coordinates of the piece which are inside the grid as the
-        // top-most line can still be out of the board.
+        // Checks if the new piece overlap another piece or touch a border.
         int topX = topLeft.getX(), topY = topLeft.getY();
-        int i = topY < 0 ? -topY : 0;
-        for (; i < state.length; i++) {
+        for (int i = 0; i < state.length; i++) {
             boolean[] line = state[i];
             int y = topY + i;
 
@@ -361,10 +384,13 @@ public class Board {
                     if (x < 0 || x >= this._width || y >= this._height)
                         return true;
 
-                    // Checks if the cell is free.
-                    Piece cell = this._grid[y].getPiece(x);
-                    if (cell != null && cell != oldPiece)
-                        return true;
+                    // Checks if the cell is free, for cells which have been
+                    // inserted inside the board.
+                    if (y >= 0) {
+                        Piece cell = this._grid[y].getPiece(x);
+                        if (cell != null && cell != oldPiece)
+                            return true;
+                    }
                 }
             }
         }
@@ -416,8 +442,7 @@ public class Board {
      * Emits the clear lines event when some lines have been removed. */
     private void clearLines()
     {
-        int topX = this._current.getTopLeft().getX()
-          , topY = this._current.getTopLeft().getY();
+        int topY = this._current.getTopLeft().getY();
 
         boolean[][] state = this._current.getCurrentState();
 
@@ -477,6 +502,11 @@ public class Board {
     }
 
     /*********************** Getters/Setters ***********************/
+
+    public GamePlay getGameplay()
+    {
+        return this._gameplay;
+    }
 
     public int getWidth()
     {
