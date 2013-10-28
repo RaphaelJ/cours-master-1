@@ -1,5 +1,7 @@
 package view;
 
+import java.awt.Rectangle;
+
 import model.Board;
 import model.Row;
 import model.piece.Piece;
@@ -57,7 +59,7 @@ public class CLIView implements GameView {
         }
     }
 
-    public void gridChange()
+    public void gridChange(Rectangle bounds)
     {
         this.printBoard();
     }

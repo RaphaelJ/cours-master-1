@@ -1,5 +1,6 @@
 package view;
 
+import java.awt.Rectangle;
 import java.util.*;
 
 import model.piece.Piece;
@@ -10,8 +11,8 @@ import model.Board;
 public interface GameView extends EventListener {
     public void stateChange(Board.GameState newState);
 
-    /** Event triggered when a piece move inside the grid. */
-    public void gridChange();
+    /** Event triggered when a some cells of the grid have been modified. */
+    public void gridChange(Rectangle bounds);
 
     /** Event triggered when n lines have been removed by the player. */
     public void clearedLines(int n);

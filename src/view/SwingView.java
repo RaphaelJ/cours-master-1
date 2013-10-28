@@ -115,12 +115,20 @@ public class SwingView extends JFrame
     public void stateChange(GameState newState)
     {
         switch (newState) {
-        case INITIALIZED: case PAUSED:
+        case INITIALIZED:
             this.cleanBoards();
             break;
         case RUNNING:
-            this.gridChange();
+            // Redraws the entire grid.
+            this.gridChange(
+                new Rectangle(0, 0, this._board.getWidth(),
+                this._board.getHeight())
+            );
             this.newPiece(this._board.getNextPiece());
+            break;
+        case PAUSED:
+            this.cleanBoards();
+            this.drawPauseString();
             break;
         case GAMEOVER:
             JOptionPane.showMessageDialog(
@@ -131,16 +139,15 @@ public class SwingView extends JFrame
         }
     }
 
-    public void gridChange()
+    public void gridChange(Rectangle bounds)
     {
         Row[] grid = this._board.getGrid();
         Graphics g = this._playPanel.getGraphics();
 
-        // Draw the grid
-        int i = 0;
-        for (Row row : grid) {
-            int j = 0;
-            for (Piece piece : row.getPieces()) {
+        for (int i = bounds.y; i < bounds.y + bounds.height; i++) {
+            Row row = grid[i];
+            for (int j = bounds.x; j < bounds.x + bounds.width; j++) {
+                Piece piece = row.getPiece(j);
                 if (piece != null) {
                     try {
                         g.drawImage(
@@ -156,9 +163,7 @@ public class SwingView extends JFrame
                         Piece.TILES_SIZE, Piece.TILES_SIZE
                     );
                 }
-                j++;
             }
-            i++;
         }
 
         g.finalize();
@@ -192,6 +197,8 @@ public class SwingView extends JFrame
                 }
             }
         }
+
+        g.finalize();
     }
 
     public void scoreChange(int newScore)
@@ -209,7 +216,7 @@ public class SwingView extends JFrame
     /** Removes every drawing for the board and the next piece panels. */
     private void cleanBoards()
     {
-        // Hides the board
+        // Hides the board.
         Graphics g = this._playPanel.getGraphics();
         g.setColor(Color.WHITE);
         g.fillRect(
@@ -217,10 +224,31 @@ public class SwingView extends JFrame
             this._board.getHeight() * Piece.TILES_SIZE
         );
 
-        // Hides the next piece panel
+        // Hides the next piece panel.
         g = this._nextPiecePanel.getGraphics();
         g.setColor(Color.WHITE);
         g.fillRect(0, 0, Piece.TILES_SIZE * 4, Piece.TILES_SIZE * 4);
+
+        g.finalize();
+    }
+
+    /** Draws the "Game paused" text at the center of the board. */
+    private void drawPauseString()
+    {
+        String text = "Game paused";
+
+        Graphics g = this._playPanel.getGraphics();
+        FontMetrics metrics = g.getFontMetrics();
+
+        int width  = metrics.stringWidth(text)
+          , height = metrics.getHeight();
+
+        g.drawString(
+            text, (this._board.getWidth() * Piece.TILES_SIZE - width) / 2,
+            (this._board.getHeight() * Piece.TILES_SIZE - height) / 2
+        );
+
+        g.finalize();
     }
 
     @Override

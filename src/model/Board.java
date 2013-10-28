@@ -1,5 +1,6 @@
 package model;
 
+import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -142,7 +143,7 @@ public class Board implements GamePlayListener {
 
         this.initBoard();
 
-        this.emitGridChange();
+        this.emitGridChange(new Rectangle(0, 0, this._width, this._height));
         this.changeState(GameState.INITIALIZED);
     }
 
@@ -156,65 +157,44 @@ public class Board implements GamePlayListener {
         if (this._current == null) // First piece.
             this._current = this.nextPiece();
         else { // Moves the piece downward.
-            Piece newPiece = this.movePiece(this._current, 0, 1);
+            Piece newPiece = this._current.translate(0, 1);
 
-            if (newPiece == null) { // Piece blocked.
+            if (this.pieceCollide(newPiece, this._current)) {
                 if (!this._current.isFullyIntroduced())
                     this._current = null;
-                else // Introduces a new piece.
+                else { // Introduces a new piece.
+                    this.clearLines();
                     this._current = this.nextPiece();
-            } else
+                }
+            } else {
+                this.removePiece(this._current);
                 this._current = newPiece;
+                this.placePiece(this._current);
+            }
         }
 
-        if (this._current != null)
-            this.emitGridChange();
-        else
+        if (this._current == null)
             this.gameOver();
     }
 
-    public synchronized void moveLeft()
+    public void moveLeft()
     {
-        if (this._currentState != GameState.RUNNING)
-            return;
-
-        Piece movedPiece = this.movePiece(this._current, -1, 0);
-
-        if (movedPiece != null) {
-            this._current = movedPiece;
-            this.emitGridChange();
-        }
+        this.moveCurrentPiece(-1, 0);
     }
 
-    public synchronized void moveRight()
+    public void moveRight()
     {
-        if (this._currentState != GameState.RUNNING)
-            return;
-
-        Piece movedPiece = this.movePiece(this._current, 1, 0);
-
-        if (movedPiece != null) {
-            this._current = movedPiece;
-            this.emitGridChange();
-        }
+        this.moveCurrentPiece(1, 0);
     }
 
     /** Push the piece one line down. */
     public synchronized void softDrop()
     {
-        if (this._currentState != GameState.RUNNING)
-            return;
-
-        Piece movedPiece = this.movePiece(this._current, 0, 1);
-
-        if (movedPiece != null) {
-            this._current = movedPiece;
-            this.emitGridChange();
-        }
+        this.moveCurrentPiece(0, 1);
     }
 
     /** Push the piece down to the last free line. */
-    public synchronized void hardDrop() 
+    public synchronized void hardDrop()
     {
         if (this._currentState != GameState.RUNNING)
             return;
@@ -223,15 +203,14 @@ public class Board implements GamePlayListener {
         Piece movedPiece = this._current;
 
         do {
-            movedPiece = this.movePiece(movedPiece, 0, 1);
-
-            if (movedPiece != null)
-                finalPiece = movedPiece;
-        } while (movedPiece != null);
+            finalPiece = movedPiece;
+            movedPiece = movedPiece.translate(0, 1);
+        } while (!this.pieceCollide(movedPiece, this._current));
 
         if (finalPiece != this._current) {
+            this.removePiece(this._current);
             this._current = finalPiece;
-            this.emitGridChange();
+            this.placePiece(this._current);
         }
     }
 
@@ -250,7 +229,6 @@ public class Board implements GamePlayListener {
         this.placePiece(rotatedPiece);
 
         this._current = rotatedPiece;
-        this.emitGridChange();
     }
 
     public void scoreChange(int newScore) { }
@@ -265,7 +243,7 @@ public class Board implements GamePlayListener {
     /*********************** Internals ***********************/
 
     /** Fills the board with empty lines. */
-    private void initBoard()
+    private synchronized void initBoard()
     {
         for (int i = 0; i < this._height; i++)
             this._grid[i] = new Row(this._width);
@@ -277,7 +255,7 @@ public class Board implements GamePlayListener {
     }
 
     /** Choose the next random piece without placing it on the grid. */
-    private Piece getRandomPiece()
+    private synchronized Piece getRandomPiece()
     {
         Piece.PieceFactory factory = Piece.AVAILABLE_PIECES[
             this._rand.nextInt(Piece.AVAILABLE_PIECES.length)
@@ -290,7 +268,7 @@ public class Board implements GamePlayListener {
         return factory.construct(coords, 0);
     }
 
-    private void startTimer()
+    private synchronized void startTimer()
     {
         TimerTask task = new TimerTask() {
             @Override
@@ -306,22 +284,21 @@ public class Board implements GamePlayListener {
         );
     }
 
-    private void gameOver()
+    private synchronized void gameOver()
     {
         this._timer.cancel();
         this.changeState(GameState.GAMEOVER);
     }
 
-    private void changeState(GameState newState)
+    private synchronized void changeState(GameState newState)
     {
         this._currentState = newState;
         this.emitStateChange(newState);
     }
 
     /** Returns the next random piece and places it at the top of the grid.
-     * Returns null and emits a game over event if the piece can't be placed in
-     * the grid. */
-    private Piece nextPiece()
+     * Returns null if the piece can't be placed in the grid. */
+    private synchronized Piece nextPiece()
     {
         Piece piece = this._next;
         this._next = getRandomPiece();
@@ -333,10 +310,8 @@ public class Board implements GamePlayListener {
 
         for (int j = 0; j < line.length; j++) {
             Piece cell = this._grid[0].getPiece(j + topLeft.getX());
-            if (line[j] && cell != null) {
-                this.gameOver();
+            if (line[j] && cell != null)
                 return null;
-            }
         }
 
         this.placePiece(piece);
@@ -346,27 +321,27 @@ public class Board implements GamePlayListener {
         return piece;
     }
 
-    /** Returns the new translated piece if it doesn't overlap with another
-     * piece or if it is out of the board.
-     * Returns null and does nothing if an collision occurs. */
-    private Piece movePiece(Piece piece, int dX, int dY)
+    /** Moves the current piece by the given offset.
+     * Does nothing if an collision occurs. */
+    private synchronized void moveCurrentPiece(int dX, int dY)
     {
-        Piece newPiece = piece.translate(dX, dY);
+        if (this._currentState != GameState.RUNNING)
+            return;
 
-        if (this.pieceCollide(newPiece, piece)) {
-            this.clearLines();
-            return null;
-        }
+        Piece newPiece = this._current.translate(dX, dY);
 
-        this.removePiece(piece);
-        this.placePiece(newPiece);
+        if (this.pieceCollide(newPiece, this._current))
+            return;
 
-        return newPiece;
+        this.removePiece(this._current);
+        this._current = newPiece;
+        this.placePiece(this._current);
+
     }
 
     /** Returns true if the piece collide with the left/right/bottom border or
      * with another piece. Ignore oldPiece collisions. */
-    private boolean pieceCollide(Piece newPiece, Piece oldPiece)
+    private synchronized boolean pieceCollide(Piece newPiece, Piece oldPiece)
     {
         Coordinates topLeft = newPiece.getTopLeft();
         boolean[][] state = newPiece.getCurrentState();
@@ -399,7 +374,7 @@ public class Board implements GamePlayListener {
     }
 
     /** Places a new piece on the grid. Doesn't check for collisions. */
-    private void placePiece(Piece piece)
+    private synchronized void placePiece(Piece piece)
     {
         int topX = piece.getTopLeft().getX()
           , topY = piece.getTopLeft().getY();
@@ -407,19 +382,28 @@ public class Board implements GamePlayListener {
         boolean[][] state = piece.getCurrentState();
 
         // Only draws coordinates of the piece which are inside the grid.
-        int i = topY < 0 ? -topY : 0;
-        for (; i < state.length; i++) {
+        int minX = topX < 0 ? -topX : 0
+          , maxX = Math.min(this._width, topX + state.length) - topX
+          , minY = topY < 0 ? -topY : 0
+          , maxY = Math.min(this._height, topY + state.length) - topY;
+        for (int i = minY; i < maxY; i++) {
             boolean[] line = state[i];
 
-            for (int j = 0; j < line.length; j++) {
+            for (int j = minX; j < maxX; j++) {
                 if (line[j])
                     this._grid[topY + i].setPiece(piece, topX + j);
             }
         }
+
+        this.emitGridChange(
+            new Rectangle(
+                topX + minX, topY + minY, maxX, maxY
+            )
+        );
     }
 
     /** Removes a piece from the grid. */
-    private void removePiece(Piece piece)
+    private synchronized void removePiece(Piece piece)
     {
         int topX = piece.getTopLeft().getX()
           , topY = piece.getTopLeft().getY();
@@ -427,36 +411,52 @@ public class Board implements GamePlayListener {
         boolean[][] state = piece.getCurrentState();
 
         // Only clean coordinates of the piece which are inside the grid.
-        int i = topY < 0 ? -topY : 0;
-        for (; i < state.length; i++) {
+        int minX = topX < 0 ? -topX : 0
+          , maxX = Math.min(this._width, topX + state.length) - topX
+          , minY = topY < 0 ? -topY : 0
+          , maxY = Math.min(this._height, topY + state.length) - topY;
+        for (int i = minY; i < maxY; i++) {
             boolean[] line = state[i];
 
-            for (int j = 0; j < line.length; j++) {
+            for (int j = minX; j < maxX; j++) {
                 if (line[j])
                     this._grid[topY + i].setPiece(null, topX + j);
             }
         }
+
+        this.emitGridChange(
+            new Rectangle(
+                topX + minX, topY + minY, maxX, maxY
+            )
+        );
     }
 
     /** Checks every line where the current piece is to be cleared.
      * Emits the clear lines event when some lines have been removed. */
-    private void clearLines()
+    private synchronized void clearLines()
     {
-        int topY = this._current.getTopLeft().getY();
+        int topX = this._current.getTopLeft().getX()
+          , topY = this._current.getTopLeft().getY();
 
         boolean[][] state = this._current.getCurrentState();
 
         int nLines = 0;
+        int lastRemoved = 0;
 
         // Only clean coordinates of the piece which are inside the grid.
-        int i = topY < 0 ? -topY : 0;
-        for (; i < state.length; i++) {
+        int minX = topX < 0 ? -topX : 0
+          , maxX = Math.min(this._width, topX + state.length) - topX
+          , minY = topY < 0 ? -topY : 0
+          , maxY = Math.min(this._height, topY + state.length) - topY;
+        for (int i = minY; i < maxY; i++) {
             boolean[] line = state[i];
 
-            // Checks for at least one occupied cell.
-            for (int j = 0; j < line.length; j++) {
+            // Checks each line where the piece occupes a cell.
+            for (int j = minX; j < maxX; j++) {
                 if (line[j]) {
                     if (this._grid[i + topY].isComplete()) {
+                        lastRemoved = i + topY;
+
                         // Shifts line references to the bottom and adds a new
                         // line at the top of the grid.
                         for (int k = i + topY; k > 0; k--)
@@ -471,8 +471,12 @@ public class Board implements GamePlayListener {
             }
         }
 
-        if (nLines > 0)
+        if (nLines > 0) {
             this.emitClearedLines(nLines);
+            this.emitGridChange(
+                new Rectangle(0, 0, this._width, lastRemoved + 1)
+            );
+        }
     }
 
     /*********************** Events ***********************/
@@ -483,10 +487,10 @@ public class Board implements GamePlayListener {
             view.stateChange(newState);
     }
 
-    private void emitGridChange()
+    private void emitGridChange(Rectangle bounds)
     {
         for (GameView view : _views)
-            view.gridChange();
+            view.gridChange(bounds);
     }
 
     private void emitClearedLines(int n)

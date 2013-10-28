@@ -1,5 +1,6 @@
 package gameplay;
 
+import java.awt.*;
 import java.util.ArrayList;
 
 import model.Board;
@@ -65,7 +66,7 @@ public class NintendoGameBoy implements GamePlay {
         }
     }
 
-    public void gridChange() { }
+    public void gridChange(Rectangle bounds) { }
 
     public void clearedLines(int n)
     {
