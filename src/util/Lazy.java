@@ -16,8 +16,10 @@ public class Lazy<T> {
 
     public T get() throws Exception
     {
-        if (!this._evaluated)
+        if (!this._evaluated) {
             this._value = this._f.call();
+            this._evaluated = true;
+        }
 
         return this._value;
     }
