@@ -83,7 +83,7 @@ public class NintendoGameBoy implements GamePlay {
 
         // Gives more points when groups of lines are erased.
         int[] points = { 40, 100, 300, 1200 };
-        this._score += points[n - 1] * (this.getLevel() + 1);
+        this._score += points[n - 1] * this.getLevel();
 
         for (GamePlayListener listener : this._listeners)
             listener.scoreChange(this.getScore());
@@ -98,11 +98,11 @@ public class NintendoGameBoy implements GamePlay {
 
     public int getLevel()
     {
-        return this._nClearedLines / 10;
+        return this._nClearedLines / 10 + 1;
     }
 
     public int getSpeed()
     {
-        return _levels[this.getLevel()];
+        return _levels[this.getLevel() - 1];
     }
 }

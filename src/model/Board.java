@@ -131,7 +131,7 @@ public class Board implements GamePlayListener {
             break;
         case INITIALIZED:
         case GAMEOVER:
-        	break;
+            break;
         }
     }
 
@@ -546,7 +546,10 @@ public class Board implements GamePlayListener {
     public void setClockSpeed(int clockSpeed)
     {
         this._clockSpeed = clockSpeed;
-        this._timer.cancel();
-        this.startTimer();
+
+        if (this._currentState == GameState.RUNNING) {
+            this._timer.cancel();
+            this.startTimer();
+        }
     }
 }
