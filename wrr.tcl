@@ -71,30 +71,6 @@ $ns connect $udp1 $null1
 # Creating the different classes of traffic
 #
 
-set qlim 20 ;# Size of queues associated to the WRR scheduler
-
-# First we need to create the two queues, one for each class
-set q0 [new Queue/DropTail]	
-$q0 set limit_ $qlim
-set q1 [new Queue/DropTail]
-$q1 set limit_ $qlim
-
-# Then we create the two classes of traffic
-set classflow0 [new CBQClass]	
-$classflow0 install-queue $q0                    ;# Associate queue q0 to class classflow0
-$classflow0 setparams none true 0.4 auto 1 1 0   ;# 0.4 is for 40% of bandwidth (real number between 0.0 and 1.0)
-set classflow1 [new CBQClass]
-$classflow1 install-queue $q1			         ;# Associate queue q0 to class classflow0
-$classflow1 setparams none true 0.6 auto 1 1 0	 ;# 0.6 is for 60% of bandwidth (real number between 0.0 and 1.0)
-
-# We need to insert each classflow in the link n2-n3
-set cbqlink [$ns link $n2 $n3]
-$cbqlink insert $classflow0
-$cbqlink insert $classflow1
-
-# Finally we bind the flow IDs to the classflow
-$cbqlink bind $classflow0 0 ;# packets with fid_ 0 are in classflow0
-$cbqlink bind $classflow1 1 ;# packets with fid_ 1 are in classflow1
 
 # Start the traffic generators at time 0
 $ns at 0 "$cbr0 start"
