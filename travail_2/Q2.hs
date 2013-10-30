@@ -1,7 +1,10 @@
 -- | Plot a curve of the throughputs (Mb/s) of the three TCP flows at the source
 -- node.
 --
--- > runhaskell Q2.hs < Q1.tr | gnuplot --persist
+-- Without min-max fairness :
+-- > runhaskell Q2.hs < Q2.tr | gnuplot --persist
+-- With min-max fairness :
+-- > runhaskell Q2.hs < Q6.tr | gnuplot --persist
 import Control.Applicative
 import Control.Monad
 import Text.Printf
@@ -15,9 +18,12 @@ main = do
                          , tName t == "tcp" ]
         groupedSize = groupCenti tcpPackets 0
 
-    putStrLn "plot '-' with lines title 'TCP0 throughput (Mbps)' lt rgb 'red', \
-                  \'-' with lines title 'TCP1 throughput (Mbps)' lt rgb 'blue', \
-                  \'-' with lines title 'TCP2 throughput (Mbps)' lt rgb 'green'"
+    putStrLn "set xlabel 'Time (seconds)'"
+    putStrLn "set ylabel 'Throughput (Mbps)'"
+
+    putStrLn "plot '-' with lines title 'TCP0' lt rgb 'red', \
+                  \'-' with lines title 'TCP1' lt rgb 'blue', \
+                  \'-' with lines title 'TCP2' lt rgb 'green'"
 
     forM_ groupedSize $ \(centi, sumTcp0, _, _) -> do
         printf "%.2f %f\n" centi (toMbps sumTcp0)
