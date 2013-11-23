@@ -19,6 +19,7 @@ public class SwingView extends JFrame
                        implements GameView, GamePlayListener, KeyListener {
     private Board _board;
     private JPanel _playPanel;
+    private JLabel _time;
     private JLabel _score;
     private JLabel _level;
     private JPanel _nextPiecePanel;
@@ -43,6 +44,9 @@ public class SwingView extends JFrame
         JPanel rightPanel = new JPanel();
 
         GamePlay gameplay = this._board.getGameplay();
+        JLabel timeTitle = new JLabel("Time elapsed :");
+        this._time = new JLabel("00:00:00");
+        
         JLabel scoreTitle = new JLabel("Score :");
         this._score = new JLabel(Integer.toString(gameplay.getScore()));
 
@@ -72,6 +76,8 @@ public class SwingView extends JFrame
         );
 
         rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
+        rightPanel.add(timeTitle);
+        rightPanel.add(this._time);
         rightPanel.add(scoreTitle);
         rightPanel.add(this._score);
         rightPanel.add(levelTitle);
@@ -141,8 +147,11 @@ public class SwingView extends JFrame
     }
 
     public void gridChange(Rectangle bounds)
-    {
-        Row[] grid = this._board.getGrid();
+    {  	
+    	this.updateElapsedTime();
+    	
+        // Update the grid
+    	Row[] grid = this._board.getGrid();
         Graphics g = this._playPanel.getGraphics();
 
         for (int i = bounds.y; i < bounds.y + bounds.height; i++) {
@@ -168,6 +177,21 @@ public class SwingView extends JFrame
         }
 
         g.finalize();
+    }
+    
+    private void updateElapsedTime() {
+    	
+    	long delta = this._board.getElapsedTimeInSeconds();
+    	int elapsedHours = (int) (delta / 3600);
+    	delta = delta % 3600;
+ 
+		int elapsedMinutes = (int) (delta / 60);
+		delta = delta % 60;
+ 
+		int elapsedSeconds = (int) delta;
+		
+        this._time.setText(String.format("%02d:%02d:%02d",
+        		elapsedHours, elapsedMinutes, elapsedSeconds));
     }
 
     public void clearedLines(int n) { }

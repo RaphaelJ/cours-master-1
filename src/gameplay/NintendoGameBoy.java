@@ -105,6 +105,11 @@ public class NintendoGameBoy implements GamePlay {
         return _levels[this.getLevel() - 1];
     }
     
+    public int getElapsedTime()
+    {
+    	return this._board.getElapsedTimeInSeconds();
+    }
+    
     public Board getGame()
     {
     	return this._board;

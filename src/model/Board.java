@@ -51,8 +51,10 @@ public class Board implements GamePlayListener {
 
     private ArrayList<GameView> _views = new ArrayList<GameView>();
 
-    private Timer _timer;
+    private Timer _clock;
     private int _clockSpeed;
+    
+    private long _startTime;
 
     public Board(GamePlay gameplay)
     {
@@ -109,8 +111,10 @@ public class Board implements GamePlayListener {
     {
         if (this._currentState != GameState.INITIALIZED)
             this.reset();
+        
+        this._startTime = System.currentTimeMillis();
 
-        this.startTimer();
+        this.startTimers();
 
         this.changeState(GameState.RUNNING);
         this.gameTick();
@@ -122,11 +126,11 @@ public class Board implements GamePlayListener {
     {
         switch (this._currentState) {
         case RUNNING:
-            this._timer.cancel();
+            this._clock.cancel();
             this.changeState(GameState.PAUSED);
             break;
         case PAUSED:
-            this.startTimer();
+            this.startTimers();
             this.changeState(GameState.RUNNING);
             break;
         case INITIALIZED:
@@ -139,7 +143,7 @@ public class Board implements GamePlayListener {
     public synchronized void reset()
     {
         if (this._currentState == GameState.RUNNING)
-            this._timer.cancel();
+            this._clock.cancel();
 
         this.initBoard();
 
@@ -268,7 +272,7 @@ public class Board implements GamePlayListener {
         return factory.construct(coords, 0);
     }
 
-    private synchronized void startTimer()
+    private synchronized void startTimers()
     {
         TimerTask task = new TimerTask() {
             @Override
@@ -278,15 +282,15 @@ public class Board implements GamePlayListener {
             }
         };
 
-        this._timer = new Timer();
-        this._timer.scheduleAtFixedRate(
+        this._clock = new Timer();
+        this._clock.scheduleAtFixedRate(
             task, this._clockSpeed, this._clockSpeed
         );
     }
 
     private synchronized void gameOver()
     {
-        this._timer.cancel();
+        this._clock.cancel();
         this.changeState(GameState.GAMEOVER);
     }
 
@@ -548,8 +552,12 @@ public class Board implements GamePlayListener {
         this._clockSpeed = clockSpeed;
 
         if (this._currentState == GameState.RUNNING) {
-            this._timer.cancel();
-            this.startTimer();
+            this._clock.cancel();
+            this.startTimers();
         }
+    }
+    
+    public int getElapsedTimeInSeconds() {
+    	return (int) ((System.currentTimeMillis() - this._startTime) / 1000);
     }
 }

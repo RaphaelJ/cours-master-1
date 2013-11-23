@@ -10,6 +10,8 @@ public interface GamePlay extends GameView {
     public void setGame(Board board);
 
     public void addListener(GamePlayListener listener);
+    
+    public int getElapsedTime();
 
     public int getScore();
 
