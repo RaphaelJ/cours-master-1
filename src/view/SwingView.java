@@ -272,7 +272,7 @@ public class SwingView extends JFrame
             for (GameController controller : this._controllers)
                 controller.softDrop();
             break;
-        case KeyEvent.VK_SPACE:
+        case KeyEvent.VK_ENTER:
             for (GameController controller : this._controllers)
                 controller.hardDrop();
             break;
