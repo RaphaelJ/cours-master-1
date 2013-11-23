@@ -28,9 +28,9 @@ public class Row {
 
     /** Changes the state of a cell.
      * A piece with null as value frees the cell. */
-    public void setPiece(Piece piece, int column)
+    public void setPiece(int column, Piece piece)
     {
-        if(piece != null)
+        if (piece != null)
             this._nbBlocks++;
         else
             this._nbBlocks--;

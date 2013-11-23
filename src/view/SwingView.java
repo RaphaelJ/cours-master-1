@@ -15,7 +15,7 @@ import javax.swing.*;
 import controller.GameController;
 
 public class SwingView extends JFrame
-                       implements GameView, GamePlayListener, KeyListener {
+                       implements BoardListener, GamePlayListener, KeyListener {
     private Board _board;
     private JPanel _playPanel;
     private JLabel _score;

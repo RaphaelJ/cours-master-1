@@ -9,11 +9,10 @@ import gameplay.*;
 import model.piece.Piece;
 import util.random.LCGRandom;
 import util.random.Random;
-import view.GameView;
 
 /** Saves the current status of the board and communicates with views to share
  * changes and game events with the user. */
-public class Board implements GamePlayListener {
+public class Board {
 
     public enum GameState {
           INITIALIZED // The board is empty and the timer hasn't been started.
@@ -27,12 +26,7 @@ public class Board implements GamePlayListener {
     public static final int DEFAULT_WIDTH  = 10;
     public static final int DEFAULT_HEIGHT = 22;
 
-    /** "Ticks" duration in milliseconds. */
-    public static final int DEFAULT_SPEED = 1000;
-
     private final Random _rand;
-
-    private final GamePlay _gameplay;
 
     private final int _width;
     private final int _height;
@@ -49,22 +43,15 @@ public class Board implements GamePlayListener {
     private Piece _current = null;
     private Piece _next = null;
 
-    private ArrayList<GameView> _views = new ArrayList<GameView>();
+    private ArrayList<BoardListener> _listeners
+        = new ArrayList<BoardListener>();
 
-    private Timer _timer;
-    private int _clockSpeed;
-
-    public Board(GamePlay gameplay)
+    public Board()
     {
-        this._gameplay = gameplay;
-        this.addView(gameplay);
-        gameplay.addListener(this);
         this._rand = new LCGRandom();
 
         this._width = DEFAULT_WIDTH;
         this._height = DEFAULT_HEIGHT;
-
-        this._clockSpeed = DEFAULT_SPEED;
 
         this._grid = new Row[this._height];
         this.initBoard();
@@ -74,73 +61,32 @@ public class Board implements GamePlayListener {
      * generator. Using a common seed for two Board instances ensures that
      * pieces will come in the same order. i.e. can avoid some synchronization
      * between two remote processes. */
-    public Board(GamePlay gameplay, Random rand)
+    public Board(Random rand)
     {
-        this(gameplay, rand, DEFAULT_WIDTH, DEFAULT_HEIGHT, DEFAULT_SPEED);
+        this(rand, DEFAULT_WIDTH, DEFAULT_HEIGHT);
     }
 
-    public Board(GamePlay gameplay, Random rand, int width, int height,
-                 int clockSpeed)
+    public Board(Random rand, int width, int height, int clockSpeed)
     {
-        this._gameplay = gameplay;
-        this.addView(gameplay);
-        gameplay.addListener(this);
         this._rand = rand;
 
         this._width = width;
         this._height = height;
 
-        this._clockSpeed = clockSpeed;
-
         this._grid = new Row[this._height];
         this.initBoard();
     }
 
-    public void addView(GameView view)
+    public void addListener(BoardListener listener)
     {
-        this._views.add(view);
+        this._listeners.add(listener);
     }
 
     /*********************** User actions ***********************/
 
-    /** Starts the timer which controls the game.
-     * Resets the game if needed. */
-    public synchronized void newGame()
-    {
-        if (this._currentState != GameState.INITIALIZED)
-            this.reset();
-
-        this.startTimer();
-
-        this.changeState(GameState.RUNNING);
-        this.gameTick();
-    }
-
-    /** Pauses/Unpauses the timer if the game is running/in pause.
-     * Does nothing otherwise. */
-    public synchronized void pause()
-    {
-        switch (this._currentState) {
-        case RUNNING:
-            this._timer.cancel();
-            this.changeState(GameState.PAUSED);
-            break;
-        case PAUSED:
-            this.startTimer();
-            this.changeState(GameState.RUNNING);
-            break;
-        case INITIALIZED:
-        case GAMEOVER:
-            break;
-        }
-    }
-
-    /** Reinitialises the grid and stops the game if needed. */
+    /** Reinitialises the grid. */
     public synchronized void reset()
     {
-        if (this._currentState == GameState.RUNNING)
-            this._timer.cancel();
-
         this.initBoard();
 
         this.emitGridChange(new Rectangle(0, 0, this._width, this._height));
@@ -266,22 +212,6 @@ public class Board implements GamePlayListener {
         );
 
         return factory.construct(coords, 0);
-    }
-
-    private synchronized void startTimer()
-    {
-        TimerTask task = new TimerTask() {
-            @Override
-            public void run()
-            {
-                gameTick();
-            }
-        };
-
-        this._timer = new Timer();
-        this._timer.scheduleAtFixedRate(
-            task, this._clockSpeed, this._clockSpeed
-        );
     }
 
     private synchronized void gameOver()
@@ -483,34 +413,29 @@ public class Board implements GamePlayListener {
 
     private void emitStateChange(GameState newState)
     {
-        for (GameView view : _views)
-            view.stateChange(newState);
+        for (BoardListener listener : _listeners)
+            listener.stateChange(newState);
     }
 
     private void emitGridChange(Rectangle bounds)
     {
-        for (GameView view : _views)
-            view.gridChange(bounds);
+        for (BoardListener listener : _listeners)
+            listener.gridChange(bounds);
     }
 
     private void emitClearedLines(int n)
     {
-        for (GameView view : _views)
-            view.clearedLines(n);
+        for (BoardListener listener : _listeners)
+            listener.clearedLines(n);
     }
 
     private void emitNewPiece(Piece piece)
     {
-        for (GameView view : _views)
-            view.newPiece(piece);
+        for (BoardListener listener : _listeners)
+            listener.newPiece(piece);
     }
 
     /*********************** Getters/Setters ***********************/
-
-    public GamePlay getGameplay()
-    {
-        return this._gameplay;
-    }
 
     public int getWidth()
     {
@@ -535,21 +460,5 @@ public class Board implements GamePlayListener {
     public Piece getNextPiece()
     {
         return this._next;
-    }
-
-    public int getClockSpeed()
-    {
-        return this._clockSpeed;
-    }
-
-    /** Changes the speed of the game. */
-    public void setClockSpeed(int clockSpeed)
-    {
-        this._clockSpeed = clockSpeed;
-
-        if (this._currentState == GameState.RUNNING) {
-            this._timer.cancel();
-            this.startTimer();
-        }
     }
 }

@@ -1,14 +1,11 @@
-package view;
+package model;
 
 import java.awt.Rectangle;
 import java.util.*;
 
-import model.piece.Piece;
-import model.Board;
-
-/** Provides an interface for views which are object which listen to game's
+/** Provides an interface for views and other objects which listen to game's
  * board changes. */
-public interface GameView extends EventListener {
+public interface BoardListener extends EventListener {
     public void stateChange(Board.GameState newState);
 
     /** Event triggered when a some cells of the grid have been modified. */
