@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import model.Board;
 import model.Board.GameState;
 import model.piece.Piece;
-import view.GameView;
 
 /** Implements the traditional Marathon mode from the Game Boy tetris.
  * Read http://tetris.wikia.com/wiki/Tetris_(Game_Boy) for a complete
@@ -104,5 +103,10 @@ public class NintendoGameBoy implements GamePlay {
     public int getSpeed()
     {
         return _levels[this.getLevel() - 1];
+    }
+    
+    public Board getGame()
+    {
+    	return this._board;
     }
 }

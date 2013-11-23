@@ -14,6 +14,7 @@ import javax.swing.*;
 
 import controller.GameController;
 
+@SuppressWarnings("serial")
 public class SwingView extends JFrame
                        implements GameView, GamePlayListener, KeyListener {
     private Board _board;
