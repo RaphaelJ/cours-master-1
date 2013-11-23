@@ -1,12 +1,6 @@
 package model.piece;
 
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.util.concurrent.Callable;
-import javax.imageio.ImageIO;
-
 import model.Coordinates;
-import util.Lazy;
 
 /** Contains the position and the state (orientation) of a piece.
  * The class is immutable to allow non destructive updates. That is, rotate
@@ -18,12 +12,6 @@ public abstract class Piece {
         PieceI.factory, PieceJ.factory, PieceL.factory, PieceO.factory,
         PieceS.factory, PieceT.factory, PieceZ.factory
     };
-
-    /** Size of images which will be used by graphical interfaces to paint
-     * cells. */
-    public static final int TILES_SIZE = 24;
-
-    public static final File TILES_DIR = new File("resources");
 
     /** Provides a factory method to create new instances of a piece with
      * different orientations and positions. */
@@ -103,24 +91,6 @@ public abstract class Piece {
         }
 
         return true;
-    }
-
-    /** Returns the corresponding image of a cell of the piece. */
-    public abstract BufferedImage getTile() throws Exception;
-
-    /** Returns the tile corresponding to the given name.
-     * Doesn't load the image until its first accessed as some interfaces
-     * (CLI) don't use them. */
-    public static Lazy<BufferedImage> getTile(final String name)
-    {
-        return new Lazy<BufferedImage>(
-            new Callable<BufferedImage>() {
-                public BufferedImage call() throws Exception
-                {
-                    return ImageIO.read(new File(TILES_DIR, name));
-                }
-            }
-        );
     }
 
     /** Provides the factory which can be used to create new instances of the
