@@ -2,10 +2,7 @@ package model;
 
 import java.awt.Rectangle;
 import java.util.ArrayList;
-import java.util.Timer;
-import java.util.TimerTask;
 
-import gameplay.*;
 import model.piece.Piece;
 import util.random.LCGRandom;
 import util.random.Random;
@@ -13,7 +10,7 @@ import view.GameView;
 
 /** Saves the current status of the board and communicates with views to share
  * changes and game events with the user. */
-public class Board implements GamePlayListener {
+public class Board {
 
     public enum GameState {
           INITIALIZED // The board is empty and the timer hasn't been started.
@@ -27,12 +24,8 @@ public class Board implements GamePlayListener {
     public static final int DEFAULT_WIDTH  = 10;
     public static final int DEFAULT_HEIGHT = 22;
 
-    /** "Ticks" duration in milliseconds. */
-    public static final int DEFAULT_SPEED = 1000;
-
     private final Random _rand;
 
-    private final GamePlay _gameplay;
 
     private final int _width;
     private final int _height;
@@ -51,22 +44,14 @@ public class Board implements GamePlayListener {
 
     private ArrayList<GameView> _views = new ArrayList<GameView>();
 
-    private Timer _clock;
-    private int _clockSpeed;
-    
     private long _startTime;
 
-    public Board(GamePlay gameplay)
+    public Board()
     {
-        this._gameplay = gameplay;
-        this.addView(gameplay);
-        gameplay.addListener(this);
         this._rand = new LCGRandom();
 
         this._width = DEFAULT_WIDTH;
         this._height = DEFAULT_HEIGHT;
-
-        this._clockSpeed = DEFAULT_SPEED;
 
         this._grid = new Row[this._height];
         this.initBoard();
@@ -76,23 +61,17 @@ public class Board implements GamePlayListener {
      * generator. Using a common seed for two Board instances ensures that
      * pieces will come in the same order. i.e. can avoid some synchronization
      * between two remote processes. */
-    public Board(GamePlay gameplay, Random rand)
+    public Board(Random rand)
     {
-        this(gameplay, rand, DEFAULT_WIDTH, DEFAULT_HEIGHT, DEFAULT_SPEED);
+        this(rand, DEFAULT_WIDTH, DEFAULT_HEIGHT);
     }
 
-    public Board(GamePlay gameplay, Random rand, int width, int height,
-                 int clockSpeed)
+    public Board(Random rand, int width, int height)
     {
-        this._gameplay = gameplay;
-        this.addView(gameplay);
-        gameplay.addListener(this);
         this._rand = rand;
 
         this._width = width;
         this._height = height;
-
-        this._clockSpeed = clockSpeed;
 
         this._grid = new Row[this._height];
         this.initBoard();
@@ -114,37 +93,13 @@ public class Board implements GamePlayListener {
         
         this._startTime = System.currentTimeMillis();
 
-        this.startTimers();
-
         this.changeState(GameState.RUNNING);
         this.gameTick();
-    }
-
-    /** Pauses/Unpauses the timer if the game is running/in pause.
-     * Does nothing otherwise. */
-    public synchronized void pause()
-    {
-        switch (this._currentState) {
-        case RUNNING:
-            this._clock.cancel();
-            this.changeState(GameState.PAUSED);
-            break;
-        case PAUSED:
-            this.startTimers();
-            this.changeState(GameState.RUNNING);
-            break;
-        case INITIALIZED:
-        case GAMEOVER:
-            break;
-        }
     }
 
     /** Reinitialises the grid and stops the game if needed. */
     public synchronized void reset()
     {
-        if (this._currentState == GameState.RUNNING)
-            this._clock.cancel();
-
         this.initBoard();
 
         this.emitGridChange(new Rectangle(0, 0, this._width, this._height));
@@ -176,9 +131,6 @@ public class Board implements GamePlayListener {
                 this.placePiece(this._current);
             }
         }
-
-        if (this._current == null)
-            this.gameOver();
     }
 
     public void moveLeft()
@@ -235,15 +187,6 @@ public class Board implements GamePlayListener {
         this._current = rotatedPiece;
     }
 
-    public void scoreChange(int newScore) { }
-
-    public void levelChange(int newLevel) { }
-
-    public void speedChange(int newClockSpeed)
-    {
-        this.setClockSpeed(newClockSpeed);
-    }
-
     /*********************** Internals ***********************/
 
     /** Fills the board with empty lines. */
@@ -272,29 +215,7 @@ public class Board implements GamePlayListener {
         return factory.construct(coords, 0);
     }
 
-    private synchronized void startTimers()
-    {
-        TimerTask task = new TimerTask() {
-            @Override
-            public void run()
-            {
-                gameTick();
-            }
-        };
-
-        this._clock = new Timer();
-        this._clock.scheduleAtFixedRate(
-            task, this._clockSpeed, this._clockSpeed
-        );
-    }
-
-    private synchronized void gameOver()
-    {
-        this._clock.cancel();
-        this.changeState(GameState.GAMEOVER);
-    }
-
-    private synchronized void changeState(GameState newState)
+    public synchronized void changeState(GameState newState)
     {
         this._currentState = newState;
         this.emitStateChange(newState);
@@ -511,11 +432,6 @@ public class Board implements GamePlayListener {
 
     /*********************** Getters/Setters ***********************/
 
-    public GamePlay getGameplay()
-    {
-        return this._gameplay;
-    }
-
     public int getWidth()
     {
         return this._width;
@@ -535,28 +451,17 @@ public class Board implements GamePlayListener {
     {
         return this._currentState;
     }
+    
+    public Piece getCurrentPiece()
+    {
+    	return this._current;
+    }
 
     public Piece getNextPiece()
     {
         return this._next;
     }
 
-    public int getClockSpeed()
-    {
-        return this._clockSpeed;
-    }
-
-    /** Changes the speed of the game. */
-    public void setClockSpeed(int clockSpeed)
-    {
-        this._clockSpeed = clockSpeed;
-
-        if (this._currentState == GameState.RUNNING) {
-            this._clock.cancel();
-            this.startTimers();
-        }
-    }
-    
     public int getElapsedTimeInSeconds() {
     	return (int) ((System.currentTimeMillis() - this._startTime) / 1000);
     }

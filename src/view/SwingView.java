@@ -24,14 +24,19 @@ public class SwingView extends JFrame
     private JLabel _level;
     private JPanel _nextPiecePanel;
 
+    private GamePlay _gameplay;
+    
     private ArrayList<GameController> _controllers
         = new ArrayList<GameController>();
 
-    public SwingView(Board board)
+    public SwingView(Board board, GamePlay gameplay)
     {
         super("Tetris MVC");
         this._board = board;
-        this._board.getGameplay().addListener(this);
+        this._gameplay = gameplay;
+        
+        gameplay.addListener(this);
+        
         initComponents();
 
         this.setFocusable(true);
@@ -43,7 +48,7 @@ public class SwingView extends JFrame
         this._playPanel = new JPanel();
         JPanel rightPanel = new JPanel();
 
-        GamePlay gameplay = this._board.getGameplay();
+        GamePlay gameplay = this._gameplay;
         JLabel timeTitle = new JLabel("Time elapsed :");
         this._time = new JLabel("00:00:00");
         
