@@ -1,24 +1,33 @@
 package gameplay;
 
+import java.util.*;
+
 import model.Board;
-import view.GameView;
+import model.Board.GameState;
+import model.piece.Piece;
 
-/** Provides an interface for "rules" which controls how the game is running (
- * score, speed, levels ...).
- * GamePlay instances emits events to change the game behaviour. */
-public class GamePlay {
-
-    /** "Ticks" duration in milliseconds. */
-    public static final int DEFAULT_SPEED = 1000;
-
+/** Provides an interface for "rules" which manage the dynamic aspect of the
+ * game (timer, score, speed, levels ...).
+ * GamePlay instances change the game behaviour when receiving events from
+ * controllers by changing their timer and by controlling their associed Board.
+ */
+public abstract class GamePlay {
 
     protected Board _board;
 
-    private Timer _timer;
-    private int _clockSpeed;
+    private int _speed;
+    private Timer _timer = null;
 
+    private ArrayList<GamePlayListener> _listeners
+        = new ArrayList<GamePlayListener>();
 
-    public void addListener(GamePlayListener listener);
+    public GamePlay(Board board, int speed)
+    {
+        this._board = board;
+        this._speed = speed;
+    }
+
+    /*********************** User actions ***********************/
 
     /** Starts the timer which controls the game.
      * Resets the game if needed. */
@@ -29,20 +38,22 @@ public class GamePlay {
 
         this.startTimer();
 
-        this._board.changeState(Board.GameState.RUNNING);
+        this._board.setCurrentState(Board.GameState.RUNNING);
         this._board.gameTick();
     }
 
     /** Pauses/Unpauses the timer if the game is running/in pause.
      * Does nothing otherwise. */
-    public void pause()
+    public synchronized void pause()
     {
         switch (this._board.getCurrentState()) {
         case RUNNING:
-            this._board.changeState(Board.GameState.PAUSED);
+            this._timer.cancel();
+            this._board.setCurrentState(Board.GameState.PAUSED);
             break;
         case PAUSED:
-            this._board.changeState(Board.GameState.RUNNING);
+            this._board.setCurrentState(Board.GameState.RUNNING);
+            this.startTimer();
             break;
         default:
         }
@@ -79,10 +90,24 @@ public class GamePlay {
         if (this._board.getCurrentState() == Board.GameState.RUNNING)
             this._timer.cancel();
 
-        this._clockSpeed = 0;
-
         this._board.reset();
     }
+
+    /*********************** Board events ***********************/
+
+    /** Will be called by the board when n lines have been removed by the
+     * player. */
+    public void clearedLines(int n)
+    {
+    }
+
+    /** Will be called by the board when a new piece has been randomly chosen
+     * but not yet introduced in the grid. */
+    public void newPiece(Piece piece)
+    {
+    }
+
+    /*********************** Internals ***********************/
 
     private synchronized void startTimer()
     {
@@ -90,38 +115,73 @@ public class GamePlay {
             @Override
             public void run()
             {
-                gameTick();
+                if (!_board.gameTick())
+                    gameOver();
             }
         };
 
         this._timer = new Timer();
         this._timer.scheduleAtFixedRate(
-            task, this._clockSpeed, this._clockSpeed
+            task, this._speed, this._speed
         );
     }
 
-    /** Will be called by the board when n lines have been removed by the
-     * player. */
-    public void clearedLines(int n);
+    private synchronized void gameOver()
+    {
+        this._timer.cancel();
+    }
 
-    /** Will be called by the board when a new piece has been randomly chosen
-     * but not yet introduced in the grid. */
-    public void newPiece(Piece piece);
+    /*********************** Getters/Setters and events ***********************/
 
-    public int getScore();
+    public void addListener(GamePlayListener listener)
+    {
+        this._listeners.add(listener);
+    }
 
-    public int getLevel();
+    public void emitScoreChange(int newScore)
+    {
+        for (GamePlayListener listener : this._listeners)
+            listener.scoreChange(newScore);
+    }
+
+    public void emitLevelChange(int newLevel)
+    {
+        for (GamePlayListener listener : this._listeners)
+            listener.levelChange(newLevel);
+    }
+
+    public void emitSpeedChange(int newClockSpeed)
+    {
+        for (GamePlayListener listener : this._listeners)
+            listener.speedChange(newClockSpeed);
+    }
+
+    public Board getBoard()
+    {
+        return this._board;
+    }
+
+    public abstract int getScore();
+
+    public abstract int getLevel();
 
     /** Returns the current delay between two "ticks" in milliseconds. */
-    public int getSpeed();
-
-    public void setSpeed(int newClockSpeed)
+    public int getSpeed()
     {
-        this._clockSpeed = newClockSpeed;
+        return this._speed;
+    }
+
+    /** Changes the speed of the game. Will restart the timer if the game is
+     * running. */
+    public synchronized void setSpeed(int newClockSpeed)
+    {
+        this._speed = newClockSpeed;
 
         if (this._board.getCurrentState() == GameState.RUNNING) {
             this._timer.cancel();
             this.startTimer();
         }
+
+        this.emitSpeedChange(newClockSpeed);
     }
 }

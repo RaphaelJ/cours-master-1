@@ -3,6 +3,8 @@ package model;
 import java.awt.Rectangle;
 import java.util.*;
 
+import model.piece.Piece;
+
 /** Provides an interface for views and other objects which listen to game's
  * board changes. */
 public interface BoardListener extends EventListener {

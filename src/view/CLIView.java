@@ -2,25 +2,28 @@ package view;
 
 import java.awt.Rectangle;
 
+import gameplay.*;
 import model.Board;
+import model.BoardListener;
 import model.Row;
 import model.piece.Piece;
 
 /** Provides a view which prints the grid to the standard output. */
 public class CLIView implements BoardListener {
-    private Board _board;
+    private GamePlay _game;
 
-    public CLIView(Board board)
+    public CLIView(GamePlay game)
     {
-        this._board = board;
+        this._game = game;
+        game.getBoard().addListener(this);
 
         this.printBoard();
     }
 
     private void printBoard()
     {
-        Row[] grid = this._board.getGrid();
-        int width = this._board.getWidth();
+        Row[] grid = this._game.getBoard().getGrid();
+        int width = this._game.getBoard().getWidth();
 
         for (int i = 0; i < width + 1; i++)
             System.out.print("~~");

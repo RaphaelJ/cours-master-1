@@ -6,17 +6,14 @@ import view.*;
 public class Main {
     public static void main(String[] args)
     {
-        GamePlay rules = new NintendoGameBoy();
-        Board board = new Board(rules);
+        GamePlay game = new NintendoGameBoy(new Board());
 
-        //CLIView   cli = new CLIView(board);
-        SwingView gui = new SwingView(board);
-        //board.addView(cli); // Listen to board changes.
-        board.addView(gui);
+        CLIView   cli = new CLIView(game);
+        SwingView gui = new SwingView(game);
 
         // Controller which listen to GUI events and transmits them to the
-        // game's board.
-        GameController controller = new LocalController(board);
+        // game's manager.
+        GameController controller = new LocalController(game);
         gui.addController(controller);
 
         gui.run();

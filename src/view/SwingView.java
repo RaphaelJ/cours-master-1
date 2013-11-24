@@ -3,6 +3,7 @@ package view;
 import gameplay.*;
 import model.Board;
 import model.Board.GameState;
+import model.BoardListener;
 import model.Row;
 import model.piece.Piece;
 
@@ -16,7 +17,8 @@ import controller.GameController;
 
 public class SwingView extends JFrame
                        implements BoardListener, GamePlayListener, KeyListener {
-    private Board _board;
+    private GamePlay _game;
+
     private JPanel _playPanel;
     private JLabel _score;
     private JLabel _level;
@@ -25,11 +27,14 @@ public class SwingView extends JFrame
     private ArrayList<GameController> _controllers
         = new ArrayList<GameController>();
 
-    public SwingView(Board board)
+    public SwingView(GamePlay game)
     {
         super("Tetris MVC");
-        this._board = board;
-        this._board.getGameplay().addListener(this);
+
+        this._game = game;
+        game.addListener(this);
+        game.getBoard().addListener(this);
+
         initComponents();
 
         this.setFocusable(true);
@@ -41,12 +46,11 @@ public class SwingView extends JFrame
         this._playPanel = new JPanel();
         JPanel rightPanel = new JPanel();
 
-        GamePlay gameplay = this._board.getGameplay();
         JLabel scoreTitle = new JLabel("Score :");
-        this._score = new JLabel(Integer.toString(gameplay.getScore()));
+        this._score = new JLabel(Integer.toString(this._game.getScore()));
 
         JLabel levelTitle = new JLabel("Level :");
-        this._level = new JLabel(Integer.toString(gameplay.getLevel()));
+        this._level = new JLabel(Integer.toString(this._game.getLevel()));
 
         this._nextPiecePanel = new JPanel();
         JButton newGame = new JButton("Start a new game");
@@ -56,8 +60,8 @@ public class SwingView extends JFrame
         this._playPanel.setBackground(new java.awt.Color(255, 255, 255));
         this._playPanel.setPreferredSize(
             new Dimension(
-                this._board.getWidth() * Piece.TILES_SIZE,
-                this._board.getHeight() * Piece.TILES_SIZE
+                this._game.getBoard().getWidth() * Piece.TILES_SIZE,
+                this._game.getBoard().getHeight() * Piece.TILES_SIZE
             )
         );
 
@@ -121,10 +125,10 @@ public class SwingView extends JFrame
         case RUNNING:
             // Redraws the entire grid.
             this.gridChange(
-                new Rectangle(0, 0, this._board.getWidth(),
-                this._board.getHeight())
+                new Rectangle(0, 0, this._game.getBoard().getWidth(),
+                this._game.getBoard().getHeight())
             );
-            this.newPiece(this._board.getNextPiece());
+            this.newPiece(this._game.getBoard().getNextPiece());
             break;
         case PAUSED:
             this.cleanBoards();
@@ -141,7 +145,7 @@ public class SwingView extends JFrame
 
     public void gridChange(Rectangle bounds)
     {
-        Row[] grid = this._board.getGrid();
+        Row[] grid = this._game.getBoard().getGrid();
         Graphics g = this._playPanel.getGraphics();
 
         for (int i = bounds.y; i < bounds.y + bounds.height; i++) {
@@ -220,8 +224,8 @@ public class SwingView extends JFrame
         Graphics g = this._playPanel.getGraphics();
         g.setColor(Color.WHITE);
         g.fillRect(
-            0, 0, this._board.getWidth() * Piece.TILES_SIZE,
-            this._board.getHeight() * Piece.TILES_SIZE
+            0, 0, this._game.getBoard().getWidth() * Piece.TILES_SIZE,
+            this._game.getBoard().getHeight() * Piece.TILES_SIZE
         );
 
         // Hides the next piece panel.
@@ -244,8 +248,8 @@ public class SwingView extends JFrame
           , height = metrics.getHeight();
 
         g.drawString(
-            text, (this._board.getWidth() * Piece.TILES_SIZE - width) / 2,
-            (this._board.getHeight() * Piece.TILES_SIZE - height) / 2
+            text, (this._game.getBoard().getWidth() * Piece.TILES_SIZE - width) / 2,
+            (this._game.getBoard().getHeight() * Piece.TILES_SIZE - height) / 2
         );
 
         g.finalize();

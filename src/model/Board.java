@@ -66,7 +66,7 @@ public class Board {
         this(rand, DEFAULT_WIDTH, DEFAULT_HEIGHT);
     }
 
-    public Board(Random rand, int width, int height, int clockSpeed)
+    public Board(Random rand, int width, int height)
     {
         this._rand = rand;
 
@@ -90,15 +90,16 @@ public class Board {
         this.initBoard();
 
         this.emitGridChange(new Rectangle(0, 0, this._width, this._height));
-        this.changeState(GameState.INITIALIZED);
+        this.setCurrentState(GameState.INITIALIZED);
     }
 
     /** Runs one step of the game: moves the current piece.
-     * Usually called by the timer. */
-    public synchronized void gameTick()
+     * Usually called by the timer of the gameplay. Return false if the game
+     * is over. */
+    public synchronized boolean gameTick()
     {
         if (this._currentState != GameState.RUNNING)
-            return;
+            return this._currentState != GameState.GAMEOVER;
 
         if (this._current == null) // First piece.
             this._current = this.nextPiece();
@@ -119,8 +120,11 @@ public class Board {
             }
         }
 
-        if (this._current == null)
+        if (this._current == null) {
             this.gameOver();
+            return false;
+        } else
+            return true;
     }
 
     public void moveLeft()
@@ -177,15 +181,6 @@ public class Board {
         this._current = rotatedPiece;
     }
 
-    public void scoreChange(int newScore) { }
-
-    public void levelChange(int newLevel) { }
-
-    public void speedChange(int newClockSpeed)
-    {
-        this.setClockSpeed(newClockSpeed);
-    }
-
     /*********************** Internals ***********************/
 
     /** Fills the board with empty lines. */
@@ -216,14 +211,7 @@ public class Board {
 
     private synchronized void gameOver()
     {
-        this._timer.cancel();
-        this.changeState(GameState.GAMEOVER);
-    }
-
-    private synchronized void changeState(GameState newState)
-    {
-        this._currentState = newState;
-        this.emitStateChange(newState);
+        this.setCurrentState(GameState.GAMEOVER);
     }
 
     /** Returns the next random piece and places it at the top of the grid.
@@ -321,7 +309,7 @@ public class Board {
 
             for (int j = minX; j < maxX; j++) {
                 if (line[j])
-                    this._grid[topY + i].setPiece(piece, topX + j);
+                    this._grid[topY + i].setPiece(topX + j, piece);
             }
         }
 
@@ -350,7 +338,7 @@ public class Board {
 
             for (int j = minX; j < maxX; j++) {
                 if (line[j])
-                    this._grid[topY + i].setPiece(null, topX + j);
+                    this._grid[topY + i].setPiece(topX + j, null);
             }
         }
 
@@ -413,25 +401,25 @@ public class Board {
 
     private void emitStateChange(GameState newState)
     {
-        for (BoardListener listener : _listeners)
+        for (BoardListener listener : this._listeners)
             listener.stateChange(newState);
     }
 
     private void emitGridChange(Rectangle bounds)
     {
-        for (BoardListener listener : _listeners)
+        for (BoardListener listener : this._listeners)
             listener.gridChange(bounds);
     }
 
     private void emitClearedLines(int n)
     {
-        for (BoardListener listener : _listeners)
+        for (BoardListener listener : this._listeners)
             listener.clearedLines(n);
     }
 
     private void emitNewPiece(Piece piece)
     {
-        for (BoardListener listener : _listeners)
+        for (BoardListener listener : this._listeners)
             listener.newPiece(piece);
     }
 
@@ -455,6 +443,12 @@ public class Board {
     public GameState getCurrentState()
     {
         return this._currentState;
+    }
+
+    public synchronized void setCurrentState(GameState newState)
+    {
+        this._currentState = newState;
+        this.emitStateChange(newState);
     }
 
     public Piece getNextPiece()

@@ -1,50 +1,50 @@
 package controller;
 
-import model.Board;
+import gameplay.GamePlay;
 
 /** Basic controller which tramits event to the game's board and manages
  * a timer. */
 public class LocalController implements GameController {
 
-    private Board _board;
+    private GamePlay _game;
 
-    public LocalController(Board board)
+    public LocalController(GamePlay game)
     {
-        this._board = board;
+        this._game = game;
     }
 
     public void newGame()
     {
-        this._board.newGame();
+        this._game.newGame();
     }
 
     public void pause()
     {
-        this._board.pause();
+        this._game.pause();
     }
 
     public void moveLeft()
     {
-        this._board.moveLeft();
+        this._game.moveLeft();
     }
 
     public void moveRight()
     {
-        this._board.moveRight();
+        this._game.moveRight();
     }
 
     public void softDrop()
     {
-        this._board.softDrop();
+        this._game.softDrop();
     }
 
     public void hardDrop()
     {
-        this._board.hardDrop();
+        this._game.hardDrop();
     }
 
     public void rotate()
     {
-        this._board.rotate();
+        this._game.rotate();
     }
 }
