@@ -7,4 +7,9 @@ bin/
 .settings
 .classpath
 
+# Dolphin
 .directory
+
+# Java
+*.class
+*.jar

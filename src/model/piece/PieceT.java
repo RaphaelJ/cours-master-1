@@ -1,9 +1,6 @@
 package model.piece;
 
-import java.awt.image.BufferedImage;
-
 import model.Coordinates;
-import util.Lazy;
 
 public class PieceT extends Piece {
     public static final boolean[][][] states = { {
@@ -27,8 +24,6 @@ public class PieceT extends Piece {
 
     public static final PieceTFactory factory = new PieceTFactory();
 
-    public static final Lazy<BufferedImage> tile = Piece.getTile("purple.png");
-
     public PieceT(Coordinates topLeft, int currentState)
     {
         super(topLeft, currentState);
@@ -38,12 +33,6 @@ public class PieceT extends Piece {
     public boolean[][][] getStates()
     {
         return states;
-    }
-
-    @Override
-    public BufferedImage getTile() throws Exception
-    {
-        return tile.get();
     }
 
     @Override

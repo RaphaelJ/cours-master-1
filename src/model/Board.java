@@ -1,9 +1,7 @@
 package model;
 
 import java.awt.Rectangle;
-import java.util.ArrayList;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
 import gameplay.*;
 import model.piece.Piece;
@@ -42,6 +40,15 @@ public class Board {
 
     private Piece _current = null;
     private Piece _next = null;
+
+    // Computes the duration of the game by taking into account pauses with two
+    // variables. The first contains the number of milliseconds which have been
+    // elapsed before the last pause (0 when no previous pauses). The second
+    // contains the ending time of the last pause.
+    private long _elapsed;
+    private Date _lastStart;
+
+    private GamePlay _game = null;
 
     private ArrayList<BoardListener> _listeners
         = new ArrayList<BoardListener>();
@@ -82,7 +89,7 @@ public class Board {
         this._listeners.add(listener);
     }
 
-    /*********************** User actions ***********************/
+    /*********************** Gameplay actions ***********************/
 
     /** Reinitialises the grid. */
     public synchronized void reset()
@@ -181,6 +188,46 @@ public class Board {
         this._current = rotatedPiece;
     }
 
+    /** Adds a new line at the bottom of the grid. Emits the game over event if
+     * the top line of the grid is not empty. */
+    public synchronized void addLine()
+    {
+        // Checks that the first line is empty.
+        if (this._current != null)
+            this.removePiece(this._current);
+
+        if (!this._grid[0].isEmpty()) {
+            this.gameOver();
+            return;
+        }
+
+        // Shifts every lines except the first one.
+        for (int i = 1; i < this._height; i++)
+            this._grid[i-1] = this._grid[i];
+
+        // TODO: Add a non-empty line.
+        // Il faudrait ajouter une nouvelle Piece d'1x1 et l'utiliser pour
+        // remplir aléatoirement les lignes.
+        this._grid[this._height - 1] = new Row(this._width);
+
+        if (this._current != null)
+            this.placePiece(this._current);
+
+        this.emitGridChange(new Rectangle(0, 0, this._width, this._height));
+    }
+
+    /** Removes the line at the given index from the grid. */
+    public synchronized void removeLine(int index)
+    {
+        // Shifts line references to the bottom and adds a new
+        // line at the top of the grid.
+        for (int i = index; i > 0; i--)
+            this._grid[i] = this._grid[i-1];
+        this._grid[0] = new Row(this._width);
+
+        this.emitGridChange(new Rectangle(0, 0, this._width, index + 1));
+    }
+
     /*********************** Internals ***********************/
 
     /** Fills the board with empty lines. */
@@ -193,6 +240,8 @@ public class Board {
 
         this._current = null;
         this._next = this.getRandomPiece();
+
+        this._elapsed = 0;
     }
 
     /** Choose the next random piece without placing it on the grid. */
@@ -349,17 +398,19 @@ public class Board {
         );
     }
 
-    /** Checks every line where the current piece is to be cleared.
-     * Emits the clear lines event when some lines have been removed. */
+    /** Checks every line where the current piece is complete and calls the
+     * gameplay instance for the processing of complete lines. */
     private synchronized void clearLines()
     {
+        if (this._game == null)
+            return;
+
         int topX = this._current.getTopLeft().getX()
           , topY = this._current.getTopLeft().getY();
 
         boolean[][] state = this._current.getCurrentState();
 
-        int nLines = 0;
-        int lastRemoved = 0;
+        LinkedList<Integer> completeLines = new LinkedList<>();
 
         // Only clean coordinates of the piece which are inside the grid.
         int minX = topX < 0 ? -topX : 0
@@ -372,29 +423,17 @@ public class Board {
             // Checks each line where the piece occupes a cell.
             for (int j = minX; j < maxX; j++) {
                 if (line[j]) {
-                    if (this._grid[i + topY].isComplete()) {
-                        lastRemoved = i + topY;
-
-                        // Shifts line references to the bottom and adds a new
-                        // line at the top of the grid.
-                        for (int k = i + topY; k > 0; k--)
-                            this._grid[k] = this._grid[k-1];
-
-                        this._grid[0] = new Row(this._width);
-                        nLines++;
-                    }
+                    if (this._grid[i + topY].isComplete())
+                        completeLines.add(i + topY);
 
                     break;
                 }
             }
         }
 
-        if (nLines > 0) {
-            this.emitClearedLines(nLines);
-            this.emitGridChange(
-                new Rectangle(0, 0, this._width, lastRemoved + 1)
-            );
-        }
+        // Calls the GamePlay method which will potentially remove the lines.
+        if (completeLines.size() > 0)
+            this._game.clearLines(completeLines);
     }
 
     /*********************** Events ***********************/
@@ -409,12 +448,6 @@ public class Board {
     {
         for (BoardListener listener : this._listeners)
             listener.gridChange(bounds);
-    }
-
-    private void emitClearedLines(int n)
-    {
-        for (BoardListener listener : this._listeners)
-            listener.clearedLines(n);
     }
 
     private void emitNewPiece(Piece piece)
@@ -447,12 +480,44 @@ public class Board {
 
     public synchronized void setCurrentState(GameState newState)
     {
+        // Updates the elapsed time if the game is going on pause ...
+        if (this._currentState == GameState.RUNNING
+            && newState == GameState.PAUSED)
+            this._elapsed = this.getElapsedTime();
+        // .. or updates the last start time if the game is being (re)started.
+        else if (this._currentState != GameState.RUNNING
+                 && newState == GameState.RUNNING)
+            this._lastStart = new Date();
+
         this._currentState = newState;
         this.emitStateChange(newState);
+    }
+
+    public Piece getCurrentPiece()
+    {
+        return this._current;
     }
 
     public Piece getNextPiece()
     {
         return this._next;
+    }
+
+    /** Returns the total gaming time without pauses in milliseconds. */
+    public long getElapsedTime()
+    {
+        if (this._currentState != GameState.RUNNING)
+            return this._elapsed;
+        else {
+            long sinceStart = System.currentTimeMillis() - _lastStart.getTime();
+            return this._elapsed + sinceStart;
+        }
+    }
+
+    /** Sets the GamePlay instance which will be called when lines are being
+     * cleared. */
+    public void setGamePlay(GamePlay game)
+    {
+        this._game = game;
     }
 }

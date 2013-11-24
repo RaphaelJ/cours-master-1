@@ -13,6 +13,8 @@ import java.awt.event.KeyListener;
 import java.util.*;
 import javax.swing.*;
 
+import viewmodel.PieceViewModel;
+
 import controller.GameController;
 
 public class SwingView extends JFrame
@@ -20,12 +22,15 @@ public class SwingView extends JFrame
     private GamePlay _game;
 
     private JPanel _playPanel;
+    private JLabel _time;
     private JLabel _score;
     private JLabel _level;
     private JPanel _nextPiecePanel;
 
     private ArrayList<GameController> _controllers
         = new ArrayList<GameController>();
+
+    private boolean _useImages = true;
 
     public SwingView(GamePlay game)
     {
@@ -46,6 +51,9 @@ public class SwingView extends JFrame
         this._playPanel = new JPanel();
         JPanel rightPanel = new JPanel();
 
+        JLabel timeTitle = new JLabel("Time elapsed :");
+        this._time = new JLabel("00:00:00");
+
         JLabel scoreTitle = new JLabel("Score :");
         this._score = new JLabel(Integer.toString(this._game.getScore()));
 
@@ -60,8 +68,8 @@ public class SwingView extends JFrame
         this._playPanel.setBackground(new java.awt.Color(255, 255, 255));
         this._playPanel.setPreferredSize(
             new Dimension(
-                this._game.getBoard().getWidth() * Piece.TILES_SIZE,
-                this._game.getBoard().getHeight() * Piece.TILES_SIZE
+                this._game.getBoard().getWidth() * PieceViewModel.TILES_SIZE,
+                this._game.getBoard().getHeight() * PieceViewModel.TILES_SIZE
             )
         );
 
@@ -71,10 +79,14 @@ public class SwingView extends JFrame
 
         this._nextPiecePanel.setBackground(new java.awt.Color(255, 255, 255));
         this._nextPiecePanel.setPreferredSize(
-            new Dimension(4 * Piece.TILES_SIZE, 4 * Piece.TILES_SIZE)
+            new Dimension(
+                4 * PieceViewModel.TILES_SIZE, 4 * PieceViewModel.TILES_SIZE
+            )
         );
 
         rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
+        rightPanel.add(timeTitle);
+        rightPanel.add(this._time);
         rightPanel.add(scoreTitle);
         rightPanel.add(this._score);
         rightPanel.add(levelTitle);
@@ -145,6 +157,9 @@ public class SwingView extends JFrame
 
     public void gridChange(Rectangle bounds)
     {
+        this.updateElapsedTime();
+
+        // Update the grid
         Row[] grid = this._game.getBoard().getGrid();
         Graphics g = this._playPanel.getGraphics();
 
@@ -152,19 +167,25 @@ public class SwingView extends JFrame
             Row row = grid[i];
             for (int j = bounds.x; j < bounds.x + bounds.width; j++) {
                 Piece piece = row.getPiece(j);
+
                 if (piece != null) {
                     try {
-                        g.drawImage(
-                            piece.getTile(), j * Piece.TILES_SIZE,
-                            i * Piece.TILES_SIZE, this
+                        PieceViewModel pvm = new PieceViewModel(
+                            piece, this._useImages
+                        );
+                        pvm.drawTexture(
+                            g, j * PieceViewModel.TILES_SIZE,
+                            i * PieceViewModel.TILES_SIZE, this
                         );
                     } catch (Exception e) { // Unable to load the tile.
                     }
                 } else {
                     g.setColor(Color.WHITE);
                     g.fillRect(
-                        j * Piece.TILES_SIZE, i * Piece.TILES_SIZE,
-                        Piece.TILES_SIZE, Piece.TILES_SIZE
+                        j * PieceViewModel.TILES_SIZE,
+                        i * PieceViewModel.TILES_SIZE,
+                        PieceViewModel.TILES_SIZE,
+                        PieceViewModel.TILES_SIZE
                     );
                 }
             }
@@ -173,30 +194,51 @@ public class SwingView extends JFrame
         g.finalize();
     }
 
-    public void clearedLines(int n) { }
+    private void updateElapsedTime() 
+    {
+        long delta = this._game.getBoard().getElapsedTime() / 1000;
+        int elapsedHours = (int) (delta / 3600);
+        delta = delta % 3600;
+ 
+        int elapsedMinutes = (int) (delta / 60);
+        delta = delta % 60;
+ 
+        int elapsedSeconds = (int) delta;
+
+        this._time.setText(
+            String.format(
+                "%02d:%02d:%02d", elapsedHours, elapsedMinutes, elapsedSeconds
+            )
+        );
+    }
 
     public void newPiece(Piece piece)
     {
         Graphics g = this._nextPiecePanel.getGraphics();
+        PieceViewModel pvm = new PieceViewModel(piece, this._useImages);
 
         int dimension = piece.getFactory().getExtent();
         boolean[][] state = piece.getCurrentState();
 
         // Erases the next piece panel
         g.setColor(Color.WHITE);
-        g.fillRect(0, 0, Piece.TILES_SIZE * 4, Piece.TILES_SIZE * 4);
+        g.fillRect(
+            0, 0, PieceViewModel.TILES_SIZE * 4, PieceViewModel.TILES_SIZE * 4
+        );
 
         // Draws the next piece at the center of the panel.
-        int offset = (Piece.TILES_SIZE * 4 - Piece.TILES_SIZE * dimension) / 2;
+        int offset = (PieceViewModel.TILES_SIZE * 4 - PieceViewModel.TILES_SIZE
+                                                * dimension) / 2;
         for (int i = 0; i < dimension; i++) {
             for (int j = 0; j < dimension; j++) {
                 if (state[i][j]) {
                     try {
-                        g.drawImage(
-                            piece.getTile(), offset + j * Piece.TILES_SIZE,
-                            offset + i * Piece.TILES_SIZE, this
+                        pvm.drawTexture(
+                            g, offset + j * PieceViewModel.TILES_SIZE,
+                            offset + i * PieceViewModel.TILES_SIZE, this
                         );
                     } catch (Exception e) { // Unable to load the tile.
+                        System.err.println(e.getMessage());
                     }
                 }
             }
@@ -224,14 +266,16 @@ public class SwingView extends JFrame
         Graphics g = this._playPanel.getGraphics();
         g.setColor(Color.WHITE);
         g.fillRect(
-            0, 0, this._game.getBoard().getWidth() * Piece.TILES_SIZE,
-            this._game.getBoard().getHeight() * Piece.TILES_SIZE
+            0, 0, this._game.getBoard().getWidth() * PieceViewModel.TILES_SIZE,
+            this._game.getBoard().getHeight() * PieceViewModel.TILES_SIZE
         );
 
         // Hides the next piece panel.
         g = this._nextPiecePanel.getGraphics();
         g.setColor(Color.WHITE);
-        g.fillRect(0, 0, Piece.TILES_SIZE * 4, Piece.TILES_SIZE * 4);
+        g.fillRect(
+            0, 0, PieceViewModel.TILES_SIZE * 4, PieceViewModel.TILES_SIZE * 4
+        );
 
         g.finalize();
     }
@@ -248,8 +292,11 @@ public class SwingView extends JFrame
           , height = metrics.getHeight();
 
         g.drawString(
-            text, (this._game.getBoard().getWidth() * Piece.TILES_SIZE - width) / 2,
-            (this._game.getBoard().getHeight() * Piece.TILES_SIZE - height) / 2
+            text,
+            (this._game.getBoard().getWidth() 
+             * PieceViewModel.TILES_SIZE - width) / 2,
+            (this._game.getBoard().getHeight() 
+             * PieceViewModel.TILES_SIZE - height) / 2
         );
 
         g.finalize();
@@ -275,7 +322,7 @@ public class SwingView extends JFrame
             for (GameController controller : this._controllers)
                 controller.softDrop();
             break;
-        case KeyEvent.VK_SPACE:
+        case KeyEvent.VK_ENTER:
             for (GameController controller : this._controllers)
                 controller.hardDrop();
             break;

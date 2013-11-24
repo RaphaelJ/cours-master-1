@@ -67,11 +67,6 @@ public class CLIView implements BoardListener {
         this.printBoard();
     }
 
-    public void clearedLines(int n)
-    {
-        System.out.println("You cleared " + n + " line(s)");
-    }
-
     public void newPiece(Piece piece) {
     }
 }

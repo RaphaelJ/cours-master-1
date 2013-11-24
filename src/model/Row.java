@@ -38,6 +38,11 @@ public class Row {
         this._pieces[column] = piece;
     }
 
+    public boolean isEmpty()
+    {
+        return this._nbBlocks == 0;
+    }
+
     public boolean isComplete()
     {
         return this._nbBlocks == this._width;

@@ -1,11 +1,13 @@
 package gameplay;
 
+import java.util.*;
+
 import model.Board;
 
 /** Implements the traditional Marathon mode from the Game Boy tetris.
  * Read http://tetris.wikia.com/wiki/Tetris_(Game_Boy) for a complete
  * documentation. */
-public class NintendoGameBoy extends GamePlay {
+public class NintendoGameBoy extends DefaultGamePlay {
     /** Clock's speed for each level. */
     private static int[] _levels = {
         883, 817, 750, 683, 617, 550, 467, 367, 283, 183, 167, 150, 133, 117,
@@ -40,8 +42,12 @@ public class NintendoGameBoy extends GamePlay {
     }
 
     @Override
-    public synchronized void clearedLines(int n)
+    public synchronized void clearLines(LinkedList<Integer> linesIndices)
     {
+        super.clearLines(linesIndices);
+
+        int n = linesIndices.size();
+
         // Advances by one level every 10 lines.
         int oldClearedLines = this._nClearedLines;
         this._nClearedLines += n;
