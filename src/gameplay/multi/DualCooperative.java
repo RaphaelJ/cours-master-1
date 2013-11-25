@@ -24,15 +24,17 @@ public class DualCooperative extends DualGamePlay {
             @Override
             public synchronized void clearLines(LinkedList<Integer> lines)
             {
-                this._player.clearLines(lines);
-
                 Board opponentBoard = this._opponent.getBoard();
 
+                LinkedList<Integer> toRemove = new LinkedList<Integer>();
                 for (Integer i : lines) {
-                    if (opponentBoard.getGrid()[i.intValue()].isComplete()) {
-                        this._player.getBoard().removeLine(i.intValue());
-                        opponentBoard.removeLine(i.intValue());
-                    }
+                    if (opponentBoard.getGrid()[i.intValue()].isComplete())
+                        toRemove.add(i);
+                }
+
+                if (toRemove.size() > 0) {
+                    this._player.clearLines(toRemove);
+                    this._opponent.clearLines(toRemove);
                 }
             }
         };

@@ -19,9 +19,8 @@ import util.random.LCGRandom;
 
 public class WelcomeView extends javax.swing.JFrame {
 
-    private ArrayList<GamePlay> _gameplays = new ArrayList<GamePlay>();
-    
-    public WelcomeView() {
+    public WelcomeView()
+    {
         initComponents();
     }
 
@@ -82,7 +81,8 @@ public class WelcomeView extends javax.swing.JFrame {
                     .addComponent(jButtonSolo, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(jButtonMultiClassic, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(jButtonCoop, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jButtonOptions, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+//                     .addComponent(jButtonOptions, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    )
                 .addContainerGap())
             .addGroup(layout.createSequentialGroup()
                 .addGap(71, 71, 71)
@@ -103,7 +103,7 @@ public class WelcomeView extends javax.swing.JFrame {
                 .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jButtonCoop)
                 .addGap(18, 18, 18)
-                .addComponent(jButtonOptions)
+//                 .addComponent(jButtonOptions)
                 .addContainerGap())
         );
 
@@ -111,87 +111,72 @@ public class WelcomeView extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButtonSoloActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonSoloActionPerformed
+        this.setVisible(false);
+
         Board board = new Board();
-        GamePlay gameplay = new NintendoGameBoy(board);
-        
-        board.setGamePlay(gameplay);
-        this._gameplays.add(gameplay);
-        
-        startGame();
+        GamePlay game = new NintendoGameBoy(board);
+
+        board.setGamePlay(game);
+
+        SinglePlayerSwingView gui = new SinglePlayerSwingView(game, true);
+
+        gui.addController(new LocalController(game));
+
+        gui.run();
     }//GEN-LAST:event_jButtonSoloActionPerformed
 
     private void jButtonMultiSimpleActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonMultiSimpleActionPerformed
         long commonSeed = new LCGRandom().getSeed();
-        
-        Board boardP1 = new Board(new LCGRandom(commonSeed)),
-              boardP2 = new Board(new LCGRandom(commonSeed));
-        
+
+        Board board1 = new Board(new LCGRandom(commonSeed)),
+              board2 = new Board(new LCGRandom(commonSeed));
+
         GamePlayFactory innerGameplay = new NintendoGameBoyFactory();
-        DualGamePlay gameplay = new DualGamePlay(innerGameplay, boardP1, boardP2);
-        setDualGameplays(gameplay, boardP1, boardP2);
-        
-        startGame();
+        DualGamePlay game = new DualGamePlay(innerGameplay, board1, board2);
+
+        startTwoPlayersGame(game);
     }//GEN-LAST:event_jButtonMultiSimpleActionPerformed
 
     private void jButtonMultiClassicActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonMultiClassicActionPerformed
         long commonSeed = new LCGRandom().getSeed();
-        
-        Board boardP1 = new Board(new LCGRandom(commonSeed)),
-              boardP2 = new Board(new LCGRandom(commonSeed));
-        
+
+        Board board1 = new Board(new LCGRandom(commonSeed)),
+              board2 = new Board(new LCGRandom(commonSeed));
+
         GamePlayFactory innerGameplay = new NintendoGameBoyFactory();
-        DualClassic gameplay = new DualClassic(innerGameplay, boardP1, boardP2);
-        setDualGameplays(gameplay, boardP1, boardP2);
-        
-        startGame();
+        DualGamePlay game = new DualClassic(innerGameplay, board1, board2);
+
+        startTwoPlayersGame(game);
     }//GEN-LAST:event_jButtonMultiClassicActionPerformed
 
     private void jButtonCoopActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonCoopActionPerformed
-        long commonSeed = new LCGRandom().getSeed();
-        
-        Board boardP1 = new Board(new LCGRandom(commonSeed)),
-              boardP2 = new Board(new LCGRandom(commonSeed));
-        
+        Board board1 = new Board(), board2 = new Board();
+
         GamePlayFactory innerGameplay = new NintendoGameBoyFactory();
-        DualCooperative gameplay = new DualCooperative(innerGameplay, boardP1, boardP2);
-        setDualGameplays(gameplay, boardP1, boardP2);
-        
-        startGame();
+        DualCooperative game = new DualCooperative(
+            innerGameplay, board1, board2
+        );
+
+        startTwoPlayersGame(game);
     }//GEN-LAST:event_jButtonCoopActionPerformed
 
-    private void setDualGameplays(DualGamePlay gameplay, Board boardP1,
-            Board boardP2) {
-        GamePlay gameplayP1 = gameplay.getPlayer1GamePlay(),
-                 gameplayP2 = gameplay.getPlayer2GamePlay();
-        
-        boardP1.setGamePlay(gameplayP1);
-        boardP2.setGamePlay(gameplayP2);
-        
-        this._gameplays.add(gameplayP1);
-        this._gameplays.add(gameplayP2);
-        
-        startGame();
-    }
-    
-    public ArrayList<GamePlay> getGamePlays() {
-        return this._gameplays;
-    }
-    
-    private void startGame() {
-        
+    private void startTwoPlayersGame(DualGamePlay game)
+    {
         this.setVisible(false);
-        
-        if(this._gameplays.isEmpty())
-            System.exit(0);
 
-        SwingView gui = new SwingView(this._gameplays, true);
+        GamePlay game1 = game.getPlayer1GamePlay(),
+                 game2 = game.getPlayer2GamePlay();
 
-        // Controller which listen to GUI events and transmits them to the
-        // game's manager.
-        for(GamePlay gameplay : this._gameplays)
-            gui.addController(new LocalController(gameplay));
+        game1.getBoard().setGamePlay(game1);
+        game2.getBoard().setGamePlay(game2);
+
+        TwoPlayersSwingView gui = new TwoPlayersSwingView(game1, game2, true);
+
+        gui.addControllerPlayer1(new LocalController(game1));
+        gui.addControllerPlayer2(new LocalController(game2));
 
         gui.run();
+
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

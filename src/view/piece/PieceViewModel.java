@@ -37,43 +37,47 @@ public class PieceViewModel {
     {
         this._piece = piece;
 
-        if (piece instanceof PieceI) {
-            if (useImage)
-                this._texture = new ImageTexture(CYAN.get());
-            else
-                this._texture = new ColorTexture(Color.CYAN);
-        } else if (piece instanceof PieceJ) {
-            if (useImage)
-                this._texture = new ImageTexture(GRAY.get());
-            else
-                this._texture = new ColorTexture(Color.GRAY);
-        } else if (piece instanceof PieceL) {
-            if (useImage)
-                this._texture = new ImageTexture(BLUE.get());
-            else
-                this._texture = new ColorTexture(Color.BLUE);
-        } else if (piece instanceof PieceO) {
-            if (useImage)
-                this._texture = new ImageTexture(YELLOW.get());
-            else
-                this._texture = new ColorTexture(Color.YELLOW);
-        } else if (piece instanceof PieceS) {
-            if (useImage)
-                this._texture = new ImageTexture(GREEN.get());
-            else
-                this._texture = new ColorTexture(Color.GREEN);
-        } else if (piece instanceof PieceT) {
-            if (useImage)
-                this._texture = new ImageTexture(PURPLE.get());
-            else
-                this._texture = new ColorTexture(Color.MAGENTA);
-        } else if (piece instanceof PieceZ) {
-            if (useImage)
-                this._texture = new ImageTexture(RED.get());
-            else
-                this._texture = new ColorTexture(Color.RED);
-        } else // Unknown piece
+        try {
+            if (piece instanceof PieceI || piece instanceof PieceBlock) {
+                if (useImage)
+                    this._texture = new ImageTexture(CYAN.get());
+                else
+                    this._texture = new ColorTexture(Color.CYAN);
+            } else if (piece instanceof PieceJ) {
+                if (useImage)
+                    this._texture = new ImageTexture(GRAY.get());
+                else
+                    this._texture = new ColorTexture(Color.GRAY);
+            } else if (piece instanceof PieceL) {
+                if (useImage)
+                    this._texture = new ImageTexture(BLUE.get());
+                else
+                    this._texture = new ColorTexture(Color.BLUE);
+            } else if (piece instanceof PieceO) {
+                if (useImage)
+                    this._texture = new ImageTexture(YELLOW.get());
+                else
+                    this._texture = new ColorTexture(Color.YELLOW);
+            } else if (piece instanceof PieceS) {
+                if (useImage)
+                    this._texture = new ImageTexture(GREEN.get());
+                else
+                    this._texture = new ColorTexture(Color.GREEN);
+            } else if (piece instanceof PieceT) {
+                if (useImage)
+                    this._texture = new ImageTexture(PURPLE.get());
+                else
+                    this._texture = new ColorTexture(Color.MAGENTA);
+            } else if (piece instanceof PieceZ) {
+                if (useImage)
+                    this._texture = new ImageTexture(RED.get());
+                else
+                    this._texture = new ColorTexture(Color.RED);
+            } else // Unknown piece
+                this._texture = new ColorTexture(Color.BLACK);
+        } catch (Exception e) { // Error while loading the image.
             this._texture = new ColorTexture(Color.BLACK);
+        }
     }
 
     public Piece getPiece()

@@ -1,8 +1,5 @@
 package view;
 
-import gameplay.GamePlay;
-import gameplay.GamePlayListener;
-
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -16,35 +13,37 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
+import gameplay.GamePlay;
+import gameplay.GamePlayListener;
 import model.Board.GameState;
 import model.BoardListener;
 import model.Row;
 import model.piece.Piece;
 import view.piece.PieceViewModel;
 
-public class GamePanel extends JPanel
-		implements BoardListener, GamePlayListener {
+public class GamePanel extends JPanel 
+        implements BoardListener, GamePlayListener {
 
-	private JPanel _playPanel;
-    
+    private JPanel _playPanel;
+
     private JLabel _score;
     private JLabel _level;
     private JPanel _nextPiecePanel;
-    
+
     private GamePlay _game;
     private boolean _useImages;
-    
-    public GamePanel(GamePlay game, boolean useImages) {
-    	
-    	this._game = game;
-    	game.addListener(this);
+
+    public GamePanel(GamePlay game, boolean useImages)
+    {
+        this._game = game;
+        game.addListener(this);
         game.getBoard().addListener(this);
-        
+
         this._useImages = useImages;
-    	
-    	initComponents();
+
+        initComponents();
     }
-    
+
     private void initComponents()
     {
         this._playPanel = new JPanel();
@@ -88,7 +87,7 @@ public class GamePanel extends JPanel
         this.add(this._playPanel, BorderLayout.CENTER);
         this.add(rightPanel, BorderLayout.EAST);
     }
-    
+
     public void gridChange(Rectangle bounds)
     {
         // Update the grid
@@ -142,13 +141,10 @@ public class GamePanel extends JPanel
             break;
         case PAUSED:
             this.cleanBoards();
-            this.drawPauseString();
+            this.drawString("Game paused");
             break;
         case GAMEOVER:
-            JOptionPane.showMessageDialog(
-                this, "Game over !", "Game Over",
-                JOptionPane.INFORMATION_MESSAGE
-            );
+            this.drawString("Game over !");
             break;
         }
     }
@@ -221,11 +217,9 @@ public class GamePanel extends JPanel
         g.finalize();
     }
 
-    /** Draws the "Game paused" text at the center of the board. */
-    private void drawPauseString()
+    /** Draws the text at the center of the board. */
+    private void drawString(String text)
     {
-        String text = "Game paused";
-
         Graphics g = this._playPanel.getGraphics();
         FontMetrics metrics = g.getFontMetrics();
 

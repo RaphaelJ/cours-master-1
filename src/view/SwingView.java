@@ -2,54 +2,45 @@ package view;
 
 import gameplay.*;
 
+import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.*;
 import javax.swing.*;
 
 import controller.GameController;
+import model.*;
+import model.piece.*;
 
-public class SwingView extends JFrame
-                       implements KeyListener {
-    
+public abstract class SwingView extends JFrame implements BoardListener {
+
+    protected JPanel playPanel;
+
     private JPanel infoPanel;
-    private JPanel playPanel;
     private JButton startButton;
     private JLabel time;
     private JLabel timeTitle;
-    
-    private ArrayList<GamePlay> _games;
-    private ArrayList<GamePanel> _gamePanels = new ArrayList<GamePanel>();
-    
 
-    private ArrayList<GameController> _controllers
-        = new ArrayList<GameController>();
-
-    public SwingView(ArrayList<GamePlay> games, boolean useImages)
+    public SwingView(Board board) // Uses the board to update the time
     {
         super("Tetris MVC");
 
-        this._games = games;
-        
-        for(GamePlay game : games)
-        	_gamePanels.add(new GamePanel(game, useImages));
+        board.addListener(this);
 
         initComponents();
 
         this.setFocusable(true);
-        this.addKeyListener(this);
     }
 
     private void initComponents()
     {
+        this.playPanel = new JPanel();
+        this.playPanel.setLayout(new BoxLayout(playPanel, BoxLayout.X_AXIS));
+
         this.infoPanel = new JPanel();
         this.startButton = new JButton();
         this.timeTitle = new JLabel();
         this.time = new JLabel();
-        this.playPanel = new JPanel();
-        for(GamePanel panel : this._gamePanels) {
-            this.playPanel.add(panel);
-        }
 
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
@@ -57,8 +48,7 @@ public class SwingView extends JFrame
         this.startButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt)
             {
-                for (GameController controller : _controllers)
-                    controller.newGame();
+                newGame();
 
                 requestFocus();
             }
@@ -77,8 +67,7 @@ public class SwingView extends JFrame
                 .addComponent(timeTitle)
                 .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(time)
-                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 327,
-                        Short.MAX_VALUE)
+                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(startButton)
                 .addContainerGap())
         );
@@ -95,42 +84,11 @@ public class SwingView extends JFrame
                 .addContainerGap())
         );
 
-        GroupLayout playPanelLayout = new GroupLayout(playPanel);
-        playPanel.setLayout(playPanelLayout);
-        playPanelLayout.setHorizontalGroup(
-            playPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
-        );
-        playPanelLayout.setVerticalGroup(
-            playPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addGap(0, 349, Short.MAX_VALUE)
-        );
-
-        GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
-        getContentPane().setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addComponent(playPanel, GroupLayout.DEFAULT_SIZE,
-                    GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addComponent(infoPanel, GroupLayout.Alignment.TRAILING,
-                    GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE,
-                    Short.MAX_VALUE)
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addComponent(playPanel, GroupLayout.DEFAULT_SIZE,
-                        GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(infoPanel, GroupLayout.PREFERRED_SIZE,
-                        GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
-        );
-
-        pack();
+        this.setLayout(new BorderLayout());
+        this.add(this.playPanel, BorderLayout.CENTER);
+        this.add(this.infoPanel, BorderLayout.SOUTH);
 
         this.setResizable(false);
-
-        pack();
     }
 
     public void run()
@@ -143,14 +101,13 @@ public class SwingView extends JFrame
         });
     }
 
-    public void addController(GameController controller)
-    {
-        this._controllers.add(controller);
-    }
+    protected abstract void newGame();
+
+    protected abstract long getElapsedTime();
 
     private void updateElapsedTime() 
     {
-        long delta = this._game.getBoard().getElapsedTime() / 1000;
+        long delta = this.getElapsedTime() / 1000;
         int elapsedHours = (int) (delta / 3600);
         delta = delta % 3600;
  
@@ -166,40 +123,12 @@ public class SwingView extends JFrame
         );
     }
 
-    @Override
-    public void keyPressed(KeyEvent event)
+    public void stateChange(Board.GameState newState) { }
+
+    public void gridChange(Rectangle bounds)
     {
-        switch(event.getKeyCode()) {
-        case KeyEvent.VK_P:
-            for (GameController controller : this._controllers)
-                controller.pause();
-            break;
-        case KeyEvent.VK_LEFT:
-            for (GameController controller : this._controllers)
-                controller.moveLeft();
-            break;
-        case KeyEvent.VK_RIGHT:
-            for (GameController controller : this._controllers)
-                controller.moveRight();
-            break;
-        case KeyEvent.VK_DOWN:
-            for (GameController controller : this._controllers)
-                controller.softDrop();
-            break;
-        case KeyEvent.VK_ENTER:
-            for (GameController controller : this._controllers)
-                controller.hardDrop();
-            break;
-        case KeyEvent.VK_UP:
-            for (GameController controller : this._controllers)
-                controller.rotate();
-            break;
-        }
+        this.updateElapsedTime();
     }
 
-    @Override
-    public void keyReleased(KeyEvent e) { }
-
-    @Override
-    public void keyTyped(KeyEvent e) { }
+    public void newPiece(Piece piece) { }
 }

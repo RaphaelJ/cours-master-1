@@ -9,8 +9,8 @@ import model.Coordinates;
  * the transformation. */
 public abstract class Piece {
     public static final Piece.PieceFactory[] AVAILABLE_PIECES = {
-        PieceI.factory, PieceJ.factory, PieceL.factory, PieceO.factory,
-        PieceS.factory, PieceT.factory, PieceZ.factory
+        PieceI.factory/*, PieceJ.factory, PieceL.factory, PieceO.factory,
+        PieceS.factory, PieceT.factory, PieceZ.factory*/
     };
 
     /** Provides a factory method to create new instances of a piece with
