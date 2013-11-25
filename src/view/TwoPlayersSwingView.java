@@ -2,11 +2,9 @@ package view;
 
 import gameplay.*;
 
-import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.*;
-import javax.swing.*;
 
 import controller.GameController;
 
@@ -16,6 +14,7 @@ public class TwoPlayersSwingView extends SwingView implements KeyListener {
     private GamePanel _panel1, _panel2;
 
     private ArrayList<GameController> _controllers1, _controllers2;
+    private Set<Integer> _activeKeys = new HashSet<Integer>();
 
     public TwoPlayersSwingView(GamePlay game1, GamePlay game2,
                                  boolean useImages)
@@ -64,60 +63,60 @@ public class TwoPlayersSwingView extends SwingView implements KeyListener {
     @Override
     public void keyPressed(KeyEvent event)
     {
-        switch(event.getKeyCode()) {
-        case KeyEvent.VK_P:
+    	_activeKeys.add(event.getKeyCode());
+    	
+      
+        if(_activeKeys.contains(KeyEvent.VK_P))
             for (GameController controller : this._controllers1)
                 controller.pause();
-            break;
 
         // Left player
-        case KeyEvent.VK_Q:
+        if(_activeKeys.contains(KeyEvent.VK_Q))
             for (GameController controller : this._controllers1)
                 controller.moveLeft();
-            break;
-        case KeyEvent.VK_D:
+        
+        if(_activeKeys.contains(KeyEvent.VK_D))
             for (GameController controller : this._controllers1)
                 controller.moveRight();
-            break;
-        case KeyEvent.VK_S:
+       
+        if(_activeKeys.contains(KeyEvent.VK_S))
             for (GameController controller : this._controllers1)
                 controller.softDrop();
-            break;
-        case KeyEvent.VK_A:
+        
+        if(_activeKeys.contains(KeyEvent.VK_A))
             for (GameController controller : this._controllers1)
                 controller.hardDrop();
-            break;
-        case KeyEvent.VK_Z:
+        
+        if(_activeKeys.contains(KeyEvent.VK_Z))
             for (GameController controller : this._controllers1)
                 controller.rotate();
-            break;
 
         // Right player
-        case KeyEvent.VK_LEFT:
+        if(_activeKeys.contains(KeyEvent.VK_LEFT))
             for (GameController controller : this._controllers2)
                 controller.moveLeft();
-            break;
-        case KeyEvent.VK_RIGHT:
+        
+        if(_activeKeys.contains(KeyEvent.VK_RIGHT))
             for (GameController controller : this._controllers2)
                 controller.moveRight();
-            break;
-        case KeyEvent.VK_DOWN:
+        
+        if(_activeKeys.contains(KeyEvent.VK_DOWN))
             for (GameController controller : this._controllers2)
                 controller.softDrop();
-            break;
-        case KeyEvent.VK_ENTER:
+        
+        if(_activeKeys.contains(KeyEvent.VK_ENTER))
             for (GameController controller : this._controllers2)
                 controller.hardDrop();
-            break;
-        case KeyEvent.VK_UP:
+        
+        if(_activeKeys.contains(KeyEvent.VK_U))
             for (GameController controller : this._controllers2)
                 controller.rotate();
-            break;
-        }
     }
 
     @Override
-    public void keyReleased(KeyEvent e) { }
+    public void keyReleased(KeyEvent e) {
+    	_activeKeys.remove(e.getKeyCode());
+    }
 
     @Override
     public void keyTyped(KeyEvent e) { }
