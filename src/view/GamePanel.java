@@ -20,8 +20,7 @@ import model.Board.GameState;
 import model.BoardListener;
 import model.Row;
 import model.piece.Piece;
-
-import viewmodel.PieceViewModel;
+import view.piece.PieceViewModel;
 
 public class GamePanel extends JPanel
 		implements BoardListener, GamePlayListener {
