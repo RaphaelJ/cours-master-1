@@ -1,4 +1,4 @@
-package viewmodel;
+package view.piece;
 
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
@@ -6,11 +6,11 @@ import java.awt.image.ImageObserver;
 
 import util.Lazy;
 
-public class Texture {
+public class ImageTexture implements Texture {
 
-    private Lazy<BufferedImage> _image = null;
+    private BufferedImage _image = null;
 
-    public Texture(BufferedImage image)
+    public ImageTexture(BufferedImage image)
     {
         this._image = image;
     }

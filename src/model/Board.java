@@ -4,7 +4,7 @@ import java.awt.Rectangle;
 import java.util.*;
 
 import gameplay.*;
-import model.piece.Piece;
+import model.piece.*;
 import util.random.LCGRandom;
 import util.random.Random;
 
@@ -206,14 +206,14 @@ public class Board {
             this._grid[i-1] = this._grid[i];
 
         // Fills the new line with one block pieces except one cell.
-        Row row = new Row(this._width)
+        Row row = new Row(this._width);
         this._grid[this._height - 1] = row;
 
         int empty = new LCGRandom().nextInt(this._width);
         for (int i = 0; i < this._width; i++) {
             if (i != empty) {
                 row.setPiece(
-                    i, new PieceBlock(new Coordinates(i, this.height - 1), 0)
+                    i, new PieceBlock(new Coordinates(i, this._height - 1), 0)
                 );
             }
         }

@@ -9,9 +9,8 @@ import java.util.concurrent.Callable;
 
 import javax.imageio.ImageIO;
 
-import util.Lazy;
-
 import model.piece.*;
+import util.Lazy;
 
 /** Proxy which provides drawing capabilities for each piece. */
 public class PieceViewModel {

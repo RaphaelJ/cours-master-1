@@ -1,4 +1,4 @@
-package viewmodel;
+package view.piece;
 
 import java.awt.Graphics;
 import java.awt.image.ImageObserver;

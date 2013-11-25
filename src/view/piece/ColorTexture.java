@@ -1,17 +1,16 @@
-package viewmodel;
+package view.piece;
 
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.image.ImageObserver;
 
-public class ColorTexture {
+public class ColorTexture implements Texture {
 
     private Color _color = null;
 
     public ColorTexture(Color color)
     {
         this._color = color;
-        this._useImage = false;
     }
 
     public void draw(Graphics g, int x, int y, ImageObserver observer)
