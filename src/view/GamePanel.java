@@ -23,7 +23,6 @@ import model.piece.Piece;
 
 import viewmodel.PieceViewModel;
 
-@SuppressWarnings("serial")
 public class GamePanel extends JPanel
 		implements BoardListener, GamePlayListener {
 

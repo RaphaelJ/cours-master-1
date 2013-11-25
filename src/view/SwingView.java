@@ -9,13 +9,18 @@ import javax.swing.*;
 
 import controller.GameController;
 
-@SuppressWarnings("serial")
 public class SwingView extends JFrame
                        implements KeyListener {
     
-	private ArrayList<GamePlay> _games;
+    private JPanel infoPanel;
+    private JPanel playPanel;
+    private JButton startButton;
+    private JLabel time;
+    private JLabel timeTitle;
+    
+    private ArrayList<GamePlay> _games;
     private ArrayList<GamePanel> _gamePanels = new ArrayList<GamePanel>();
-    private JLabel _time;
+    
 
     private ArrayList<GameController> _controllers
         = new ArrayList<GameController>();
@@ -37,14 +42,19 @@ public class SwingView extends JFrame
 
     private void initComponents()
     {
-    	JLabel timeTitle = new JLabel("Time elapsed :");
-        this._time = new JLabel("00:00:00");
-        // TODO: Place the time somewhere
-    	
-    	JButton newGame = new JButton("Start a new game");
-    	// TODO: Place the new game button somewhere
-    	
-        newGame.addActionListener(new java.awt.event.ActionListener() {
+        this.infoPanel = new JPanel();
+        this.startButton = new JButton();
+        this.timeTitle = new JLabel();
+        this.time = new JLabel();
+        this.playPanel = new JPanel();
+        for(GamePanel panel : this._gamePanels) {
+            this.playPanel.add(panel);
+        }
+
+        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+
+        this.startButton.setText("Start");
+        this.startButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt)
             {
                 for (GameController controller : _controllers)
@@ -53,6 +63,70 @@ public class SwingView extends JFrame
                 requestFocus();
             }
         });
+
+        this.timeTitle.setText("Time elapsed :");
+
+        this.time.setText("00:00:00");
+
+        javax.swing.GroupLayout infoPanelLayout = new GroupLayout(infoPanel);
+        infoPanel.setLayout(infoPanelLayout);
+        infoPanelLayout.setHorizontalGroup(
+            infoPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+            .addGroup(GroupLayout.Alignment.TRAILING,
+                    infoPanelLayout.createSequentialGroup()
+                .addComponent(timeTitle)
+                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(time)
+                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 327,
+                        Short.MAX_VALUE)
+                .addComponent(startButton)
+                .addContainerGap())
+        );
+        infoPanelLayout.setVerticalGroup(
+            infoPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+            .addGroup(GroupLayout.Alignment.TRAILING,
+                    infoPanelLayout.createSequentialGroup()
+                .addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGroup(infoPanelLayout.createParallelGroup(
+                        GroupLayout.Alignment.BASELINE)
+                    .addComponent(startButton)
+                    .addComponent(timeTitle)
+                    .addComponent(time))
+                .addContainerGap())
+        );
+
+        GroupLayout playPanelLayout = new GroupLayout(playPanel);
+        playPanel.setLayout(playPanelLayout);
+        playPanelLayout.setHorizontalGroup(
+            playPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+            .addGap(0, 0, Short.MAX_VALUE)
+        );
+        playPanelLayout.setVerticalGroup(
+            playPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+            .addGap(0, 349, Short.MAX_VALUE)
+        );
+
+        GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
+        getContentPane().setLayout(layout);
+        layout.setHorizontalGroup(
+            layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+            .addComponent(playPanel, GroupLayout.DEFAULT_SIZE,
+                    GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(infoPanel, GroupLayout.Alignment.TRAILING,
+                    GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE,
+                    Short.MAX_VALUE)
+        );
+        layout.setVerticalGroup(
+            layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+            .addGroup(layout.createSequentialGroup()
+                .addComponent(playPanel, GroupLayout.DEFAULT_SIZE,
+                        GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(infoPanel, GroupLayout.PREFERRED_SIZE,
+                        GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+        );
+
+        pack();
 
         this.setResizable(false);
 
@@ -76,8 +150,7 @@ public class SwingView extends JFrame
 
     private void updateElapsedTime() 
     {
-    	// TODO: Where does the time should come from ?
-        /*long delta = this._game.getBoard().getElapsedTime() / 1000;
+        long delta = this._game.getBoard().getElapsedTime() / 1000;
         int elapsedHours = (int) (delta / 3600);
         delta = delta % 3600;
  
@@ -86,11 +159,11 @@ public class SwingView extends JFrame
  
         int elapsedSeconds = (int) delta;
 
-        this._time.setText(
+        this.time.setText(
             String.format(
                 "%02d:%02d:%02d", elapsedHours, elapsedMinutes, elapsedSeconds
             )
-        );*/
+        );
     }
 
     @Override
