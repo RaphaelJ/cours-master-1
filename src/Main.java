@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+
 import controller.*;
 import gameplay.*;
 import gameplay.multi.*;
@@ -23,18 +25,19 @@ public class Main {
 
         board1.setGamePlay(player1Gameplay);
         board2.setGamePlay(player2Gameplay);
+        
+        //CLIView   cli = new CLIView(player1Gameplay);
 
-        CLIView   cli = new CLIView(player1Gameplay);
-
-        SwingView gui1 = new SwingView(player1Gameplay)
-                , gui2 = new SwingView(player2Gameplay);
+        ArrayList<GamePlay> games = new ArrayList<GamePlay>();
+        games.add(player1Gameplay);
+        games.add(player2Gameplay);
+        SwingView gui = new SwingView(games, true);
 
         // Controller which listen to GUI events and transmits them to the
         // game's manager.
-        gui1.addController(new LocalController(player1Gameplay));
-        gui2.addController(new LocalController(player2Gameplay));
+        gui.addController(new LocalController(player1Gameplay));
+        gui.addController(new LocalController(player2Gameplay));
 
-        gui1.run();
-        gui2.run();
+        gui.run();
     }
 }

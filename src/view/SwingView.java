@@ -1,44 +1,33 @@
 package view;
 
 import gameplay.*;
-import model.Board;
-import model.Board.GameState;
-import model.BoardListener;
-import model.Row;
-import model.piece.Piece;
 
-import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.*;
 import javax.swing.*;
 
-import viewmodel.PieceViewModel;
-
 import controller.GameController;
 
+@SuppressWarnings("serial")
 public class SwingView extends JFrame
-                       implements BoardListener, GamePlayListener, KeyListener {
-    private GamePlay _game;
-
-    private JPanel _playPanel;
+                       implements KeyListener {
+    
+	private ArrayList<GamePlay> _games;
+    private ArrayList<GamePanel> _gamePanels = new ArrayList<GamePanel>();
     private JLabel _time;
-    private JLabel _score;
-    private JLabel _level;
-    private JPanel _nextPiecePanel;
 
     private ArrayList<GameController> _controllers
         = new ArrayList<GameController>();
 
-    private boolean _useImages = true;
-
-    public SwingView(GamePlay game)
+    public SwingView(ArrayList<GamePlay> games, boolean useImages)
     {
         super("Tetris MVC");
 
-        this._game = game;
-        game.addListener(this);
-        game.getBoard().addListener(this);
+        this._games = games;
+        
+        for(GamePlay game : games)
+        	_gamePanels.add(new GamePanel(game, useImages));
 
         initComponents();
 
@@ -48,56 +37,13 @@ public class SwingView extends JFrame
 
     private void initComponents()
     {
-        this._playPanel = new JPanel();
-        JPanel rightPanel = new JPanel();
-
-        JLabel timeTitle = new JLabel("Time elapsed :");
+    	JLabel timeTitle = new JLabel("Time elapsed :");
         this._time = new JLabel("00:00:00");
-
-        JLabel scoreTitle = new JLabel("Score :");
-        this._score = new JLabel(Integer.toString(this._game.getScore()));
-
-        JLabel levelTitle = new JLabel("Level :");
-        this._level = new JLabel(Integer.toString(this._game.getLevel()));
-
-        this._nextPiecePanel = new JPanel();
-        JButton newGame = new JButton("Start a new game");
-
-        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-
-        this._playPanel.setBackground(new java.awt.Color(255, 255, 255));
-        this._playPanel.setPreferredSize(
-            new Dimension(
-                this._game.getBoard().getWidth() * PieceViewModel.TILES_SIZE,
-                this._game.getBoard().getHeight() * PieceViewModel.TILES_SIZE
-            )
-        );
-
-        rightPanel.setBorder(
-            BorderFactory.createLineBorder(new Color(0, 0, 0))
-        );
-
-        this._nextPiecePanel.setBackground(new java.awt.Color(255, 255, 255));
-        this._nextPiecePanel.setPreferredSize(
-            new Dimension(
-                4 * PieceViewModel.TILES_SIZE, 4 * PieceViewModel.TILES_SIZE
-            )
-        );
-
-        rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
-        rightPanel.add(timeTitle);
-        rightPanel.add(this._time);
-        rightPanel.add(scoreTitle);
-        rightPanel.add(this._score);
-        rightPanel.add(levelTitle);
-        rightPanel.add(this._level);
-        rightPanel.add(this._nextPiecePanel);
-        rightPanel.add(newGame);
-
-        this.setLayout(new BorderLayout());
-        this.add(this._playPanel, BorderLayout.CENTER);
-        this.add(rightPanel, BorderLayout.EAST);
-
+        // TODO: Place the time somewhere
+    	
+    	JButton newGame = new JButton("Start a new game");
+    	// TODO: Place the new game button somewhere
+    	
         newGame.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt)
             {
@@ -128,75 +74,10 @@ public class SwingView extends JFrame
         this._controllers.add(controller);
     }
 
-    public void stateChange(GameState newState)
-    {
-        switch (newState) {
-        case INITIALIZED:
-            this.cleanBoards();
-            break;
-        case RUNNING:
-            // Redraws the entire grid.
-            this.gridChange(
-                new Rectangle(0, 0, this._game.getBoard().getWidth(),
-                this._game.getBoard().getHeight())
-            );
-            this.newPiece(this._game.getBoard().getNextPiece());
-            break;
-        case PAUSED:
-            this.cleanBoards();
-            this.drawPauseString();
-            break;
-        case GAMEOVER:
-            JOptionPane.showMessageDialog(
-                this, "Game over !", "Game Over",
-                JOptionPane.INFORMATION_MESSAGE
-            );
-            break;
-        }
-    }
-
-    public void gridChange(Rectangle bounds)
-    {
-        this.updateElapsedTime();
-
-        // Update the grid
-        Row[] grid = this._game.getBoard().getGrid();
-        Graphics g = this._playPanel.getGraphics();
-
-        for (int i = bounds.y; i < bounds.y + bounds.height; i++) {
-            Row row = grid[i];
-            for (int j = bounds.x; j < bounds.x + bounds.width; j++) {
-                Piece piece = row.getPiece(j);
-
-                if (piece != null) {
-                    try {
-                        PieceViewModel pvm = new PieceViewModel(
-                            piece, this._useImages
-                        );
-                        pvm.drawTexture(
-                            g, j * PieceViewModel.TILES_SIZE,
-                            i * PieceViewModel.TILES_SIZE, this
-                        );
-                    } catch (Exception e) { // Unable to load the tile.
-                    }
-                } else {
-                    g.setColor(Color.WHITE);
-                    g.fillRect(
-                        j * PieceViewModel.TILES_SIZE,
-                        i * PieceViewModel.TILES_SIZE,
-                        PieceViewModel.TILES_SIZE,
-                        PieceViewModel.TILES_SIZE
-                    );
-                }
-            }
-        }
-
-        g.finalize();
-    }
-
     private void updateElapsedTime() 
     {
-        long delta = this._game.getBoard().getElapsedTime() / 1000;
+    	// TODO: Where does the time should come from ?
+        /*long delta = this._game.getBoard().getElapsedTime() / 1000;
         int elapsedHours = (int) (delta / 3600);
         delta = delta % 3600;
  
@@ -209,97 +90,7 @@ public class SwingView extends JFrame
             String.format(
                 "%02d:%02d:%02d", elapsedHours, elapsedMinutes, elapsedSeconds
             )
-        );
-    }
-
-    public void newPiece(Piece piece)
-    {
-        Graphics g = this._nextPiecePanel.getGraphics();
-        PieceViewModel pvm = new PieceViewModel(piece, this._useImages);
-
-        int dimension = piece.getFactory().getExtent();
-        boolean[][] state = piece.getCurrentState();
-
-        // Erases the next piece panel
-        g.setColor(Color.WHITE);
-        g.fillRect(
-            0, 0, PieceViewModel.TILES_SIZE * 4, PieceViewModel.TILES_SIZE * 4
-        );
-
-        // Draws the next piece at the center of the panel.
-        int offset = (PieceViewModel.TILES_SIZE * 4 - PieceViewModel.TILES_SIZE
-                                                * dimension) / 2;
-        for (int i = 0; i < dimension; i++) {
-            for (int j = 0; j < dimension; j++) {
-                if (state[i][j]) {
-                    try {
-                        pvm.drawTexture(
-                            g, offset + j * PieceViewModel.TILES_SIZE,
-                            offset + i * PieceViewModel.TILES_SIZE, this
-                        );
-                    } catch (Exception e) { // Unable to load the tile.
-                        System.err.println(e.getMessage());
-                    }
-                }
-            }
-        }
-
-        g.finalize();
-    }
-
-    public void scoreChange(int newScore)
-    {
-        this._score.setText(Integer.toString(newScore));
-    }
-
-    public void levelChange(int newLevel)
-    {
-        this._level.setText(Integer.toString(newLevel));
-    }
-
-    public void speedChange(int newClockSpeed) { }
-
-    /** Removes every drawing for the board and the next piece panels. */
-    private void cleanBoards()
-    {
-        // Hides the board.
-        Graphics g = this._playPanel.getGraphics();
-        g.setColor(Color.WHITE);
-        g.fillRect(
-            0, 0, this._game.getBoard().getWidth() * PieceViewModel.TILES_SIZE,
-            this._game.getBoard().getHeight() * PieceViewModel.TILES_SIZE
-        );
-
-        // Hides the next piece panel.
-        g = this._nextPiecePanel.getGraphics();
-        g.setColor(Color.WHITE);
-        g.fillRect(
-            0, 0, PieceViewModel.TILES_SIZE * 4, PieceViewModel.TILES_SIZE * 4
-        );
-
-        g.finalize();
-    }
-
-    /** Draws the "Game paused" text at the center of the board. */
-    private void drawPauseString()
-    {
-        String text = "Game paused";
-
-        Graphics g = this._playPanel.getGraphics();
-        FontMetrics metrics = g.getFontMetrics();
-
-        int width  = metrics.stringWidth(text)
-          , height = metrics.getHeight();
-
-        g.drawString(
-            text,
-            (this._game.getBoard().getWidth() 
-             * PieceViewModel.TILES_SIZE - width) / 2,
-            (this._game.getBoard().getHeight() 
-             * PieceViewModel.TILES_SIZE - height) / 2
-        );
-
-        g.finalize();
+        );*/
     }
 
     @Override

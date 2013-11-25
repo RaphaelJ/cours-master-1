@@ -410,7 +410,7 @@ public class Board {
 
         boolean[][] state = this._current.getCurrentState();
 
-        LinkedList<Integer> completeLines = new LinkedList<>();
+        LinkedList<Integer> completeLines = new LinkedList<Integer>();
 
         // Only clean coordinates of the piece which are inside the grid.
         int minX = topX < 0 ? -topX : 0

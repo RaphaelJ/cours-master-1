@@ -3,9 +3,6 @@ package gameplay;
 import java.util.*;
 
 import model.Board;
-import model.Board.GameState;
-import model.BoardListener;
-import model.piece.Piece;
 
 /** Provides an interface for "rules" which manage the dynamic aspect of the
  * game (timer, score, speed, levels ...).

@@ -36,8 +36,9 @@ public class NintendoGameBoy extends DefaultGamePlay {
 
         this.initGame();
 
-        this.emitScoreChange(this._score);
-        this.emitLevelChange(this.getLevel());
+        // TODO: Are those methods implemented in DefaultGamePlay ?
+        //this.emitScoreChange(this._score);
+        //this.emitLevelChange(this.getLevel());
         this.setSpeed(_levels[0]);
     }
 
@@ -53,15 +54,17 @@ public class NintendoGameBoy extends DefaultGamePlay {
         this._nClearedLines += n;
         if (this._nClearedLines / 10 > oldClearedLines / 10) {
             int newLevel = this.getLevel();
-            this.emitLevelChange(newLevel);
-            this.emitSpeedChange(_levels[newLevel - 1]);
+            // TODO: Are those methods implemented in DefaultGamePlay ?
+            //this.emitLevelChange(newLevel);
+            //this.emitSpeedChange(_levels[newLevel - 1]);
         }
 
         // Gives more points when groups of lines are erased.
         int[] points = { 40, 100, 300, 1200 };
         this._score += points[n - 1] * this.getLevel();
 
-        this.emitScoreChange(this._score);
+     // TODO: Is this method implemented in DefaultGamePlay ?
+        //this.emitScoreChange(this._score);
     }
 
     @Override

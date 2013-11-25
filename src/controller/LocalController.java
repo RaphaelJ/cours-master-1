@@ -2,12 +2,6 @@ package controller;
 
 import gameplay.GamePlay;
 
-import java.util.Timer;
-import java.util.TimerTask;
-
-import model.Board;
-import model.Board.GameState;
-
 /** Basic controller which tramits events to the game's manager. */
 public class LocalController implements GameController {
     private GamePlay _game;
