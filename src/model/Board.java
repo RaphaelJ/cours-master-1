@@ -205,10 +205,18 @@ public class Board {
         for (int i = 1; i < this._height; i++)
             this._grid[i-1] = this._grid[i];
 
-        // TODO: Add a non-empty line.
-        // Il faudrait ajouter une nouvelle Piece d'1x1 et l'utiliser pour
-        // remplir aléatoirement les lignes.
-        this._grid[this._height - 1] = new Row(this._width);
+        // Fills the new line with one block pieces except one cell.
+        Row row = new Row(this._width)
+        this._grid[this._height - 1] = row;
+
+        int empty = new LCGRandom().nextInt(this._width);
+        for (int i = 0; i < this._width; i++) {
+            if (i != empty) {
+                row.setPiece(
+                    i, new PieceBlock(new Coordinates(i, this.height - 1), 0)
+                );
+            }
+        }
 
         if (this._current != null)
             this.placePiece(this._current);
