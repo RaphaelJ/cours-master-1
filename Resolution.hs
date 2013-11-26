@@ -72,6 +72,7 @@ runParser filename txt =
         ls <- many (alphaNum <|> char '_')
         return (Var (T.pack (l : ls)))
 
+main :: IO Int
 main = do
     eAST <- runParser "stdin" <$> T.getContents
     case eAST of
