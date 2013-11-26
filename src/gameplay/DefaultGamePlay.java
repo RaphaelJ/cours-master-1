@@ -4,8 +4,6 @@ import java.util.*;
 
 import model.Board;
 import model.Board.GameState;
-import model.BoardListener;
-import model.piece.Piece;
 
 /** Provides a base class for gameplays which use a timer to controll the game.
  * Most concrete gameplays should derive from this class whereas gameplays which

@@ -1,14 +1,8 @@
 package view;
 
-import gameplay.*;
-
 import java.awt.*;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.util.*;
 import javax.swing.*;
 
-import controller.GameController;
 import model.*;
 import model.piece.*;
 
@@ -42,7 +36,7 @@ public abstract class SwingView extends JFrame implements BoardListener {
         this.timeTitle = new JLabel();
         this.time = new JLabel();
 
-        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
 
         this.startButton.setText("Start");
         this.startButton.addActionListener(new java.awt.event.ActionListener() {

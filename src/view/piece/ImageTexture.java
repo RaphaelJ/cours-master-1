@@ -4,8 +4,6 @@ import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.awt.image.ImageObserver;
 
-import util.Lazy;
-
 public class ImageTexture implements Texture {
 
     private BufferedImage _image = null;

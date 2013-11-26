@@ -1,5 +1,8 @@
 package view;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
 import controller.LocalController;
 import gameplay.GamePlay;
 import gameplay.GamePlayFactory;
@@ -9,92 +12,107 @@ import gameplay.multi.DualClassic;
 import gameplay.multi.DualCooperative;
 import gameplay.multi.DualGamePlay;
 
-import java.util.ArrayList;
-
 import javax.swing.GroupLayout;
+import javax.swing.JButton;
 import javax.swing.LayoutStyle;
+import javax.swing.WindowConstants;
 
 import model.Board;
 import util.random.LCGRandom;
 
 public class WelcomeView extends javax.swing.JFrame {
 
+	private JButton jButtonCoop;
+    private JButton jButtonMultiClassic;
+    private JButton jButtonMultiSimple;
+    private JButton jButtonOptions;
+    private JButton jButtonSolo;
+    private JButton jButtonExit;
+	
     public WelcomeView()
     {
+    	super("Tetris MVC");
+    	
         initComponents();
     }
 
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jButtonSolo = new javax.swing.JButton();
-        jButtonMultiSimple = new javax.swing.JButton();
-        jButtonMultiClassic = new javax.swing.JButton();
-        jButtonCoop = new javax.swing.JButton();
-        jButtonOptions = new javax.swing.JButton();
-        jLabelTitle = new javax.swing.JLabel();
-
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        jButtonSolo = new JButton();
+        jButtonMultiSimple = new JButton();
+        jButtonMultiClassic = new JButton();
+        jButtonCoop = new JButton();
+        jButtonOptions = new JButton();
+        jButtonExit = new JButton();
+        
+        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
         jButtonSolo.setText("Solo mode");
-        jButtonSolo.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        jButtonSolo.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
                 jButtonSoloActionPerformed(evt);
             }
         });
 
         jButtonMultiSimple.setText("Multi simple mode");
-        jButtonMultiSimple.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        jButtonMultiSimple.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
                 jButtonMultiSimpleActionPerformed(evt);
             }
         });
 
         jButtonMultiClassic.setText("Multi classic mode");
-        jButtonMultiClassic.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        jButtonMultiClassic.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
                 jButtonMultiClassicActionPerformed(evt);
             }
         });
 
         jButtonCoop.setText("Cooperative mode");
-        jButtonCoop.setToolTipText("");
-        jButtonCoop.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        jButtonCoop.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
                 jButtonCoopActionPerformed(evt);
             }
         });
 
         jButtonOptions.setText("Options");
-
-        jLabelTitle.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabelTitle.setText("Tetris");
+        
+        jButtonExit.setText("Exit");
+        jButtonExit.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+					setVisible(false);
+					System.exit(0);
+			}
+		});
 
         GroupLayout layout = new GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
-            layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+            layout.createParallelGroup(GroupLayout.Alignment.CENTER)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                    .addComponent(jButtonMultiSimple, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jButtonSolo, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jButtonMultiClassic, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jButtonCoop, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-//                     .addComponent(jButtonOptions, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGroup(layout.createParallelGroup(
+                		GroupLayout.Alignment.CENTER)
+                    .addComponent(jButtonMultiSimple, GroupLayout.DEFAULT_SIZE,
+                    		GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jButtonSolo, GroupLayout.DEFAULT_SIZE,
+                    		GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jButtonMultiClassic, GroupLayout.DEFAULT_SIZE,
+                    		GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jButtonCoop, GroupLayout.DEFAULT_SIZE,
+                    		GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+/*                     .addComponent(jButtonOptions, GroupLayout.DEFAULT_SIZE,
+                    		GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)*/
+                    .addComponent(jButtonExit, GroupLayout.DEFAULT_SIZE,
+                    		GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     )
                 .addContainerGap())
-            .addGroup(layout.createSequentialGroup()
-                .addGap(71, 71, 71)
-                .addComponent(jLabelTitle, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGap(75, 75, 75))
         );
         layout.setVerticalGroup(
-            layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addGroup(GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addGap(27, 27, 27)
-                .addComponent(jLabelTitle, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGap(32, 32, 32)
+            layout.createParallelGroup(GroupLayout.Alignment.CENTER)
+            .addGroup(GroupLayout.Alignment.CENTER,
+            		layout.createSequentialGroup()
+                .addContainerGap()
                 .addComponent(jButtonSolo)
                 .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jButtonMultiSimple)
@@ -104,13 +122,14 @@ public class WelcomeView extends javax.swing.JFrame {
                 .addComponent(jButtonCoop)
                 .addGap(18, 18, 18)
 //                 .addComponent(jButtonOptions)
+                .addComponent(jButtonExit)
                 .addContainerGap())
         );
 
         pack();
-    }// </editor-fold>//GEN-END:initComponents
+    }
 
-    private void jButtonSoloActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonSoloActionPerformed
+    private void jButtonSoloActionPerformed(ActionEvent evt) {
         this.setVisible(false);
 
         Board board = new Board();
@@ -123,9 +142,10 @@ public class WelcomeView extends javax.swing.JFrame {
         gui.addController(new LocalController(game));
 
         gui.run();
-    }//GEN-LAST:event_jButtonSoloActionPerformed
+        this.setVisible(true);
+    }
 
-    private void jButtonMultiSimpleActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonMultiSimpleActionPerformed
+    private void jButtonMultiSimpleActionPerformed(ActionEvent evt) {
         long commonSeed = new LCGRandom().getSeed();
 
         Board board1 = new Board(new LCGRandom(commonSeed)),
@@ -135,9 +155,9 @@ public class WelcomeView extends javax.swing.JFrame {
         DualGamePlay game = new DualGamePlay(innerGameplay, board1, board2);
 
         startTwoPlayersGame(game);
-    }//GEN-LAST:event_jButtonMultiSimpleActionPerformed
+    }
 
-    private void jButtonMultiClassicActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonMultiClassicActionPerformed
+    private void jButtonMultiClassicActionPerformed(ActionEvent evt) {
         long commonSeed = new LCGRandom().getSeed();
 
         Board board1 = new Board(new LCGRandom(commonSeed)),
@@ -147,9 +167,9 @@ public class WelcomeView extends javax.swing.JFrame {
         DualGamePlay game = new DualClassic(innerGameplay, board1, board2);
 
         startTwoPlayersGame(game);
-    }//GEN-LAST:event_jButtonMultiClassicActionPerformed
+    }
 
-    private void jButtonCoopActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonCoopActionPerformed
+    private void jButtonCoopActionPerformed(ActionEvent evt) {
         Board board1 = new Board(), board2 = new Board();
 
         GamePlayFactory innerGameplay = new NintendoGameBoyFactory();
@@ -158,7 +178,7 @@ public class WelcomeView extends javax.swing.JFrame {
         );
 
         startTwoPlayersGame(game);
-    }//GEN-LAST:event_jButtonCoopActionPerformed
+    }
 
     private void startTwoPlayersGame(DualGamePlay game)
     {
@@ -176,15 +196,7 @@ public class WelcomeView extends javax.swing.JFrame {
         gui.addControllerPlayer2(new LocalController(game2));
 
         gui.run();
+        this.setVisible(true);
 
     }
-
-    // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton jButtonCoop;
-    private javax.swing.JButton jButtonMultiClassic;
-    private javax.swing.JButton jButtonMultiSimple;
-    private javax.swing.JButton jButtonOptions;
-    private javax.swing.JButton jButtonSolo;
-    private javax.swing.JLabel jLabelTitle;
-    // End of variables declaration//GEN-END:variables
 }

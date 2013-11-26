@@ -10,7 +10,6 @@ import java.awt.Rectangle;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 import gameplay.GamePlay;
