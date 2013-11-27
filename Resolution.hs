@@ -2,6 +2,7 @@
 
 import Control.Applicative ((<$>), (<|>), (<*))
 import Data.Char (isSpace)
+import qualified Data.Set as S
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
@@ -24,7 +25,7 @@ instance Show AST where
     show (Or  expr1 expr2) = printf "(%s | %s)" (show expr1) (show expr2)
     show Empty             = "[]"
 
-runParser :: SourceName -> Text ->  Either ParseError AST
+runParser :: SourceName -> Text -> Either ParseError AST
 runParser filename txt =
     parse formula filename noSpaces
   where
@@ -71,6 +72,56 @@ runParser filename txt =
         l  <- lower -- Lettre minuscule
         ls <- many (alphaNum <|> char '_')
         return (Var (T.pack (l : ls)))
+
+simplify :: AST -> AST
+simplify p@(Val _) = p
+simplify p@(Var _) = p
+simplify (Not p) | Val True  <- p' = Val False
+                 | Val False <- p' = Val True
+                 | Not q     <- p' = q
+                 | otherwise       = Not p
+  where
+    p' = simplify p
+simplify (And p q) | Val True  <- p' = q'
+                   | Val False <- p' = Val False
+                   | Val True  <- q' = p'
+                   | Val False <- q' = Val False
+                   | otherwise       = And p' q'
+  where
+    p' = simplify p
+    q' = simplify q
+simplify (Or p q) | Val True  <- p' = Val True
+                  | Val False <- p' = q'
+                  | Val True  <- q' = Val True
+                  | Val False <- q' = p'
+                  | otherwise       = Or p' q'
+  where
+    p' = simplify p
+    q' = simplify q
+simplify Empty = Empty
+
+normalize :: AST -> [S.Set Ast]
+normalize (Val True)  = []
+-- normalize (Val False) = [S.fromList (Val False)]
+normalize Empty       = []
+normalize formula =
+  where
+    deMorgan (Not (And p q)) = Or  (deMorgan (Not p)) (deMorgan (Not q))
+    deMorgan (Not (Or  p q)) = And (deMorgan (Not p)) (deMorgan (Not q))
+    deMorgan (Not p)         = Not (deMorgan p)
+    deMorgan (And p q)       = And (deMorgan p)       (deMorgan q)
+    deMorgan (Or  p q)       = Or  (deMorgan p)       (deMorgan q)
+    deMorgan p               = p
+
+    simplifyNot (Not (Not p)) = simplifyNot p
+    simplifyNot (And p q)     = And (simplifyNot p) (simplifyNot q)
+    simplifyNot (Or  p q)     = Or  (simplifyNot p) (simplifyNot q)
+    simplifyNot p             = p
+
+    distrib (Or p (And q r)) = And (distrib (Or p q)) (distrib (Or p r))
+    distrib (Or (And p q) r) = And (distrib (Or p r)) (distrib (Or q r))
+    distrib (Or p q)         = Or 
+    distrib (And p q)        = And (distrib p)        (distrib q)
 
 main :: IO Int
 main = do
