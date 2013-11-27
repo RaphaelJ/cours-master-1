@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, PatternGuards #-}
 
 import Control.Applicative ((<$>), (<|>), (<*))
 import Data.Char (isSpace)
@@ -15,6 +15,10 @@ import Text.Parsec.Text (Parser)
 import Text.Printf (printf)
 
 data AST = Val Bool | Var Text | Not AST | And AST AST | Or AST AST | Empty
+
+data Litteral = Lit Text | Opp Text
+
+type Clause = S.Set Litteral
 
 instance Show AST where
     show (Val True)        = "$true"
@@ -100,32 +104,47 @@ simplify (Or p q) | Val True  <- p' = Val True
     q' = simplify q
 simplify Empty = Empty
 
-normalize :: AST -> [S.Set Ast]
-normalize (Val True)  = []
--- normalize (Val False) = [S.fromList (Val False)]
-normalize Empty       = []
-normalize formula =
+-- normalize :: AST -> [Clause]
+-- normalize (Val True)  = []
+-- -- normalize (Val False) = [S.fromList (Val False)]
+-- normalize Empty       = []
+normalize =
+    distribute . simplifyNot . deMorgan
   where
-    deMorgan (Not (And p q)) = Or  (deMorgan (Not p)) (deMorgan (Not q))
-    deMorgan (Not (Or  p q)) = And (deMorgan (Not p)) (deMorgan (Not q))
-    deMorgan (Not p)         = Not (deMorgan p)
-    deMorgan (And p q)       = And (deMorgan p)       (deMorgan q)
-    deMorgan (Or  p q)       = Or  (deMorgan p)       (deMorgan q)
-    deMorgan p               = p
+    deMorgan (Not p) | And r s <- p' = Or  (deMorgan (Not r)) (deMorgan (Not s))
+                     | Or  r s <- p' = And (deMorgan (Not r)) (deMorgan (Not s))
+                     | otherwise     = Not p'
+      where
+        p' = deMorgan p
+    deMorgan (And p q) = And (deMorgan p) (deMorgan q)
+    deMorgan (Or  p q) = Or  (deMorgan p) (deMorgan q)
+    deMorgan p         = p
 
     simplifyNot (Not (Not p)) = simplifyNot p
     simplifyNot (And p q)     = And (simplifyNot p) (simplifyNot q)
     simplifyNot (Or  p q)     = Or  (simplifyNot p) (simplifyNot q)
     simplifyNot p             = p
 
-    distrib (Or p (And q r)) = And (distrib (Or p q)) (distrib (Or p r))
-    distrib (Or (And p q) r) = And (distrib (Or p r)) (distrib (Or q r))
-    distrib (Or p q)         = Or 
-    distrib (And p q)        = And (distrib p)        (distrib q)
+    -- Applique une distributivité en commençant en profondeur pour faire
+    -- remonter les conjonctions. Applique les règles de simple et de double
+    -- distributivité.
+    distribute (Or p q)
+--         | And r s <- p'
+--         , And t u <- q' = And (And (distribute (Or r t)) (distribute (Or r u)))
+--                               (And (distribute (Or s t)) (distribute (Or s u)))
+        | And r s <- q' = And (distribute (Or p' r)) (distribute (Or p' s))
+        | And r s <- p' = And (distribute (Or r q')) (distribute (Or s q'))
+        | otherwise     = Or p' q'
+      where
+        p' = distribute p
+        q' = distribute q
+    distribute (And p q) = And (distribute p) (distribute q)
+    distribute (Not p)   = Not (distribute p)
+    distribute p         = p
 
 main :: IO Int
 main = do
     eAST <- runParser "stdin" <$> T.getContents
     case eAST of
         Left err  -> hPrint stderr err >> return 1
-        Right ast -> print ast         >> return 0
+        Right ast -> print (normalize ast) >> return 0
