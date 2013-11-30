@@ -16,7 +16,7 @@ import Text.Printf (printf)
 
 data AST = Val Bool | Var Text | Not AST | And AST AST | Or AST AST | Empty
 
-data Litteral = Lit Text | Opp Text
+data Litteral = Lit Text | OppLit Text deriving (Eq, Ord)
 
 type Clause = S.Set Litteral
 
@@ -28,6 +28,10 @@ instance Show AST where
     show (And expr1 expr2) = printf "(%s & %s)" (show expr1) (show expr2)
     show (Or  expr1 expr2) = printf "(%s | %s)" (show expr1) (show expr2)
     show Empty             = "[]"
+    
+instance Show Litteral where
+    show (Lit name)    = T.unpack name
+    show (OppLit name) = '~' : T.unpack name
 
 runParser :: SourceName -> Text -> Either ParseError AST
 runParser filename txt =
@@ -109,7 +113,7 @@ simplify Empty = Empty
 -- -- normalize (Val False) = [S.fromList (Val False)]
 -- normalize Empty       = []
 normalize =
-    distribute . simplifyNot . deMorgan
+    removeValids . clauses . distribute . simplifyNot . deMorgan
   where
     deMorgan (Not p) | And r s <- p' = Or  (deMorgan (Not r)) (deMorgan (Not s))
                      | Or  r s <- p' = And (deMorgan (Not r)) (deMorgan (Not s))
@@ -141,6 +145,37 @@ normalize =
     distribute (And p q) = And (distribute p) (distribute q)
     distribute (Not p)   = Not (distribute p)
     distribute p         = p
+
+    clauses =
+        goConj []
+      where
+        goConj acc (And p q) = goConj (goConj acc q) p
+        goConj acc p         = goDisj (S.empty) p : acc
+
+        goDisj clause (Or p q)          = let clause' = goDisj clause p
+                                          in goDisj clause' q
+        goDisj clause (Var name)        = S.insert (Lit name) clause
+        goDisj clause ~(Not (Var name)) = S.insert (OppLit name) clause
+
+    removeValid =
+        filter (not . isValid)
+      where
+        -- Vaut True si la clause c contient une paire complémentaire.
+        isValid c = any ((`S.member` c) . complement) (S.toList c)
+
+    removeInclusive =
+        go []
+      where
+        go acc []        = acc
+        go acc (c : cs)
+            | any (`includedIn` c) left || any (`isIncludedIn` c) cs = go left cs
+            | otherwise                                              = go (c : left) cs
+
+        -- Retourne True si la clause c2 comprends tous les littéraux de c1.
+        c1 `isIncludedIn` c2 = all (`S.member` c2) (S.toList c1)
+
+    complement (Lit name)    = OppLit name
+    complement (OppLit name) = Lit name
 
 main :: IO Int
 main = do
