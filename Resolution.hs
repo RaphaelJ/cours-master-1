@@ -20,6 +20,8 @@ data Litteral = Lit Text | OppLit Text deriving (Eq, Ord)
 
 type Clause = S.Set Litteral
 
+data Solution = Consistant | Inconsistant
+
 instance Show AST where
     show (Val True)        = "$true"
     show (Val False)       = "$false"
@@ -28,7 +30,7 @@ instance Show AST where
     show (And expr1 expr2) = printf "(%s & %s)" (show expr1) (show expr2)
     show (Or  expr1 expr2) = printf "(%s | %s)" (show expr1) (show expr2)
     show Empty             = "[]"
-    
+
 instance Show Litteral where
     show (Lit name)    = T.unpack name
     show (OppLit name) = '~' : T.unpack name
@@ -113,8 +115,10 @@ simplify Empty = Empty
 -- -- normalize (Val False) = [S.fromList (Val False)]
 -- normalize Empty       = []
 normalize =
-    removeValids . clauses . distribute . simplifyNot . deMorgan
+    removeInclusive . removeValid . clauses . distribute . simplifyNot . deMorgan
   where
+    -- Applique les règles de DeMorgan pour propager les négations vers les
+    -- feuilles de l'arbre.
     deMorgan (Not p) | And r s <- p' = Or  (deMorgan (Not r)) (deMorgan (Not s))
                      | Or  r s <- p' = And (deMorgan (Not r)) (deMorgan (Not s))
                      | otherwise     = Not p'
@@ -124,14 +128,14 @@ normalize =
     deMorgan (Or  p q) = Or  (deMorgan p) (deMorgan q)
     deMorgan p         = p
 
+    -- Supprime les doubles négations de l'arbre syntaxique.
     simplifyNot (Not (Not p)) = simplifyNot p
     simplifyNot (And p q)     = And (simplifyNot p) (simplifyNot q)
     simplifyNot (Or  p q)     = Or  (simplifyNot p) (simplifyNot q)
     simplifyNot p             = p
 
-    -- Applique une distributivité en commençant en profondeur pour faire
-    -- remonter les conjonctions. Applique les règles de simple et de double
-    -- distributivité.
+    -- Applique les règles de simple distributivité en commençant en profondeur
+    -- pour faire remonter les conjonctions.
     distribute (Or p q)
 --         | And r s <- p'
 --         , And t u <- q' = And (And (distribute (Or r t)) (distribute (Or r u)))
@@ -146,36 +150,71 @@ normalize =
     distribute (Not p)   = Not (distribute p)
     distribute p         = p
 
+    -- Extrait les clauses d'un arbre syntaxique en CNF à l'aide d'un parcours
+    -- en profondeur.
+    clauses :: AST -> [Clause]
     clauses =
         goConj []
       where
+        -- Ajoute un nouvel ensemble de littéraux pour chaque terme de chaque
+        -- conjonction.
         goConj acc (And p q) = goConj (goConj acc q) p
         goConj acc p         = goDisj (S.empty) p : acc
 
+        -- Rajoute tous les littéraux des sous-disjonctions à l'ensemble des
+        -- littéraux de la clause en cours de parcours.
         goDisj clause (Or p q)          = let clause' = goDisj clause p
                                           in goDisj clause' q
         goDisj clause (Var name)        = S.insert (Lit name) clause
         goDisj clause ~(Not (Var name)) = S.insert (OppLit name) clause
 
+    -- Supprime les clauses contenant au moins une paire complémentaire de
+    -- littéraux.
+    -- Complexité : O(n * m * log m) où n est le nombre de clauses et m le
+    -- nombre de littéraux par clause.
+    removeValid :: [Clause] -> [Clause]
     removeValid =
         filter (not . isValid)
       where
         -- Vaut True si la clause c contient une paire complémentaire.
+        -- Complexité : O(n * log n) où n est le nombre de littéraux de c.
         isValid c = any ((`S.member` c) . complement) (S.toList c)
 
+    -- Supprime les clauses dont il existe une seconde clause composée d'un
+    -- sous-ensemble de leurs littéraux.
+    -- Complexité : O(n² * m) où n est le nombre de clauses et m le nombre de
+    -- littéraux par clause.
+    removeInclusive :: [Clause] -> [Clause]
     removeInclusive =
         go []
       where
-        go acc []        = acc
-        go acc (c : cs)
-            | any (`includedIn` c) left || any (`isIncludedIn` c) cs = go left cs
-            | otherwise                                              = go (c : left) cs
+        go acc []       = acc
+        go acc (c : cs) |    any (`includedIn` c) acc
+                          || any (`includedIn` c) cs = go acc cs
+                        | otherwise                  = go (c : acc) cs
 
         -- Retourne True si la clause c2 comprends tous les littéraux de c1.
-        c1 `isIncludedIn` c2 = all (`S.member` c2) (S.toList c1)
+        -- Complexité : O(n) où n est le nombre de littéraux par clause.
+        -- L'algorithme de différence s'exécute en temps linéaire en parcourant
+        -- simultanément les deux arbres binaires.
+        c1 `includedIn` c2 = S.null (S.difference c1 c2)
+        -- Complexité : O(n * log n) où n est le nombre de littéraux par clause.
+        -- c1 `includedIn` c2 = all (`S.member` c2) (S.toList c1)
 
-    complement (Lit name)    = OppLit name
-    complement (OppLit name) = Lit name
+complement :: Litteral -> Litteral
+complement (Lit name)    = OppLit name
+complement (OppLit name) = Lit name
+
+resolve :: [Clause] -> ([Clause], Solution)
+resolve clauses =
+    let derivs = [ S.delete lit1 c1 `S.union` S.delete lit2 c2
+                  | c1 <- clauses, lit1 <- S.fromList c1, c2 <- clauses
+                  , let lit2 = complement lit1, lit2 `S.member` c2 ]
+        clauses' = derivs ++ clauses
+    in case derivs of
+            []                 -> (clauses', Inconsistant)
+            ds | any S.null ds -> (clauses', Consistant)
+               | otherwise     -> resolve clauses'
 
 main :: IO Int
 main = do
