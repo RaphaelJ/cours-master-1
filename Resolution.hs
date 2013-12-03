@@ -211,9 +211,10 @@ resolve clauses =
     closure :: S.Set Clause -> [Clause] -> Solution
     closure _   [] = Consistant -- Fermeture complète, impossible de dériver [].
     closure set derivs
-        | S.empty `elem` derivs = Inconsistant
+        | S.empty `S.member` set = Inconsistant
         | otherwise =
-            let derivs' = [ deriv
+            let derivs' = [
+                      deriv
                     | c1 <- derivs, lit1 <- S.toList c1
                     , isPureLit lit1
                     , c2 <- S.toList set
@@ -222,7 +223,8 @@ resolve clauses =
                     , lit2 `S.member` c2
                     , let deriv = S.delete lit1 c1 `S.union` S.delete lit2 c2
                     , not (isValid deriv)
-                    , deriv `S.notMember` set ]
+                    , deriv `S.notMember` set
+                    ]
                 set' = S.union set (S.fromList derivs')
             in closure set' derivs'
 
