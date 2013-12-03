@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings, PatternGuards #-}
 
 import Control.Applicative ((<$>), (<|>), (<*))
+import Control.Monad (forever)
 import Data.Char (isSpace)
 import qualified Data.Set as S
 import Data.Text (Text)
@@ -20,7 +21,10 @@ data Litteral = Lit Text | OppLit Text deriving (Eq, Ord)
 
 type Clause = S.Set Litteral
 
-data Solution = Consistant | Inconsistant
+type CNF = S.Set Clause
+
+data Solution = Consistant | Inconsistant deriving (Show, Eq, Ord)
+
 
 instance Show AST where
     show (Val True)        = "$true"
@@ -54,10 +58,10 @@ runParser filename txt =
 
         left <- orExpr
 
-        (    (string "=>"        >> ((left .=>.)  <$> expr))
-         <|> (try (string "<=")  >> ((left .<=.)  <$> expr))
-         <|> (try (string "<~>") >> ((left .<~>.) <$> expr))
-         <|> (string "<=>"       >> ((left .<=>.) <$> expr))
+        (    (try (string "<~>") >> ((left .<~>.) <$> expr))
+         <|> (try (string "<=>") >> ((left .<=>.) <$> expr))
+         <|> (string "<="        >> ((left .<=.)  <$> expr))
+         <|> (string "=>"        >> ((left .=>.)  <$> expr))
          <|> return left)
 
     orExpr = do
@@ -74,8 +78,8 @@ runParser filename txt =
 
     atom =     between (char '(') (char ')') expr
            <|> (char '~' >> (Not <$> atom))
-           <|> (string "$true"  >> return (Val True))
-           <|> (string "$false" >> return (Val False))
+           <|> (try (string "$true") >> return (Val True))
+           <|> (     string "$false" >> return (Val False))
            <|> variable
 
     variable = do
@@ -84,8 +88,6 @@ runParser filename txt =
         return (Var (T.pack (l : ls)))
 
 simplify :: AST -> AST
-simplify p@(Val _) = p
-simplify p@(Var _) = p
 simplify (Not p) | Val True  <- p' = Val False
                  | Val False <- p' = Val True
                  | Not q     <- p' = q
@@ -108,14 +110,19 @@ simplify (Or p q) | Val True  <- p' = Val True
   where
     p' = simplify p
     q' = simplify q
-simplify Empty = Empty
+simplify p = p
 
--- normalize :: AST -> [Clause]
--- normalize (Val True)  = []
--- -- normalize (Val False) = [S.fromList (Val False)]
--- normalize Empty       = []
-normalize =
-    removeInclusive . removeValid . clauses . distribute . simplifyNot . deMorgan
+normalize :: AST -> [Clause]
+normalize Empty       = []
+normalize (Val True)  = []
+normalize (Val False) = [S.empty]
+normalize formula     =
+      removeInclusive
+    $ removeValid
+    $ clauses
+    $ distribute
+    $ doubleNot
+    $ deMorgan formula
   where
     -- Applique les règles de DeMorgan pour propager les négations vers les
     -- feuilles de l'arbre.
@@ -129,10 +136,10 @@ normalize =
     deMorgan p         = p
 
     -- Supprime les doubles négations de l'arbre syntaxique.
-    simplifyNot (Not (Not p)) = simplifyNot p
-    simplifyNot (And p q)     = And (simplifyNot p) (simplifyNot q)
-    simplifyNot (Or  p q)     = Or  (simplifyNot p) (simplifyNot q)
-    simplifyNot p             = p
+    doubleNot (Not (Not p)) = doubleNot p
+    doubleNot (And p q)     = And (doubleNot p) (doubleNot q)
+    doubleNot (Or  p q)     = Or  (doubleNot p) (doubleNot q)
+    doubleNot p             = p
 
     -- Applique les règles de simple distributivité en commençant en profondeur
     -- pour faire remonter les conjonctions.
@@ -173,15 +180,11 @@ normalize =
     -- Complexité : O(n * m * log m) où n est le nombre de clauses et m le
     -- nombre de littéraux par clause.
     removeValid :: [Clause] -> [Clause]
-    removeValid =
-        filter (not . isValid)
-      where
-        -- Vaut True si la clause c contient une paire complémentaire.
-        -- Complexité : O(n * log n) où n est le nombre de littéraux de c.
-        isValid c = any ((`S.member` c) . complement) (S.toList c)
+    removeValid = filter (not . isValid)
 
     -- Supprime les clauses dont il existe une seconde clause composée d'un
-    -- sous-ensemble de leurs littéraux.
+    -- sous-ensemble de leurs littéraux. Supprime également les exemplaires
+    -- multiples d'une même clause.
     -- Complexité : O(n² * m) où n est le nombre de clauses et m le nombre de
     -- littéraux par clause.
     removeInclusive :: [Clause] -> [Clause]
@@ -196,29 +199,56 @@ normalize =
         -- Retourne True si la clause c2 comprends tous les littéraux de c1.
         -- Complexité : O(n) où n est le nombre de littéraux par clause.
         -- L'algorithme de différence s'exécute en temps linéaire en parcourant
-        -- simultanément les deux arbres binaires.
+        -- simultanément les deux arbres binaires (algorithme similaire à la
+        -- fusion du merge-sort).
         c1 `includedIn` c2 = S.null (S.difference c1 c2)
-        -- Complexité : O(n * log n) où n est le nombre de littéraux par clause.
-        -- c1 `includedIn` c2 = all (`S.member` c2) (S.toList c1)
 
+resolve :: [Clause] -> Solution
+resolve clauses =
+    let initialSet = S.fromList clauses
+    in closure initialSet clauses
+  where
+    closure :: S.Set Clause -> [Clause] -> Solution
+    closure _   [] = Consistant -- Fermeture complète, impossible de dériver [].
+    closure set derivs
+        | S.empty `elem` derivs = Inconsistant
+        | otherwise =
+            let derivs' = [ deriv
+                    | c1 <- derivs, lit1 <- S.toList c1
+                    , isPureLit lit1
+                    , c2 <- S.toList set
+                    , let Lit lit1Name = lit1
+                    , let lit2 = OppLit lit1Name
+                    , lit2 `S.member` c2
+                    , let deriv = S.delete lit1 c1 `S.union` S.delete lit2 c2
+                    , not (isValid deriv)
+                    , deriv `S.notMember` set ]
+                set' = S.union set (S.fromList derivs')
+            in closure set' derivs'
+
+    isPureLit (Lit _)    = True
+    isPureLit (OppLit _) = False
+
+-- Retourne True si la clause c contient une paire complémentaire.
+-- Complexité : O(n * log n) où n est le nombre de littéraux de c.
+isValid :: Clause -> Bool
+isValid c = any ((`S.member` c) . complement) (S.toList c)
+
+-- Retourne le complément d'un littéral.
 complement :: Litteral -> Litteral
 complement (Lit name)    = OppLit name
 complement (OppLit name) = Lit name
 
-resolve :: [Clause] -> ([Clause], Solution)
-resolve clauses =
-    let derivs = [ S.delete lit1 c1 `S.union` S.delete lit2 c2
-                  | c1 <- clauses, lit1 <- S.fromList c1, c2 <- clauses
-                  , let lit2 = complement lit1, lit2 `S.member` c2 ]
-        clauses' = derivs ++ clauses
-    in case derivs of
-            []                 -> (clauses', Inconsistant)
-            ds | any S.null ds -> (clauses', Consistant)
-               | otherwise     -> resolve clauses'
-
 main :: IO Int
-main = do
-    eAST <- runParser "stdin" <$> T.getContents
+main = forever $ do
+    eAST <- runParser "stdin" <$> T.getLine
     case eAST of
         Left err  -> hPrint stderr err >> return 1
-        Right ast -> print (normalize ast) >> return 0
+        Right ast -> do
+            let simplified = simplify ast
+            let normalized = normalize simplified
+            printf "Formule parsée:\n\t%s\n"     (show ast)
+            printf "Formule simplifiée:\n\t%s\n" (show simplified)
+            printf "Clauses:\n\t%s\n"            (show normalized)
+            printf "Solution:\n\t%s\n"           (show (resolve normalized))
+            return 0
