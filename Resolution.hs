@@ -91,7 +91,7 @@ simplify :: AST -> AST
 simplify (Not p) | Val True  <- p' = Val False
                  | Val False <- p' = Val True
                  | Not q     <- p' = q
-                 | otherwise       = Not p
+                 | otherwise       = Not p'
   where
     p' = simplify p
 simplify (And p q) | Val True  <- p' = q'
@@ -216,7 +216,7 @@ resolve clauses =
             let derivs' = [
                       deriv
                     | c1 <- derivs, lit1 <- S.toList c1
-                    , isPureLit lit1
+                    , isPureLit lit1 -- Evite les dérivées réciproques.
                     , c2 <- S.toList set
                     , let Lit lit1Name = lit1
                     , let lit2 = OppLit lit1Name
