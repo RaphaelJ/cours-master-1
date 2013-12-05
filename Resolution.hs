@@ -1,54 +1,106 @@
 {-# LANGUAGE OverloadedStrings, PatternGuards #-}
 
 import Control.Applicative ((<$>), (<|>), (<*))
-import Control.Monad (forever)
+import Control.Monad (forever, forM_)
 import Data.Char (isSpace)
+import Data.List (intercalate)
+import qualified Data.Map as M
 import qualified Data.Set as S
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import System.IO (hPrint, stderr)
 import Text.Parsec (
-      ParseError, SourceName, between, eof, many, parse, string, try
+      ParseError, SourceName, between, eof, many, optionMaybe, parse, string
+    , try
     )
 import Text.Parsec.Char (alphaNum, char, lower)
 import Text.Parsec.Text (Parser)
 import Text.Printf (printf)
 
-data AST = Val Bool | Var Text | Not AST | And AST AST | Or AST AST | Empty
+-- Types -----------------------------------------------------------------------
 
-data Litteral = Lit Text | OppLit Text deriving (Eq, Ord)
+-- Contient l'arbre syntaxique d'une formule non vide.
+-- Les opérateurs =>, <=,<=> et <~> sont convertis en disjonctions et
+-- conjonctions au parsing et n'existent pas dans l'arbre syntaxique.
+data Formula = Val Bool
+             | Var Text
+             | Not Formula
+             | And Formula Formula
+             | Or  Formula Formula
 
-type Clause = S.Set Litteral
+-- Permet d'afficher une formule.
+-- Évite les parenthèses inutiles. Par exemple, (a | b) | c devient a | b | c.
+instance Show Formula where
+    show (Val True)  = "$true"
+    show (Val False) = "$false"
 
-type CNF = S.Set Clause
+    show (Var name)  = T.unpack name
 
-data Solution = Consistant | Inconsistant deriving (Show, Eq, Ord)
+    show (Not expr@(And _ _)) = printf "~(%s)" (show expr)
+    show (Not expr@(Or  _ _)) = printf "~(%s)" (show expr)
+    show (Not expr)           = '~' : show expr
 
+    show (And expr1 expr2)    =
+        printf "%s & %s" (inner expr1) (inner expr2)
+      where
+        inner expr@(Or  _ _) = printf "(%s)" (show expr)
+        inner expr           = show expr
 
-instance Show AST where
-    show (Val True)        = "$true"
-    show (Val False)       = "$false"
-    show (Var name)        = T.unpack name
-    show (Not expr)        = '~' : show expr
-    show (And expr1 expr2) = printf "(%s & %s)" (show expr1) (show expr2)
-    show (Or  expr1 expr2) = printf "(%s | %s)" (show expr1) (show expr2)
-    show Empty             = "[]"
+    show (Or  expr1 expr2)    =
+        printf "%s | %s" (inner expr1) (inner expr2)
+      where
+        inner expr@(And _ _) = printf "(%s)" (show expr)
+        inner expr           = show expr
+
+-- Représentation des littéraux dans les clauses des CNFs.
+data Litteral = Lit Text | OppLit Text
+    deriving (Eq, Ord)
 
 instance Show Litteral where
-    show (Lit name)    = T.unpack name
+    show (Lit name)    =       T.unpack name
     show (OppLit name) = '~' : T.unpack name
 
-runParser :: SourceName -> Text -> Either ParseError AST
+-- Retourne le complément d'un littéral.
+complement :: Litteral -> Litteral
+complement (Lit name)    = OppLit name
+complement (OppLit name) = Lit name
+
+-- Chaque clause est un ensemble (Set) de littéraux. Set est une collection
+-- d'éléments uniques stockées dans un arbre binaire.
+-- Cette structure de données permet de rapidement rechercher l'existence d'un
+-- littéral dans une clause, d'effectuer les opérations d'union en temps
+-- linéaire (par rapport au nombre de littéraux) et les opérations de
+-- suppression en temps logarithmique (utiles pour l'application de la méthode
+-- de résolution).
+type Clause = S.Set Litteral
+
+emptyClause :: Clause
+emptyClause = S.empty
+
+-- Contient les deux clauses dérivées à partir desquelles une dérivée a été
+-- créée s'il ne s'agit pas d'une clause de la CNF, de telle manière à former
+-- un arbre.
+data Derivative = InitialClause Clause
+                | Derivative    Clause (Derivative, Derivative)
+    deriving (Show, Eq, Ord)
+
+-- Parseur ---------------------------------------------------------------------
+
+-- Tente de parser le fichier nommé 'filename' (utilisé dans les messages
+-- d'erreur) ayant 'txt' comme contenu.
+-- Retourne soit une formule, soit une erreur de parsing.
+-- Pour une formule vide, retourne Nothing.
+runParser :: SourceName -> Text -> Either ParseError (Maybe Formula)
 runParser filename txt =
     parse formula filename noSpaces
   where
     noSpaces = T.filter (not . isSpace) txt -- Préprocesse les espaces.
 
-    formula, expr, orExpr, andExpr, atom, variable :: Parser AST
+    formula :: Parser (Maybe Formula) -- Retourne une formule ou Nothing pour
+    formula = optionMaybe expr <* eof -- une formule vide.
 
-    formula = (expr <* eof) <|> (eof >> return Empty)
-
+    expr, orExpr, andExpr, atom, variable :: Parser Formula
     expr = do
         -- Fonctions de transformation des opérateurs secondaires en & et |.
         let p .=>.  q = Or (Not p) q
@@ -87,7 +139,15 @@ runParser filename txt =
         ls <- many (alphaNum <|> char '_')
         return (Var (T.pack (l : ls)))
 
-simplify :: AST -> AST
+-- Résolution ------------------------------------------------------------------
+
+-- Simplifie une formule en faisant remonter ses valeurs 'true'/'false' à la
+-- racine de l'arbre.
+-- Il est aisé de prouver par induction que cet algorithme génère un arbre où
+-- seule la racine peut contenir une valeur 'true' ou 'false', celles se
+-- trouvant plus bas dans l'arbre étant systématiquement et récursivement soit
+-- simplifiées, soit remontées au niveau supérieur.
+simplify :: Formula -> Formula
 simplify (Not p) | Val True  <- p' = Val False
                  | Val False <- p' = Val True
                  | Not q     <- p' = q
@@ -112,10 +172,12 @@ simplify (Or p q) | Val True  <- p' = Val True
     q' = simplify q
 simplify p = p
 
-normalize :: AST -> [Clause]
-normalize Empty       = []
+-- Retourne la formule en CNF.
+-- La formule en entrée doit avoir été simplifiée (elle ne doit plus contenir de
+-- valeur true/false en dehors de sa racine).
+normalize :: Formula -> [Clause]
 normalize (Val True)  = []
-normalize (Val False) = [S.empty]
+normalize (Val False) = [emptyClause]
 normalize formula     =
       removeInclusive
     $ removeValid
@@ -125,7 +187,7 @@ normalize formula     =
     $ deMorgan formula
   where
     -- Applique les règles de DeMorgan pour propager les négations vers les
-    -- feuilles de l'arbre.
+    -- feuilles de l'arbre syntaxique.
     deMorgan (Not p) | And r s <- p' = Or  (deMorgan (Not r)) (deMorgan (Not s))
                      | Or  r s <- p' = And (deMorgan (Not r)) (deMorgan (Not s))
                      | otherwise     = Not p'
@@ -159,7 +221,7 @@ normalize formula     =
 
     -- Extrait les clauses d'un arbre syntaxique en CNF à l'aide d'un parcours
     -- en profondeur.
-    clauses :: AST -> [Clause]
+    clauses :: Formula -> [Clause]
     clauses =
         goConj []
       where
@@ -186,71 +248,105 @@ normalize formula     =
     -- sous-ensemble de leurs littéraux. Supprime également les exemplaires
     -- multiples d'une même clause.
     -- Complexité : O(n² * m) où n est le nombre de clauses et m le nombre de
-    -- littéraux par clause.
+    -- littéraux par clause. L'algorithme de détection des sous-ensembles
+    -- s'exécute en temps linéaire en parcourant simultanément les deux arbres
+    -- binaires (algorithme similaire à la fusion du merge-sort).
     removeInclusive :: [Clause] -> [Clause]
     removeInclusive =
         go []
       where
         go acc []       = acc
-        go acc (c : cs) |    any (`includedIn` c) acc
-                          || any (`includedIn` c) cs = go acc cs
-                        | otherwise                  = go (c : acc) cs
+        go acc (c : cs) |    any (`S.isSubsetOf` c) acc
+                          || any (`S.isSubsetOf` c) cs  = go acc cs
+                        | otherwise                     = go (c : acc) cs
 
-        -- Retourne True si la clause c2 comprends tous les littéraux de c1.
-        -- Complexité : O(n) où n est le nombre de littéraux par clause.
-        -- L'algorithme de différence s'exécute en temps linéaire en parcourant
-        -- simultanément les deux arbres binaires (algorithme similaire à la
-        -- fusion du merge-sort).
-        c1 `includedIn` c2 = S.null (S.difference c1 c2)
-
-resolve :: [Clause] -> Solution
-resolve clauses =
-    let initialSet = S.fromList clauses
-    in closure initialSet clauses
+-- Applique la méthode de résolution pour trouver une réfutation.
+-- Retourne Nothing si aucune réfutation n'a pu être trouvée, retourne la
+-- réfutation utilisée pour dériver [] sinon.
+resolve :: [Clause] -> Maybe Derivative
+resolve cnf =
+    let initMap = M.fromList [ (c, InitialClause c) | c <- cnf ]
+    in closure initMap initMap
   where
-    closure :: S.Set Clause -> [Clause] -> Solution
-    closure _   [] = Consistant -- Fermeture complète, impossible de dériver [].
-    closure set derivs
-        | S.empty `S.member` set = Inconsistant
+    -- Etant donné les clauses déjà dérivées et les clauses venant d'être
+    -- dérivées à l'étape précédente, retourne éventuellement l'arbre de
+    -- dérivation de la clause vide (derivs est un sous-enseble de clauses).
+    -- Les deux ensembles de clauses sont sous la forme d'un mapping clause ->
+    -- dérivée pour pouvoir rechercher rapidement si une clause existe (deux
+    -- clauses identiques pourraient exister sous la forme de deux dérivées
+    -- différentes).
+    closure :: M.Map Clause Derivative -> M.Map Clause Derivative
+            -> Maybe Derivative
+    closure clauses derivs
+        | refut@(Just _) <- M.lookup emptyClause derivs =
+            -- La clause vide a été trouvée dans les dernières dérivées.
+            refut
+        | M.null (derivs) =
+            -- Aucune dérivée à l'étape précédente, impossible de dériver [].
+            Nothing
         | otherwise =
-            let derivs' = [
-                      deriv
-                    | c1 <- derivs, lit1 <- S.toList c1
-                    , isPureLit lit1 -- Evite les dérivées réciproques.
-                    , c2 <- S.toList set
-                    , let Lit lit1Name = lit1
-                    , let lit2 = OppLit lit1Name
-                    , lit2 `S.member` c2
-                    , let deriv = S.delete lit1 c1 `S.union` S.delete lit2 c2
-                    , not (isValid deriv)
-                    , deriv `S.notMember` set
-                    ]
-                set' = S.union set (S.fromList derivs')
-            in closure set' derivs'
+            -- Tente une étape supplémentaire de fermeture en dérivant de
+            -- nouvelles clauses des dernières dérivées trouvées.
+            closure clauses' derivs'
+      where
+        -- Tente de créer de nouvelles dérivées en combinant les dérivées vanant
+        -- d'être trouvées avec toutes les clauses trouvées au cours de la
+        -- fermeture.
+        derivs' = M.fromList [
+              (c', Derivative c' (d1, d2))
+            | (c1, d1) <- M.toList derivs
+            , (c2, d2) <- M.toList clauses
+              -- Évite les dérivées réciproques en appliquant la règle de
+              -- dérivation que sur lit1 = p et lit2 = ~p :
+            , lit1@(Lit lit1Name) <- S.toList c1
+            , let lit2 = OppLit lit1Name
+            , lit2 `S.member` c2
+              -- Applique la règle de distributivité sur les clauses c1 & c2 :
+            , let c' = S.delete lit1 c1 `S.union` S.delete lit2 c2
+              -- Ignore les clauses déjà dérivées :
+            , c' `M.notMember` clauses
+              -- Ignore les clauses valides comme celles-ci ne sauraient pas
+              -- dériver la clause vide :
+            , not (isValid c')
+            ]
 
-    isPureLit (Lit _)    = True
-    isPureLit (OppLit _) = False
+        -- L'opération d'union des deux Maps s'exécute en temps linéaire.
+        clauses' = M.union clauses derivs'
 
 -- Retourne True si la clause c contient une paire complémentaire.
 -- Complexité : O(n * log n) où n est le nombre de littéraux de c.
 isValid :: Clause -> Bool
 isValid c = any ((`S.member` c) . complement) (S.toList c)
 
--- Retourne le complément d'un littéral.
-complement :: Litteral -> Litteral
-complement (Lit name)    = OppLit name
-complement (OppLit name) = Lit name
-
 main :: IO Int
 main = forever $ do
-    eAST <- runParser "stdin" <$> T.getLine
-    case eAST of
-        Left err  -> hPrint stderr err >> return 1
-        Right ast -> do
-            let simplified = simplify ast
-            let normalized = normalize simplified
-            printf "Formule parsée:\n\t%s\n"     (show ast)
-            printf "Formule simplifiée:\n\t%s\n" (show simplified)
-            printf "Clauses:\n\t%s\n"            (show normalized)
-            printf "Solution:\n\t%s\n"           (show (resolve normalized))
-            return 0
+    eFormula <- runParser "stdin" <$> T.getLine
+    case eFormula of
+        Left err  -> hPrint stderr err
+        Right formula -> do
+            putStr "Formule parsée:\n\t"
+            case formula of
+                Just ast -> do
+                    print ast
+
+                    let simplified = simplify ast
+                    let clauses    = normalize simplified
+
+                    putStr "Formule simplifiée:\n\t"
+                    print simplified
+
+                    putStrLn "Clauses:"
+                    forM_ clauses $ \clause -> do
+                        putStr "\t"
+                        putStrLn (intercalate " | " (map show (S.toList clause)))
+
+                    putStr "Conclusion:\n\t"
+                    case resolve clauses of
+                        Just _  -> putStrLn "Formule inconsistante"
+                        Nothing -> putStrLn "Formule consistante"
+
+                Nothing  -> do
+                    putStrLn "Formule vide"
+
+                    putStr "Conclusion:\n\t"
+                    putStrLn "Formule consistante"
