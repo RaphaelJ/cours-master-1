@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings, PatternGuards #-}
 
-import Control.Applicative ((<$>), (<|>), (<*))
-import Control.Monad (forever, forM_)
+import Control.Applicative ((<$>), (<|>))
+import Control.Monad (forM_)
 import Data.Char (isSpace)
 import Data.List (intercalate)
 import qualified Data.Map as M
@@ -9,29 +9,41 @@ import qualified Data.Set as S
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
-import System.IO (hPrint, stderr)
+import System.Environment (getArgs)
+import System.IO (
+      Handle, IOMode (WriteMode), hClose, hPrint, hPutStr, hPutStrLn, openFile
+    , stderr
+    )
 import Text.Parsec (
-      ParseError, SourceName, between, eof, many, optionMaybe, parse, string
-    , try
+      ParseError, SourceName, between, eof, many, parse, string, try
     )
 import Text.Parsec.Char (alphaNum, char, lower)
 import Text.Parsec.Text (Parser)
-import Text.Printf (printf)
+import Text.Printf (printf, hPrintf)
 
 -- Types -----------------------------------------------------------------------
 
+-- Une formule est soit une formule vide, soit un arbre d'expression (Expr).
+data Formula = EmptyFormula
+             | Formula      Expr
+
+instance Show Formula where
+    show (Formula expr) = show expr
+    show EmptyFormula   = "Formule vide"
+
 -- Contient l'arbre syntaxique d'une formule non vide.
 -- Les opérateurs =>, <=,<=> et <~> sont convertis en disjonctions et
--- conjonctions au parsing et n'existent pas dans l'arbre syntaxique.
-data Formula = Val Bool
-             | Var Text
-             | Not Formula
-             | And Formula Formula
-             | Or  Formula Formula
+-- conjonctions au parsing et n'existent donc pas dans l'arbre syntaxique.
+data Expr = Val Bool
+          | Var Text
+          | Not Expr
+          | And Expr Expr
+          | Or  Expr Expr
 
--- Permet d'afficher une formule.
--- Évite les parenthèses inutiles. Par exemple, (a | b) | c devient a | b | c.
-instance Show Formula where
+-- Permet d'afficher une formule non vide.
+-- Évite les parenthèses inutiles. Par exemple, "(a | b) | c" devient
+-- "a | b | c".
+instance Show Expr where
     show (Val True)  = "$true"
     show (Val False) = "$false"
 
@@ -73,34 +85,46 @@ complement (OppLit name) = Lit name
 -- linéaire (par rapport au nombre de littéraux) et les opérations de
 -- suppression en temps logarithmique (utiles pour l'application de la méthode
 -- de résolution).
-type Clause = S.Set Litteral
+type Clause = S.Set Litteral -- 'type' définit un type "alias", équivalent à
+                             -- 'typedef' en C.
 
 emptyClause :: Clause
 emptyClause = S.empty
 
+-- Affiche une clause en séparant les littéraux par le caractère "|".
+showClause :: Clause -> String
+showClause c | S.null c  = "[]"
+             | otherwise = intercalate " | " (map show (S.toList c))
+
 -- Contient les deux clauses dérivées à partir desquelles une dérivée a été
 -- créée s'il ne s'agit pas d'une clause de la CNF, de telle manière à former
--- un arbre.
+-- un arbre permettant de reconstituer la réfutation.
 data Derivative = InitialClause Clause
                 | Derivative    Clause (Derivative, Derivative)
-    deriving (Show, Eq, Ord)
+    deriving (Eq, Ord)
 
 -- Parseur ---------------------------------------------------------------------
 
--- Tente de parser le fichier nommé 'filename' (utilisé dans les messages
+-- Tente de parseur le fichier nommé 'filename' (utilisé dans les messages
 -- d'erreur) ayant 'txt' comme contenu.
 -- Retourne soit une formule, soit une erreur de parsing.
--- Pour une formule vide, retourne Nothing.
-runParser :: SourceName -> Text -> Either ParseError (Maybe Formula)
+runParser :: SourceName -> Text -> Either ParseError Formula
 runParser filename txt =
     parse formula filename noSpaces
   where
-    noSpaces = T.filter (not . isSpace) txt -- Préprocesse les espaces.
+    -- Supprime les espaces avant de parser.
+    noSpaces = T.filter (not . isSpace) txt
 
-    formula :: Parser (Maybe Formula) -- Retourne une formule ou Nothing pour
-    formula = optionMaybe expr <* eof -- une formule vide.
+    formula :: Parser Formula
+    formula = do
+        formul <- (    (Formula <$> expr)
+                   <|> return EmptyFormula)
+        eof
+        return formul
 
-    expr, orExpr, andExpr, atom, variable :: Parser Formula
+    -- Implémente la priorité des opérateurs avec une descente récursive.
+
+    expr, orExpr, andExpr, atom, variable :: Parser Expr
     expr = do
         -- Fonctions de transformation des opérateurs secondaires en & et |.
         let p .=>.  q = Or (Not p) q
@@ -148,37 +172,41 @@ runParser filename txt =
 -- trouvant plus bas dans l'arbre étant systématiquement et récursivement soit
 -- simplifiées, soit remontées au niveau supérieur.
 simplify :: Formula -> Formula
-simplify (Not p) | Val True  <- p' = Val False
-                 | Val False <- p' = Val True
-                 | Not q     <- p' = q
-                 | otherwise       = Not p'
-  where
-    p' = simplify p
-simplify (And p q) | Val True  <- p' = q'
-                   | Val False <- p' = Val False
-                   | Val True  <- q' = p'
-                   | Val False <- q' = Val False
-                   | otherwise       = And p' q'
-  where
-    p' = simplify p
-    q' = simplify q
-simplify (Or p q) | Val True  <- p' = Val True
-                  | Val False <- p' = q'
-                  | Val True  <- q' = Val True
-                  | Val False <- q' = p'
-                  | otherwise       = Or p' q'
-  where
-    p' = simplify p
-    q' = simplify q
-simplify p = p
+simplify EmptyFormula   = EmptyFormula
+simplify (Formula expr) = Formula (simplifyExpr expr)
+  where 
+    simplifyExpr (Not p) | Val True  <- p' = Val False
+                         | Val False <- p' = Val True
+                         | Not q     <- p' = q
+                         | otherwise       = Not p'
+      where
+        p' = simplifyExpr p
+    simplifyExpr (And p q) | Val True  <- p' = q'
+                           | Val False <- p' = Val False
+                           | Val True  <- q' = p'
+                           | Val False <- q' = Val False
+                           | otherwise       = And p' q'
+      where
+        p' = simplifyExpr p
+        q' = simplifyExpr q
+    simplifyExpr (Or p q) | Val True  <- p' = Val True
+                          | Val False <- p' = q'
+                          | Val True  <- q' = Val True
+                          | Val False <- q' = p'
+                          | otherwise       = Or p' q'
+      where
+        p' = simplifyExpr p
+        q' = simplifyExpr q
+    simplifyExpr p = p
 
 -- Retourne la formule en CNF.
 -- La formule en entrée doit avoir été simplifiée (elle ne doit plus contenir de
 -- valeur true/false en dehors de sa racine).
 normalize :: Formula -> [Clause]
-normalize (Val True)  = []
-normalize (Val False) = [emptyClause]
-normalize formula     =
+normalize EmptyFormula          = []
+normalize (Formula (Val True))  = []
+normalize (Formula (Val False)) = [emptyClause]
+normalize (Formula formula)     =
       removeInclusive
     $ removeValid
     $ clauses
@@ -186,7 +214,7 @@ normalize formula     =
     $ doubleNot
     $ deMorgan formula
   where
-    -- Applique les règles de DeMorgan pour propager les négations vers les
+    -- Applique les règles de De Morgan pour propager les négations vers les
     -- feuilles de l'arbre syntaxique.
     deMorgan (Not p) | And r s <- p' = Or  (deMorgan (Not r)) (deMorgan (Not s))
                      | Or  r s <- p' = And (deMorgan (Not r)) (deMorgan (Not s))
@@ -203,12 +231,15 @@ normalize formula     =
     doubleNot (Or  p q)     = Or  (doubleNot p) (doubleNot q)
     doubleNot p             = p
 
-    -- Applique les règles de simple distributivité en commençant en profondeur
-    -- pour faire remonter les conjonctions.
+    -- Applique les règles de distributivité en commençant en profondeur pour
+    -- faire remonter les conjonctions.
+    -- La première règle concerne la double distributivité. Cette dernière est
+    -- facultative (elle peut être dérivée des deux autres règles) mais elle
+    -- rend l'algorithme plus rapide en supprimant quelques redondances).
     distribute (Or p q)
---         | And r s <- p'
---         , And t u <- q' = And (And (distribute (Or r t)) (distribute (Or r u)))
---                               (And (distribute (Or s t)) (distribute (Or s u)))
+        | And r s <- p'
+        , And t u <- q' = And (And (distribute (Or r t)) (distribute (Or r u)))
+                              (And (distribute (Or s t)) (distribute (Or s u)))
         | And r s <- q' = And (distribute (Or p' r)) (distribute (Or p' s))
         | And r s <- p' = And (distribute (Or r q')) (distribute (Or s q'))
         | otherwise     = Or p' q'
@@ -221,7 +252,7 @@ normalize formula     =
 
     -- Extrait les clauses d'un arbre syntaxique en CNF à l'aide d'un parcours
     -- en profondeur.
-    clauses :: Formula -> [Clause]
+    clauses :: Expr -> [Clause]
     clauses =
         goConj []
       where
@@ -268,13 +299,13 @@ resolve cnf =
     let initMap = M.fromList [ (c, InitialClause c) | c <- cnf ]
     in closure initMap initMap
   where
-    -- Etant donné les clauses déjà dérivées et les clauses venant d'être
+    -- Étant donné les clauses déjà dérivées et les clauses venant d'être
     -- dérivées à l'étape précédente, retourne éventuellement l'arbre de
-    -- dérivation de la clause vide (derivs est un sous-enseble de clauses).
+    -- dérivation de la clause vide (derivs est un sous-ensemble de clauses).
     -- Les deux ensembles de clauses sont sous la forme d'un mapping clause ->
     -- dérivée pour pouvoir rechercher rapidement si une clause existe (deux
     -- clauses identiques pourraient exister sous la forme de deux dérivées
-    -- différentes).
+    -- différentes et on ne peut donc pas utiliser Set).
     closure :: M.Map Clause Derivative -> M.Map Clause Derivative
             -> Maybe Derivative
     closure clauses derivs
@@ -289,7 +320,7 @@ resolve cnf =
             -- nouvelles clauses des dernières dérivées trouvées.
             closure clauses' derivs'
       where
-        -- Tente de créer de nouvelles dérivées en combinant les dérivées vanant
+        -- Tente de créer de nouvelles dérivées en combinant les dérivées venant
         -- d'être trouvées avec toutes les clauses trouvées au cours de la
         -- fermeture.
         derivs' = M.fromList [
@@ -318,35 +349,105 @@ resolve cnf =
 isValid :: Clause -> Bool
 isValid c = any ((`S.member` c) . complement) (S.toList c)
 
-main :: IO Int
-main = forever $ do
-    eFormula <- runParser "stdin" <$> T.getLine
-    case eFormula of
-        Left err  -> hPrint stderr err
-        Right formula -> do
-            putStr "Formule parsée:\n\t"
-            case formula of
-                Just ast -> do
-                    print ast
+-- I/O -------------------------------------------------------------------------
 
-                    let simplified = simplify ast
-                    let clauses    = normalize simplified
+main :: IO ()
+main = do
+    args <- getArgs
 
-                    putStr "Formule simplifiée:\n\t"
-                    print simplified
+    case args of
+        [input, output] -> withDebug    input output
+        [input]         -> withoutDebug input
+        _               -> usage
+  where
+    -- Résous la formule du fichier 'input'. Affiche true si la formule est
+    -- consistante, false sinon. Écrit les étapes de la résolution dans le
+    -- fichier 'output'.
+    withDebug input output =
+        parseAndResolve input debugFct
+      where
+        -- Écrit les étapes de la résolution dans le fichier 'output'.
+        debugFct formula simplified clauses solution = do
+            h <- openFile output WriteMode
 
-                    putStrLn "Clauses:"
-                    forM_ clauses $ \clause -> do
-                        putStr "\t"
-                        putStrLn (intercalate " | " (map show (S.toList clause)))
+            hPutStr h "Formule interprétée:\n\t"
+            hPrint h formula
 
-                    putStr "Conclusion:\n\t"
-                    case resolve clauses of
-                        Just _  -> putStrLn "Formule inconsistante"
-                        Nothing -> putStrLn "Formule consistante"
+            hPutStr h "Formule simplifiée:\n\t"
+            hPrint h simplified
 
-                Nothing  -> do
-                    putStrLn "Formule vide"
+            hPutStrLn h "Clauses:"
+            let clausesWithNum = zip clauses [(1 :: Int)..]
+            forM_ clausesWithNum $ \(clause, i) ->
+                hPrintf h "\t%d.\t%s\n" i (showClause clause)
 
-                    putStr "Conclusion:\n\t"
-                    putStrLn "Formule consistante"
+            hPutStrLn h "Réfutation:"
+            case solution of
+                Just refut -> do
+                    let clausesNums = M.fromList clausesWithNum
+                    _ <- printRefut h clausesNums refut
+                    return ()
+                Nothing    -> hPutStrLn h "\tAucune réfutation trouvée."
+
+            hPutStr h "Conclusion:\n\t"
+            case solution of
+                Just _  -> hPutStrLn h "Formule inconsistante."
+                Nothing -> hPutStrLn h "Formule consistante."
+
+            hClose h
+
+        -- Effectue une descente récursive pour afficher les clauses de toutes
+        -- les dérivées parentes d'une dérivée.
+        -- Accepte en argument une Map contenant les numéros des clauses déjà
+        -- affichées et la dérivée à explorer.
+        -- Retourne une nouvelle Map où les dérivées parentes ont été ajoutées.
+        printRefut :: Handle -> M.Map Clause Int -> Derivative
+                   -> IO (M.Map Clause Int, Int)
+        printRefut _ clausesNums (InitialClause c) =
+            return (clausesNums, clausesNums M.! c)
+        printRefut h clausesNums (Derivative c (d1, d2))
+            | Just num <- c `M.lookup` clausesNums =
+                return (clausesNums, num)
+            | otherwise                            = do
+                (clausesNums',  d1Num) <- printRefut h clausesNums  d1
+                (clausesNums'', d2Num) <- printRefut h clausesNums' d2
+                let thisNum        = M.size clausesNums'' + 1
+                    clausesNums''' = M.insert c thisNum clausesNums''
+
+                _ <- hPrintf h "\t%d.\t%s (%d, %d)\n" thisNum (showClause c)
+                                                      d1Num d2Num
+
+                return (clausesNums''', thisNum)
+
+    -- Résous la formule du fichier 'input'. Affiche true si la formule est
+    -- consistante, false sinon.
+    withoutDebug input =
+        parseAndResolve input debugFct
+      where
+        debugFct _ _ _ _ = return ()
+
+    -- Parse et résous une formule se trouvant dans un fichier. Affiche true
+    -- sur stdin si la formule est consistante, false sinon.
+    -- Parse la formule contenue dans le fichier dont le nom a été donné en
+    -- argument et accepte une fonction qui sera exécutée avec les données de
+    -- résolution pour afficher des informations supplémentaires.
+    parseAndResolve input debugFct = do
+        content <- T.readFile input
+
+        case runParser input content of
+            Left err -> -- Erreur de parsing.
+                hPrint stderr err
+            Right formula -> do
+                let simplified = simplify formula
+                    clauses    = normalize simplified
+                    solution   = resolve clauses
+
+                case solution of
+                    Nothing -> putStrLn "true"
+                    Just _  -> putStrLn "false"
+
+                debugFct formula simplified clauses solution
+
+    usage = do
+        putStrLn "Usage:"
+        putStrLn "resolution <input_file> [<debug_file>]"
