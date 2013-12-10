@@ -57,12 +57,6 @@ instance MonadPlus IO where
     mzero       = ioError (userError "mzero")
     m `mplus` n = m `catchIOError` \_ -> n
 
-#if !(MIN_VERSION_base(4,4,0))
--- exported by System.IO.Error from base-4.4
-catchIOError :: IO a -> (IOError -> IO a) -> IO a
-catchIOError = catch
-#endif
-
 -- | An exception to be thrown.
 --
 -- Minimal complete definition: 'noMsg' or 'strMsg'.
@@ -93,29 +87,6 @@ instance ErrorList Char where
 
 -- ---------------------------------------------------------------------------
 -- Our parameterizable error monad
-
-#if !(MIN_VERSION_base(4,3,0))
-
--- These instances are in base-4.3
-
-instance Applicative (Either e) where
-    pure          = Right
-    Left  e <*> _ = Left e
-    Right f <*> r = fmap f r
-
-instance Monad (Either e) where
-    return        = Right
-    Left  l >>= _ = Left l
-    Right r >>= k = k r
-
-instance MonadFix (Either e) where
-    mfix f = let
-        a = f $ case a of
-            Right r -> r
-            _       -> error "empty mfix argument"
-        in a
-
-#endif /* base to 4.2.0.x */
 
 instance (Error e) => Alternative (Either e) where
     empty        = Left noMsg
