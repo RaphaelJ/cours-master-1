@@ -34,11 +34,12 @@ instance Show Formula where
 -- Contient l'arbre syntaxique d'une formule non vide.
 -- Les opérateurs =>, <=,<=> et <~> sont convertis en disjonctions et
 -- conjonctions au parsing et n'existent donc pas dans l'arbre syntaxique.
-data Expr = Val Bool
-          | Var Text
-          | Not Expr
-          | And Expr Expr
-          | Or  Expr Expr
+data Expr = Val !Bool
+          | Var !Text
+          | Not !Expr
+          | And !Expr !Expr
+          | Or  !Expr !Expr
+    deriving (Eq, Ord)
 
 -- Permet d'afficher une formule non vide.
 -- Évite les parenthèses inutiles. Par exemple, "(a | b) | c" devient
@@ -210,45 +211,53 @@ normalize (Formula formula)     =
       removeInclusive
     $ removeValid
     $ clauses
-    $ distribute
-    $ doubleNot
+    $ fst
+    $ distribute M.empty
     $ deMorgan formula
   where
     -- Applique les règles de De Morgan pour propager les négations vers les
-    -- feuilles de l'arbre syntaxique.
-    deMorgan (Not p) | And r s <- p' = Or  (deMorgan (Not r)) (deMorgan (Not s))
-                     | Or  r s <- p' = And (deMorgan (Not r)) (deMorgan (Not s))
-                     | otherwise     = Not p'
-      where
-        p' = deMorgan p
-    deMorgan (And p q) = And (deMorgan p) (deMorgan q)
-    deMorgan (Or  p q) = Or  (deMorgan p) (deMorgan q)
-    deMorgan p         = p
+    -- feuilles de l'arbre syntaxique. Supprime aussi les doubles négations.
+    -- Il est aisé de prouver par induction qu'après l'exécution de cet
+    -- algorithme, plus aucune négation ne peut porter sur une conjonction ou
+    -- disjonction.
+    -- Complexité : O(n) où n est le nombre de littéraux de la formule.
+    deMorgan (Not (Not p))   = deMorgan p
+    deMorgan (Not (And p q)) = Or  (deMorgan (Not p)) (deMorgan (Not q))
+    deMorgan (Not (Or  p q)) = And (deMorgan (Not p)) (deMorgan (Not q))
+    deMorgan (Not p)         = Not (deMorgan p)
+    deMorgan (And p q)       = And (deMorgan p) (deMorgan q)
+    deMorgan (Or  p q)       = Or  (deMorgan p) (deMorgan q)
+    deMorgan p               = p
 
-    -- Supprime les doubles négations de l'arbre syntaxique.
-    doubleNot (Not (Not p)) = doubleNot p
-    doubleNot (And p q)     = And (doubleNot p) (doubleNot q)
-    doubleNot (Or  p q)     = Or  (doubleNot p) (doubleNot q)
-    doubleNot p             = p
 
     -- Applique les règles de distributivité en commençant en profondeur pour
     -- faire remonter les conjonctions.
     -- La première règle concerne la double distributivité. Cette dernière est
     -- facultative (elle peut être dérivée des deux autres règles) mais elle
     -- rend l'algorithme plus rapide en supprimant quelques redondances).
-    distribute (Or p q)
-        | And r s <- p'
-        , And t u <- q' = And (And (distribute (Or r t)) (distribute (Or r u)))
-                              (And (distribute (Or s t)) (distribute (Or s u)))
-        | And r s <- q' = And (distribute (Or p' r)) (distribute (Or p' s))
-        | And r s <- p' = And (distribute (Or r q')) (distribute (Or s q'))
-        | otherwise     = Or p' q'
+    distribute :: M.Map Expr Expr -> Expr -> (Expr, M.Map Expr Expr)
+    distribute cache p | Just cached <- M.lookup p cache = (cached, cache)
+    distribute cache r@(Or  p q) =
+        let (p', cache')  = distribute cache  p
+            (q', cache'') = distribute cache' q
+            r' = distributeDisj (Or p' q')
+        in (r', M.insert r r' cache'')
       where
-        p' = distribute p
-        q' = distribute q
-    distribute (And p q) = And (distribute p) (distribute q)
-    distribute (Not p)   = Not (distribute p)
-    distribute p         = p
+        distributeDisj (Or (And r s) t) =
+            -- Invariant : { r, s, t } sont en CNF.
+            And (distributeDisj (Or r t)) (distributeDisj (Or s t))
+        distributeDisj (Or r (And s t)) =
+            -- Invariant : { r, s, t } sont en CNF.
+            And (distributeDisj (Or r s)) (distributeDisj (Or r t))
+        distributeDisj r                = r -- r est déjà en CNF.
+
+    distribute cache r@(And p q) =
+        let (p', cache')  = distribute cache  p
+            (q', cache'') = distribute cache' q
+            r' = And p' q'
+        in (r', M.insert r r' cache'')
+    distribute cache (Not p)   = (Not p, cache) -- p ne peut être qu'un littéral
+    distribute cache p         = (p, cache)
 
     -- Extrait les clauses d'un arbre syntaxique en CNF à l'aide d'un parcours
     -- en profondeur.
@@ -263,8 +272,7 @@ normalize (Formula formula)     =
 
         -- Rajoute tous les littéraux des sous-disjonctions à l'ensemble des
         -- littéraux de la clause en cours de parcours.
-        goDisj clause (Or p q)          = let clause' = goDisj clause p
-                                          in goDisj clause' q
+        goDisj clause (Or p q)          = goDisj (goDisj clause p) q
         goDisj clause (Var name)        = S.insert (Lit name) clause
         goDisj clause ~(Not (Var name)) = S.insert (OppLit name) clause
 
