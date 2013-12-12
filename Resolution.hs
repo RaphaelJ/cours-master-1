@@ -208,12 +208,7 @@ normalize EmptyFormula          = []
 normalize (Formula (Val True))  = []
 normalize (Formula (Val False)) = [emptyClause]
 normalize (Formula formula)     =
-      removeInclusive
-    $ removeValid
-    $ clauses
-    $ fst
-    $ distribute M.empty
-    $ deMorgan formula
+    removeInclusive (removeValid (clauses (distribute (deMorgan formula))))
   where
     -- Applique les règles de De Morgan pour propager les négations vers les
     -- feuilles de l'arbre syntaxique. Supprime aussi les doubles négations.
@@ -229,20 +224,31 @@ normalize (Formula formula)     =
     deMorgan (Or  p q)       = Or  (deMorgan p) (deMorgan q)
     deMorgan p               = p
 
+    -- Applique les règles de distributivité pour remonter les conjonctions de
+    -- la formule.
+    -- Les négations de la formule à distribuer ne peuvent porter que sur des
+    -- littéraux (comme garantit par l'exécution de l'algorithme de De Morgan).
+    distribute p = fst (distributeCached M.empty p)
 
     -- Applique les règles de distributivité en commençant en profondeur pour
     -- faire remonter les conjonctions.
-    -- La première règle concerne la double distributivité. Cette dernière est
-    -- facultative (elle peut être dérivée des deux autres règles) mais elle
-    -- rend l'algorithme plus rapide en supprimant quelques redondances).
-    distribute :: M.Map Expr Expr -> Expr -> (Expr, M.Map Expr Expr)
-    distribute cache p | Just cached <- M.lookup p cache = (cached, cache)
-    distribute cache r@(Or  p q) =
-        let (p', cache')  = distribute cache  p
-            (q', cache'') = distribute cache' q
+    -- Accepte un cache mappant les formules non distribuées vers leur
+    -- équivalent CNF (algorithme dynamique), retourne l'expression en CNF et
+    -- le cache mis à jour.
+    -- Les négations de la formule à distribuer ne peuvent porter que sur des
+    -- littéraux (comme garantit par l'exécution de l'algorithme de De Morgan).
+    distributeCached :: M.Map Expr Expr -> Expr -> (Expr, M.Map Expr Expr)
+    distributeCached cache p | Just cached <- M.lookup p cache = 
+        -- Expression en cache, déjà traitée.
+        (cached, cache)
+    distributeCached cache r@(Or  p q) =
+        let (p', cache')  = distributeCached cache  p
+            (q', cache'') = distributeCached cache' q
             r' = distributeDisj (Or p' q')
         in (r', M.insert r r' cache'')
       where
+        -- Distribue récursivement une disjonction dont les sous-expressions
+        -- sont en CNF. Retourne une fonction en CNF.
         distributeDisj (Or (And r s) t) =
             -- Invariant : { r, s, t } sont en CNF.
             And (distributeDisj (Or r t)) (distributeDisj (Or s t))
@@ -250,14 +256,13 @@ normalize (Formula formula)     =
             -- Invariant : { r, s, t } sont en CNF.
             And (distributeDisj (Or r s)) (distributeDisj (Or r t))
         distributeDisj r                = r -- r est déjà en CNF.
-
-    distribute cache r@(And p q) =
-        let (p', cache')  = distribute cache  p
-            (q', cache'') = distribute cache' q
+    distributeCached cache r@(And p q) =
+        let (p', cache')  = distributeCached cache  p
+            (q', cache'') = distributeCached cache' q
             r' = And p' q'
         in (r', M.insert r r' cache'')
-    distribute cache (Not p)   = (Not p, cache) -- p ne peut être qu'un littéral
-    distribute cache p         = (p, cache)
+    distributeCached cache (Not p) = (Not p, cache) -- p est un littéral
+    distributeCached cache p       = (p, cache)
 
     -- Extrait les clauses d'un arbre syntaxique en CNF à l'aide d'un parcours
     -- en profondeur.
@@ -304,9 +309,22 @@ normalize (Formula formula)     =
 -- réfutation utilisée pour dériver [] sinon.
 resolve :: [Clause] -> Maybe Derivative
 resolve cnf =
-    let initMap = M.fromList [ (c, InitialClause c) | c <- cnf ]
+    let initMap = M.fromList [ (c, InitialClause c) | c <- cnf
+                             , not (isPureClause c) ]
     in closure initMap initMap
   where
+    -- Une clause pure est une clause qui contient un littéral dont le
+    -- complément n'est contenu dans aucune clause.
+    -- Une telle clause est toujours satisfaisable et de ce fait, aucune de ses
+    -- dérivées n'aboutira à la clause vide.
+    isPureClause c = any (`S.member` c) pureLitterals
+
+    -- Littéraux n'avant pas de complément dans aucune clause.
+    pureLitterals =
+        let litteralsSet = S.unions cnf
+        in [ lit | lit <- S.toList litteralsSet
+                 , not (complement lit `S.member` litteralsSet) ]
+
     -- Étant donné les clauses déjà dérivées et les clauses venant d'être
     -- dérivées à l'étape précédente, retourne éventuellement l'arbre de
     -- dérivation de la clause vide (derivs est un sous-ensemble de clauses).
@@ -333,8 +351,7 @@ resolve cnf =
         -- fermeture.
         derivs' = M.fromList [
               (c', Derivative c' (d1, d2))
-            | (c1, d1) <- M.toList derivs
-            , (c2, d2) <- M.toList clauses
+            | (c1, d1) <- M.toList derivs, (c2, d2) <- M.toList clauses
               -- Évite les dérivées réciproques en appliquant la règle de
               -- dérivation que sur lit1 = p et lit2 = ~p :
             , lit1@(Lit lit1Name) <- S.toList c1
@@ -406,7 +423,7 @@ main = do
 
         -- Effectue une descente récursive pour afficher les clauses de toutes
         -- les dérivées parentes d'une dérivée.
-        -- Accepte en argument une Map contenant les numéros des clauses déjà
+        -- AcCachedcepte en argument une Map contenant les numéros des clauses déjà
         -- affichées et la dérivée à explorer.
         -- Retourne une nouvelle Map où les dérivées parentes ont été ajoutées.
         printRefut :: Handle -> M.Map Clause Int -> Derivative
