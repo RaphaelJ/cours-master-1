@@ -34,11 +34,11 @@ instance Show Formula where
 -- Contient l'arbre syntaxique d'une formule non vide.
 -- Les opérateurs =>, <=,<=> et <~> sont convertis en disjonctions et
 -- conjonctions au parsing et n'existent donc pas dans l'arbre syntaxique.
-data Expr = Val !Bool
-          | Var !Text
-          | Not !Expr
-          | And !Expr !Expr
-          | Or  !Expr !Expr
+data Expr = Val Bool
+          | Var Text
+          | Not Expr
+          | And Expr Expr
+          | Or  Expr Expr
     deriving (Eq, Ord)
 
 -- Permet d'afficher une formule non vide.
@@ -238,7 +238,7 @@ normalize (Formula formula)     =
     -- Les négations de la formule à distribuer ne peuvent porter que sur des
     -- littéraux (comme garantit par l'exécution de l'algorithme de De Morgan).
     distributeCached :: M.Map Expr Expr -> Expr -> (Expr, M.Map Expr Expr)
-    distributeCached cache p | Just cached <- M.lookup p cache = 
+    distributeCached cache p | Just cached <- M.lookup p cache =
         -- Expression en cache, déjà traitée.
         (cached, cache)
     distributeCached cache r@(Or  p q) =
@@ -249,13 +249,13 @@ normalize (Formula formula)     =
       where
         -- Distribue récursivement une disjonction dont les sous-expressions
         -- sont en CNF. Retourne une fonction en CNF.
-        distributeDisj (Or (And r s) t) =
-            -- Invariant : { r, s, t } sont en CNF.
-            And (distributeDisj (Or r t)) (distributeDisj (Or s t))
-        distributeDisj (Or r (And s t)) =
-            -- Invariant : { r, s, t } sont en CNF.
-            And (distributeDisj (Or r s)) (distributeDisj (Or r t))
-        distributeDisj r                = r -- r est déjà en CNF.
+        distributeDisj (Or (And s t) e) =
+            -- Invariant : { s, t, u } sont en CNF.
+            And (distributeDisj (Or s e)) (distributeDisj (Or t e))
+        distributeDisj (Or s (And t u)) =
+            -- Invariant : { s, t, u } sont en CNF.
+            And (distributeDisj (Or s t)) (distributeDisj (Or s u))
+        distributeDisj s                = s -- s est déjà en CNF.
     distributeCached cache r@(And p q) =
         let (p', cache')  = distributeCached cache  p
             (q', cache'') = distributeCached cache' q
