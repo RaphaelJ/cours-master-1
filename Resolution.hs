@@ -3,7 +3,7 @@
 import Control.Applicative ((<$>), (<|>))
 import Control.Monad (forM_)
 import Data.Char (isSpace)
-import Data.List (intercalate)
+import Data.List (intercalate, partition)
 import qualified Data.Map as M
 import qualified Data.Set as S
 import Data.Text (Text)
@@ -208,7 +208,12 @@ normalize EmptyFormula          = []
 normalize (Formula (Val True))  = []
 normalize (Formula (Val False)) = [emptyClause]
 normalize (Formula formula)     =
-    removeInclusive (removeValid (clauses (distribute (deMorgan formula))))
+--     removeInclusive (
+--     unitPropagation (
+    removeValid (
+    clauses (
+    distribute (
+    deMorgan formula)))
   where
     -- Applique les règles de De Morgan pour propager les négations vers les
     -- feuilles de l'arbre syntaxique. Supprime aussi les doubles négations.
@@ -299,10 +304,51 @@ normalize (Formula formula)     =
     removeInclusive =
         go []
       where
+        -- Parcourt les clauses du second argument et rajoute celles qui ne sont
+        -- pas redondantes dans 'acc'.
         go acc []       = acc
         go acc (c : cs) |    any (`S.isSubsetOf` c) acc
-                          || any (`S.isSubsetOf` c) cs  = go acc cs
+                          || any (`S.isSubsetOf` c) cs  = go acc       cs
                         | otherwise                     = go (c : acc) cs
+
+    -- Recherche les clauses ne contenant qu'un seul littéral (clauses unitaire)
+    -- et supprime le complément de ce littéral dans toutes les clauses où il se
+    -- trouve (le complément ne saurait être satisfaisable en même temps que la
+    -- clause unitaire). Ré-itère l'opération si de nouvelles clauses unitaires
+    -- ont été créées de cette manière.
+    -- La clause vide peut être créée si tous les littéraux d'une clauses on été
+    -- supprimés. Cette fonction peut retourner certaines clauses en plusieurs
+    -- exemplaires.
+    -- Complexité : O(n² * log m) où n est le nombre de clauses et m le nombre
+    -- de littéraux par clause.
+    unitPropagation :: [Clause] -> [Clause]
+    unitPropagation cnf =
+        let (units, nonUnits) = partition isUnit cnf
+        in go units [] nonUnits
+      where
+        -- Parcourt les clauses unitaires du premier argument et les propages
+        -- dans 'accUs' et 'cs' ('accUs' contient les clauses unitaires qu'il
+        -- ne faut pas parcourir et 'cs' les clauses non unitaires).
+        -- Retourne l'ensemble des clauses une fois la propagation effectuée.
+        go []       accUs cs = accUs ++ cs
+        go (u : us) accUs cs
+            | any (compl `S.member`) us || any (compl `S.member`) accUs =
+                -- Une seconde clause unitaire contient le complément du
+                -- littéral u. On peut donc simplifier la clause, et l'ensemble
+                -- de la formule, en un clause unitaire :
+                [emptyClause]
+            | otherwise                                                 =
+                -- Relance le parcours avec les nouvelles clauses unitaires
+                -- générées et celles qui n'ont pas encore été propagées.
+                go (us' ++ us) (u : accUs) cs'
+           where
+            [lit] = S.toList u
+            compl = complement lit
+
+            (us', cs') = partition isUnit [ S.delete compl c | c <- cs ]
+
+        isUnit c | S.size c == 1 = True
+                 | otherwise     = False
 
 -- Applique la méthode de résolution pour trouver une réfutation.
 -- Retourne Nothing si aucune réfutation n'a pu être trouvée, retourne la
@@ -422,7 +468,7 @@ main = do
 
         -- Effectue une descente récursive pour afficher les clauses de toutes
         -- les dérivées parentes d'une dérivée.
-        -- AcCachedcepte en argument une Map contenant les numéros des clauses déjà
+        -- Accepte en argument une Map contenant les numéros des clauses déjà
         -- affichées et la dérivée à explorer.
         -- Retourne une nouvelle Map où les dérivées parentes ont été ajoutées.
         printRefut :: Handle -> M.Map Clause Int -> Derivative
