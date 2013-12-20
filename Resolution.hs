@@ -208,12 +208,12 @@ normalize EmptyFormula          = []
 normalize (Formula (Val True))  = []
 normalize (Formula (Val False)) = [emptyClause]
 normalize (Formula formula)     =
---     removeInclusive (
---     unitPropagation (
+    removeInclusive (
+    unitPropagation (
     removeValid (
     clauses (
     distribute (
-    deMorgan formula)))
+    deMorgan formula)))))
   where
     -- Applique les règles de De Morgan pour propager les négations vers les
     -- feuilles de l'arbre syntaxique. Supprime aussi les doubles négations.
