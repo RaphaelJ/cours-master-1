@@ -166,12 +166,12 @@ runParser filename txt =
 
 -- Résolution ------------------------------------------------------------------
 
--- Simplifie une formule en faisant remonter ses valeurs 'true'/'false' à la
--- racine de l'arbre.
+-- Simplifie une formule en faisant remonter ses 'true'/'false' à la racine de
+-- l'arbre.
 -- Il est aisé de prouver par induction que cet algorithme génère un arbre où
--- seule la racine peut contenir une valeur 'true' ou 'false', celles se
--- trouvant plus bas dans l'arbre étant systématiquement et récursivement soit
--- simplifiées, soit remontées au niveau supérieur.
+-- seule la racine peut contenir 'true' ou 'false', ceux se trouvant plus bas
+-- dans l'arbre étant systématiquement et récursivement soit simplifiées, soit
+-- remontées au niveau supérieur.
 simplify :: Formula -> Formula
 simplify EmptyFormula   = EmptyFormula
 simplify (Formula expr) = Formula (simplifyExpr expr)
@@ -202,7 +202,7 @@ simplify (Formula expr) = Formula (simplifyExpr expr)
 
 -- Retourne la formule en CNF.
 -- La formule en entrée doit avoir été simplifiée (elle ne doit plus contenir de
--- valeur true/false en dehors de sa racine).
+-- 'true'/'false' en dehors de sa racine).
 normalize :: Formula -> [Clause]
 normalize EmptyFormula          = []
 normalize (Formula (Val True))  = []
@@ -348,14 +348,13 @@ resolve cnf =
       where
         -- Tente de créer de nouvelles dérivées en combinant les dérivées venant
         -- d'être trouvées avec toutes les clauses trouvées au cours de la
-        -- fermeture.
+        -- fermeture. M.fromList va élimiter les dérivées qui ont la même
+        -- clause.
         derivs' = M.fromList [
               (c', Derivative c' (d1, d2))
             | (c1, d1) <- M.toList derivs, (c2, d2) <- M.toList clauses
-              -- Évite les dérivées réciproques en appliquant la règle de
-              -- dérivation que sur lit1 = p et lit2 = ~p :
-            , lit1@(Lit lit1Name) <- S.toList c1
-            , let lit2 = OppLit lit1Name
+            , lit1 <- S.toList c1
+            , let lit2 = complement lit1
             , lit2 `S.member` c2
               -- Applique la règle de distributivité sur les clauses c1 & c2 :
             , let c' = S.delete lit1 c1 `S.union` S.delete lit2 c2
