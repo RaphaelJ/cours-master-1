@@ -15,7 +15,6 @@ public abstract class SwingView extends JFrame implements BoardListener {
     protected JPanel playPanel;
 
     private JPanel infoPanel;
-    private JButton startButton;
     private JLabel time;
     private JLabel timeTitle;
 
@@ -38,7 +37,6 @@ public abstract class SwingView extends JFrame implements BoardListener {
         this.playPanel.setLayout(new BoxLayout(playPanel, BoxLayout.X_AXIS));
 
         this.infoPanel = new JPanel();
-        this.startButton = new JButton();
         this.timeTitle = new JLabel();
         this.time = new JLabel();
 
@@ -49,16 +47,6 @@ public abstract class SwingView extends JFrame implements BoardListener {
 				parent.setVisible(true);
 			}
 		});
-
-        this.startButton.setText("Start");
-        this.startButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt)
-            {
-                newGame();
-
-                requestFocus();
-            }
-        });
 
         this.timeTitle.setText("Time elapsed :");
 
@@ -74,7 +62,6 @@ public abstract class SwingView extends JFrame implements BoardListener {
                 .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(time)
                 .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(startButton)
                 .addContainerGap())
         );
         infoPanelLayout.setVerticalGroup(
@@ -84,7 +71,6 @@ public abstract class SwingView extends JFrame implements BoardListener {
                 .addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(infoPanelLayout.createParallelGroup(
                         GroupLayout.Alignment.BASELINE)
-                    .addComponent(startButton)
                     .addComponent(timeTitle)
                     .addComponent(time))
                 .addContainerGap())
@@ -103,6 +89,8 @@ public abstract class SwingView extends JFrame implements BoardListener {
             public void run()
             {
                 setVisible(true);
+                newGame();
+                requestFocus();
             }
         });
     }

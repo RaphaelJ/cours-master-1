@@ -22,7 +22,7 @@ public class SinglePlayerSwingView extends SwingView implements KeyListener {
         super(parent, game.getBoard());
 
         this._game = game;
-        this._panel = new GamePanel(game, useImages);
+        this._panel = new GamePanel(this, game, useImages);
 
         this._controllers = new ArrayList<GameController>();
 

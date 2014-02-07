@@ -6,10 +6,13 @@ import java.awt.Dimension;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Rectangle;
+import java.awt.event.WindowEvent;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 import gameplay.GamePlay;
@@ -23,6 +26,8 @@ import view.piece.PieceViewModel;
 public class GamePanel extends JPanel 
         implements BoardListener, GamePlayListener {
 
+	private SwingView _parent;
+	
     private JPanel _playPanel;
 
     private JLabel _score;
@@ -32,8 +37,9 @@ public class GamePanel extends JPanel
     private GamePlay _game;
     private boolean _useImages;
 
-    public GamePanel(GamePlay game, boolean useImages)
+    public GamePanel(SwingView parent, GamePlay game, boolean useImages)
     {
+    	this._parent = parent;
         this._game = game;
         game.addListener(this);
         game.getBoard().addListener(this);
@@ -143,7 +149,20 @@ public class GamePanel extends JPanel
             this.drawString("Game paused");
             break;
         case GAMEOVER:
-            this.drawString("Game over !");
+        	int choice = 0;
+        	choice = JOptionPane.showConfirmDialog(
+        			this,
+        			"Would you like to retry ?",
+        			"Game Over",
+        			JOptionPane.YES_NO_OPTION);
+        	
+        	if(choice == 0)
+        		this._parent.newGame();
+        	else
+        		this._parent.dispatchEvent(
+        				new WindowEvent(this._parent,
+        								WindowEvent.WINDOW_CLOSING));
+        	
             break;
         }
     }
@@ -165,9 +184,9 @@ public class GamePanel extends JPanel
         // Draws the next piece at the center of the panel.
         int offset = (PieceViewModel.TILES_SIZE * 4 - PieceViewModel.TILES_SIZE
                                                 * dimension) / 2;
-        for (int i = 0; i < dimension; i++) {
-            for (int j = 0; j < dimension; j++) {
-                if (state[i][j]) {
+        for (int i = 0; i < dimension; i++)
+            for (int j = 0; j < dimension; j++)
+                if (state[i][j])
                     try {
                         pvm.drawTexture(
                             g, offset + j * PieceViewModel.TILES_SIZE,
@@ -176,9 +195,6 @@ public class GamePanel extends JPanel
                     } catch (Exception e) { // Unable to load the tile.
                         System.err.println(e.getMessage());
                     }
-                }
-            }
-        }
 
         g.finalize();
     }

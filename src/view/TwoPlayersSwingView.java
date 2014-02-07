@@ -26,8 +26,8 @@ public class TwoPlayersSwingView extends SwingView implements KeyListener {
         this._game1 = game1;
         this._game2 = game2;
 
-        this._panel1 = new GamePanel(game1, useImages);
-        this._panel2 = new GamePanel(game2, useImages);
+        this._panel1 = new GamePanel(this, game1, useImages);
+        this._panel2 = new GamePanel(this, game2, useImages);
 
         this._controllers1 = new ArrayList<GameController>();
         this._controllers2 = new ArrayList<GameController>();
