@@ -22,19 +22,21 @@ public class DualCooperative extends DualGamePlay {
     {
         return new DualGamePlayProxy(this, player, opponent) {
             @Override
-            public synchronized void clearLines(LinkedList<Integer> lines)
+            public void clearLines(LinkedList<Integer> lines)
             {
-                Board opponentBoard = this._opponent.getBoard();
+                synchronized (this._dualGame) {
+                    Board opponentBoard = this._opponent.getBoard();
 
-                LinkedList<Integer> toRemove = new LinkedList<Integer>();
-                for (Integer i : lines) {
-                    if (opponentBoard.getGrid()[i.intValue()].isComplete())
-                        toRemove.add(i);
-                }
+                    LinkedList<Integer> toRemove = new LinkedList<Integer>();
+                    for (Integer i : lines) {
+                        if (opponentBoard.getGrid()[i.intValue()].isComplete())
+                            toRemove.add(i);
+                    }
 
-                if (toRemove.size() > 0) {
-                    this._player.clearLines(toRemove);
-                    this._opponent.clearLines(toRemove);
+                    if (toRemove.size() > 0) {
+                        this._player.clearLines(toRemove);
+                        this._opponent.clearLines(toRemove);
+                    }
                 }
             }
         };
