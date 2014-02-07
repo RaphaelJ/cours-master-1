@@ -7,17 +7,18 @@ import model.Board;
 
 /** Creates a proxy for the player gameplay but with stopping the opponent game
  * when the pause() method is called. */
-public class DualGamePlayProxy implements GamePlay {
+public class MultiGamePlayProxy implements GamePlay {
 
-    protected DualGamePlay _dualGame;
-    protected GamePlay _player, _opponent;
+    protected MultiGamePlay _dualGame;
+    protected GamePlay _player;
+    protected ArrayList<GamePlay> _opponents;
 
-    public DualGamePlayProxy(DualGamePlay dualGame, GamePlay player,
-                             GamePlay opponent)
+    public MultiGamePlayProxy(MultiGamePlay dualGame, GamePlay player,
+                             ArrayList<GamePlay> opponents)
     {
         this._dualGame = dualGame;
         this._player = player;
-        this._opponent = opponent;
+        this._opponents = opponents;
     }
 
     public void newGame()
@@ -25,7 +26,9 @@ public class DualGamePlayProxy implements GamePlay {
         synchronized (this._dualGame) { // Avoid both players to press pause
                                         // at the same time.
             this._player.newGame();
-            this._opponent.newGame();
+            
+            for(GamePlay opponent : this._opponents)
+            	opponent.newGame();
         }
     }
 
@@ -33,7 +36,9 @@ public class DualGamePlayProxy implements GamePlay {
     {
         synchronized (this._dualGame) {
             this._player.pause();
-            this._opponent.pause();
+            
+            for(GamePlay opponent : this._opponents)
+            	opponent.pause();
         }
     }
 

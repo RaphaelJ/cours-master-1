@@ -6,15 +6,16 @@ import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 
 import controller.LocalController;
 import gameplay.GamePlay;
 import gameplay.GamePlayFactory;
 import gameplay.NintendoGameBoy;
 import gameplay.NintendoGameBoyFactory;
-import gameplay.multi.DualClassic;
-import gameplay.multi.DualCooperative;
-import gameplay.multi.DualGamePlay;
+import gameplay.multi.MultiClassic;
+import gameplay.multi.MultiCooperative;
+import gameplay.multi.MultiGamePlay;
 
 import javax.swing.JButton;
 import javax.swing.JPanel;
@@ -33,6 +34,8 @@ public class WelcomeView extends javax.swing.JFrame {
     private JButton jButtonOptions;
     private JButton jButtonSolo;
     private JButton jButtonExit;
+    
+    private int NB_PLAYERS = 3;
 	
     public WelcomeView()
     {
@@ -139,71 +142,84 @@ public class WelcomeView extends javax.swing.JFrame {
     }
 
     private void jButtonMultiSimpleActionPerformed(ActionEvent evt) {
-        Board board1 = new Board(new LCGRandom()),
-              board2 = new Board(new LCGRandom());
+        ArrayList<Board> boards = new ArrayList<>();
+        
+        for(int i = 0; i < NB_PLAYERS; i++) {
+        	Board board = new Board(new LCGRandom());
+        	boards.add(board);
+        }
 
         GamePlayFactory innerGameplay = new NintendoGameBoyFactory();
-        DualGamePlay game = new DualGamePlay(innerGameplay, board1, board2);
+        MultiGamePlay game = new MultiGamePlay(innerGameplay, boards);
 
-        startTwoPlayersGame(game);
+        startMultiPlayersGame(game, NB_PLAYERS);
     }
 
     private void jButtonMultiClassicActionPerformed(ActionEvent evt) {
-        long commonSeed = new LCGRandom().getSeed();
+    	ArrayList<Board> boards = new ArrayList<>();
+    	long commonSeed = new LCGRandom().getSeed();
 
-        Board board1 = new Board(new LCGRandom(commonSeed)),
-              board2 = new Board(new LCGRandom(commonSeed));
+        for(int i = 0; i < NB_PLAYERS; i++) {
+        	Board board = new Board(new LCGRandom(commonSeed));
+        	boards.add(board);
+        }
 
         GamePlayFactory innerGameplay = new NintendoGameBoyFactory();
         
-        int posHole = new LCGRandom().nextInt(board1.getWidth());
-        DualGamePlay game = new DualClassic(
+        int posHole = new LCGRandom().nextInt(boards.get(0).getWidth());
+        MultiGamePlay game = new MultiClassic(
         		innerGameplay,
-        		board1,
-        		board2,
+        		boards,
         		posHole);
 
-        startTwoPlayersGame(game);
+        startMultiPlayersGame(game, NB_PLAYERS);
     }
 
     private void jButtonCoopActionPerformed(ActionEvent evt) {
-        Board board1 = new Board(), board2 = new Board();
+		ArrayList<Board> boards = new ArrayList<>();
+		
+        for(int i = 0; i < NB_PLAYERS; i++) {
+        	Board board = new Board();
+        	boards.add(board);
+        }
 
         GamePlayFactory innerGameplay = new NintendoGameBoyFactory();
-        DualCooperative game = new DualCooperative(
-            innerGameplay, board1, board2
-        );
+        MultiCooperative game = new MultiCooperative(innerGameplay, boards);
 
-        startTwoPlayersGame(game);
+        startMultiPlayersGame(game, NB_PLAYERS);
     }
-
-    private void startTwoPlayersGame(DualGamePlay game)
+    
+    private void startMultiPlayersGame(MultiGamePlay game, int nbPlayers)
     {
         this.setVisible(false);
+        
+        ArrayList<GamePlay> games = new ArrayList<>();
 
-        GamePlay game1 = game.getPlayer1GamePlay(),
-                 game2 = game.getPlayer2GamePlay();
+        for(int i = 0; i < NB_PLAYERS; i++) {
+        	GamePlay gameplay = game.getPlayerGamePlay(i);
+        	games.add(gameplay);
+        	
+        	gameplay.getBoard().setGamePlay(gameplay);
+        }
 
-        game1.getBoard().setGamePlay(game1);
-        game2.getBoard().setGamePlay(game2);
+        MultiPlayerSwingView gui = new MultiPlayerSwingView(this, games, true);
 
-        TwoPlayersSwingView gui = new TwoPlayersSwingView(this, game1, game2, true);
-
-        gui.addControllerPlayer1(new LocalController(game1));
-        gui.addControllerPlayer2(new LocalController(game2));
+        for(int i = 0; i < NB_PLAYERS; i++)
+        	gui.addControllerPlayer(i, new LocalController(games.get(i)));
 
         gui.run();
     }
     
     private void jButtonOptionsActionPerformed(ActionEvent evt) {
-        Board board1 = new Board(), board2 = new Board();
+        ArrayList<Board> boards = new ArrayList<>();
+        
+        for(int i = 0; i < NB_PLAYERS; i++)
+        	boards.add(new Board());
 
         GamePlayFactory innerGameplay = new NintendoGameBoyFactory();
-        DualCooperative game = new DualCooperative(
-            innerGameplay, board1, board2
-        );
+        MultiCooperative game = new MultiCooperative(innerGameplay, boards);
 
-        startTwoPlayersGame(game);
+        startMultiPlayersGame(game, NB_PLAYERS);
     }
 
 }
