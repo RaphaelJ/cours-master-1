@@ -65,9 +65,8 @@ public class TwoPlayersSwingView extends SwingView implements KeyListener {
     @Override
     public void keyPressed(KeyEvent event)
     {
-    	_activeKeys.add(event.getKeyCode());
-    	
-      
+        _activeKeys.add(event.getKeyCode());
+
         if(_activeKeys.contains(KeyEvent.VK_P))
             for (GameController controller : this._controllers1)
                 controller.pause();
@@ -76,19 +75,19 @@ public class TwoPlayersSwingView extends SwingView implements KeyListener {
         if(_activeKeys.contains(KeyEvent.VK_Q))
             for (GameController controller : this._controllers1)
                 controller.moveLeft();
-        
+
         if(_activeKeys.contains(KeyEvent.VK_D))
             for (GameController controller : this._controllers1)
                 controller.moveRight();
-       
+
         if(_activeKeys.contains(KeyEvent.VK_S))
             for (GameController controller : this._controllers1)
                 controller.softDrop();
-        
+
         if(_activeKeys.contains(KeyEvent.VK_A))
             for (GameController controller : this._controllers1)
                 controller.hardDrop();
-        
+
         if(_activeKeys.contains(KeyEvent.VK_Z))
             for (GameController controller : this._controllers1)
                 controller.rotate();
@@ -97,27 +96,27 @@ public class TwoPlayersSwingView extends SwingView implements KeyListener {
         if(_activeKeys.contains(KeyEvent.VK_LEFT))
             for (GameController controller : this._controllers2)
                 controller.moveLeft();
-        
+
         if(_activeKeys.contains(KeyEvent.VK_RIGHT))
             for (GameController controller : this._controllers2)
                 controller.moveRight();
-        
+
         if(_activeKeys.contains(KeyEvent.VK_DOWN))
             for (GameController controller : this._controllers2)
                 controller.softDrop();
-        
+
         if(_activeKeys.contains(KeyEvent.VK_ENTER))
             for (GameController controller : this._controllers2)
                 controller.hardDrop();
-        
-        if(_activeKeys.contains(KeyEvent.VK_U))
+
+        if(_activeKeys.contains(KeyEvent.VK_UP))
             for (GameController controller : this._controllers2)
                 controller.rotate();
     }
 
     @Override
     public void keyReleased(KeyEvent e) {
-    	_activeKeys.remove(e.getKeyCode());
+        _activeKeys.remove(e.getKeyCode());
     }
 
     @Override

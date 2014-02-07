@@ -22,12 +22,14 @@ public class DualClassic extends DualGamePlay {
     {
         return new DualGamePlayProxy(this, player, opponent) {
             @Override
-            public synchronized void clearLines(LinkedList<Integer> lines)
+            public void clearLines(LinkedList<Integer> lines)
             {
-                this._player.clearLines(lines);
+                synchronized (this._dualGame) {
+                    this._player.clearLines(lines);
 
-                for (int i = 0; i < lines.size() - 1; i++)
-                    this._opponent.getBoard().addLine();
+                    for (int i = 0; i < lines.size() - 1; i++)
+                        this._opponent.getBoard().addLine();
+                }
             }
         };
     }

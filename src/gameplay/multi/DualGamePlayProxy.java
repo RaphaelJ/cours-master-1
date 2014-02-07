@@ -22,7 +22,6 @@ public class DualGamePlayProxy implements GamePlay {
 
     public void newGame()
     {
-        System.out.println(this._dualGame);
         synchronized (this._dualGame) { // Avoid both players to press pause
                                         // at the same time.
             this._player.newGame();
@@ -30,7 +29,7 @@ public class DualGamePlayProxy implements GamePlay {
         }
     }
 
-    public synchronized void pause()
+    public void pause()
     {
         synchronized (this._dualGame) {
             this._player.pause();
@@ -40,37 +39,51 @@ public class DualGamePlayProxy implements GamePlay {
 
     public void moveLeft()
     {
-        this._player.moveLeft();
+        synchronized (this._dualGame) {
+            this._player.moveLeft();
+        }
     }
 
     public void moveRight()
     {
-        this._player.moveRight();
+        synchronized (this._dualGame) {
+            this._player.moveRight();
+        }
     }
 
     public void softDrop()
     {
-        this._player.softDrop();
+        synchronized (this._dualGame) {
+            this._player.softDrop();
+        }
     }
 
     public void hardDrop()
     {
-        this._player.hardDrop();
+        synchronized (this._dualGame) {
+            this._player.hardDrop();
+        }
     }
 
     public void rotate()
     {
-        this._player.rotate();
+        synchronized (this._dualGame) {
+            this._player.rotate();
+        }
     }
 
     public void reset()
     {
-        this._player.reset();
+        synchronized (this._dualGame) {
+            this._player.reset();
+        }
     }
 
     public void clearLines(LinkedList<Integer> lines)
     {
-        this._player.clearLines(lines);
+        synchronized (this._dualGame) {
+            this._player.clearLines(lines);
+        }
     }
 
     public void addListener(GamePlayListener listener)
@@ -100,6 +113,8 @@ public class DualGamePlayProxy implements GamePlay {
 
     public void setSpeed(int newClockSpeed)
     {
-        this._player.setSpeed(newClockSpeed);
+        synchronized (this._dualGame) {
+            this._player.setSpeed(newClockSpeed);
+        }
     }
 }
