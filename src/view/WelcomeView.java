@@ -162,7 +162,13 @@ public class WelcomeView extends javax.swing.JFrame {
               board2 = new Board(new LCGRandom(commonSeed));
 
         GamePlayFactory innerGameplay = new NintendoGameBoyFactory();
-        DualGamePlay game = new DualClassic(innerGameplay, board1, board2);
+        
+        int posHole = new LCGRandom().nextInt(board1.getWidth());
+        DualGamePlay game = new DualClassic(
+        		innerGameplay,
+        		board1,
+        		board2,
+        		posHole);
 
         startTwoPlayersGame(game);
     }
