@@ -8,11 +8,15 @@ import model.Board;
 /** Applies a gameplay rule to a two players game where (n-1) lines are sent to
  * the opponent when the player removes n lines. */
 public class DualClassic extends DualGamePlay {
+	
+	protected int posHole;
 
     public DualClassic(GamePlayFactory innerGamePlay, Board board1,
-                       Board board2)
+                       Board board2, int posHole)
     {
         super(innerGamePlay, board1, board2);
+        
+        this.posHole = posHole;
     }
 
     /** Wraps the inner gameplay in a proxy so (n-1) lines are added to the
@@ -22,12 +26,14 @@ public class DualClassic extends DualGamePlay {
     {
         return new DualGamePlayProxy(this, player, opponent) {
             @Override
-            public synchronized void clearLines(LinkedList<Integer> lines)
+            public void clearLines(LinkedList<Integer> lines)
             {
-                this._player.clearLines(lines);
+                synchronized (this._dualGame) {
+                    this._player.clearLines(lines);
 
-                for (int i = 0; i < lines.size() - 1; i++)
-                    this._opponent.getBoard().addLine();
+                    for (int i = 0; i < lines.size() - 1; i++)
+                        this._opponent.getBoard().addLine(posHole);
+                }
             }
         };
     }

@@ -134,12 +134,12 @@ public class Board {
             return true;
     }
 
-    public void moveLeft()
+    public synchronized void moveLeft()
     {
         this.moveCurrentPiece(-1, 0);
     }
 
-    public void moveRight()
+    public synchronized void moveRight()
     {
         this.moveCurrentPiece(1, 0);
     }
@@ -188,9 +188,9 @@ public class Board {
         this._current = rotatedPiece;
     }
 
-    /** Adds a new line at the bottom of the grid. Emits the game over event if
-     * the top line of the grid is not empty. */
-    public synchronized void addLine()
+    /** Adds a new line at the bottom of the grid with a hole at posHole.
+     * Emits the game over event if the top line of the grid is not empty. */
+    public synchronized void addLine(int posHole)
     {
         // Checks that the first line is empty.
         if (this._current != null)
@@ -209,9 +209,8 @@ public class Board {
         Row row = new Row(this._width);
         this._grid[this._height - 1] = row;
 
-        int empty = new LCGRandom().nextInt(this._width);
         for (int i = 0; i < this._width; i++) {
-            if (i != empty) {
+            if (i != posHole) {
                 row.setPiece(
                     i, new PieceBlock(new Coordinates(i, this._height - 1), 0)
                 );
@@ -222,6 +221,15 @@ public class Board {
             this.placePiece(this._current);
 
         this.emitGridChange(new Rectangle(0, 0, this._width, this._height));
+    }
+    
+    /** Adds a new line at the bottom of the grid with a hole at a random
+     * position.
+     * Emits the game over event if the top line of the grid is not empty. */
+    public synchronized void addLine() {
+    	
+    	int posHole = new LCGRandom().nextInt(this._width);
+    	addLine(posHole);
     }
 
     /** Removes the line at the given index from the grid. */
@@ -315,7 +323,7 @@ public class Board {
     }
 
     /** Returns true if the piece collide with the left/right/bottom border or
-     * with another piece. Ignore oldPiece collisions. */
+     * with another piece. Ignore any oldPiece collisions. */
     private synchronized boolean pieceCollide(Piece newPiece, Piece oldPiece)
     {
         Coordinates topLeft = newPiece.getTopLeft();

@@ -139,10 +139,8 @@ public class WelcomeView extends javax.swing.JFrame {
     }
 
     private void jButtonMultiSimpleActionPerformed(ActionEvent evt) {
-        long commonSeed = new LCGRandom().getSeed();
-
-        Board board1 = new Board(new LCGRandom(commonSeed)),
-              board2 = new Board(new LCGRandom(commonSeed));
+        Board board1 = new Board(new LCGRandom()),
+              board2 = new Board(new LCGRandom());
 
         GamePlayFactory innerGameplay = new NintendoGameBoyFactory();
         DualGamePlay game = new DualGamePlay(innerGameplay, board1, board2);
@@ -157,7 +155,13 @@ public class WelcomeView extends javax.swing.JFrame {
               board2 = new Board(new LCGRandom(commonSeed));
 
         GamePlayFactory innerGameplay = new NintendoGameBoyFactory();
-        DualGamePlay game = new DualClassic(innerGameplay, board1, board2);
+        
+        int posHole = new LCGRandom().nextInt(board1.getWidth());
+        DualGamePlay game = new DualClassic(
+        		innerGameplay,
+        		board1,
+        		board2,
+        		posHole);
 
         startTwoPlayersGame(game);
     }
