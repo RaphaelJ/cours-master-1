@@ -6,6 +6,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.*;
 
+import javax.swing.JFrame;
+
 import controller.GameController;
 
 public class TwoPlayersSwingView extends SwingView implements KeyListener {
@@ -16,10 +18,10 @@ public class TwoPlayersSwingView extends SwingView implements KeyListener {
     private ArrayList<GameController> _controllers1, _controllers2;
     private Set<Integer> _activeKeys = new HashSet<Integer>();
 
-    public TwoPlayersSwingView(GamePlay game1, GamePlay game2,
+    public TwoPlayersSwingView(JFrame parent, GamePlay game1, GamePlay game2,
                                  boolean useImages)
     {
-        super(game1.getBoard());
+        super(parent, game1.getBoard());
 
         this._game1 = game1;
         this._game2 = game2;

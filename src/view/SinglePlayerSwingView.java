@@ -6,6 +6,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.*;
 
+import javax.swing.JFrame;
+
 import controller.GameController;
 
 public class SinglePlayerSwingView extends SwingView implements KeyListener {
@@ -15,9 +17,9 @@ public class SinglePlayerSwingView extends SwingView implements KeyListener {
 
     private ArrayList<GameController> _controllers;
 
-    public SinglePlayerSwingView(GamePlay game, boolean useImages)
+    public SinglePlayerSwingView(JFrame parent, GamePlay game, boolean useImages)
     {
-        super(game.getBoard());
+        super(parent, game.getBoard());
 
         this._game = game;
         this._panel = new GamePanel(game, useImages);

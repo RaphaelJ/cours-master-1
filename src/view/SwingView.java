@@ -1,6 +1,8 @@
 package view;
 
 import java.awt.*;
+import java.awt.event.WindowAdapter;
+
 import javax.swing.*;
 
 import model.*;
@@ -8,6 +10,8 @@ import model.piece.*;
 
 public abstract class SwingView extends JFrame implements BoardListener {
 
+	protected JFrame parent;
+	
     protected JPanel playPanel;
 
     private JPanel infoPanel;
@@ -15,10 +19,12 @@ public abstract class SwingView extends JFrame implements BoardListener {
     private JLabel time;
     private JLabel timeTitle;
 
-    public SwingView(Board board) // Uses the board to update the time
+    public SwingView(JFrame parent, Board board) // Uses the board to update the time
     {
         super("Tetris MVC");
-
+        
+    	this.parent = parent;
+        
         board.addListener(this);
 
         initComponents();
@@ -37,6 +43,12 @@ public abstract class SwingView extends JFrame implements BoardListener {
         this.time = new JLabel();
 
         setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
+        
+        this.addWindowListener(new WindowAdapter() {
+			public void windowClosing(java.awt.event.WindowEvent evt){
+				parent.setVisible(true);
+			}
+		});
 
         this.startButton.setText("Start");
         this.startButton.addActionListener(new java.awt.event.ActionListener() {
@@ -125,4 +137,6 @@ public abstract class SwingView extends JFrame implements BoardListener {
     }
 
     public void newPiece(Piece piece) { }
+
+    
 }

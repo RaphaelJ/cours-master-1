@@ -137,12 +137,12 @@ public class WelcomeView extends javax.swing.JFrame {
 
         board.setGamePlay(game);
 
-        SinglePlayerSwingView gui = new SinglePlayerSwingView(game, true);
+        SinglePlayerSwingView gui = new SinglePlayerSwingView(this, game, true);
 
         gui.addController(new LocalController(game));
 
         gui.run();
-        this.setVisible(true);
+        //this.setVisible(true);
     }
 
     private void jButtonMultiSimpleActionPerformed(ActionEvent evt) {
@@ -190,13 +190,13 @@ public class WelcomeView extends javax.swing.JFrame {
         game1.getBoard().setGamePlay(game1);
         game2.getBoard().setGamePlay(game2);
 
-        TwoPlayersSwingView gui = new TwoPlayersSwingView(game1, game2, true);
+        TwoPlayersSwingView gui = new TwoPlayersSwingView(this, game1, game2, true);
 
         gui.addControllerPlayer1(new LocalController(game1));
         gui.addControllerPlayer2(new LocalController(game2));
 
         gui.run();
-        this.setVisible(true);
+        //this.setVisible(true);
 
     }
 }
