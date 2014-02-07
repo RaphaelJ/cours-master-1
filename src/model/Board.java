@@ -134,12 +134,12 @@ public class Board {
             return true;
     }
 
-    public void moveLeft()
+    public synchronized void moveLeft()
     {
         this.moveCurrentPiece(-1, 0);
     }
 
-    public void moveRight()
+    public synchronized void moveRight()
     {
         this.moveCurrentPiece(1, 0);
     }
@@ -315,7 +315,7 @@ public class Board {
     }
 
     /** Returns true if the piece collide with the left/right/bottom border or
-     * with another piece. Ignore oldPiece collisions. */
+     * with another piece. Ignore any oldPiece collisions. */
     private synchronized boolean pieceCollide(Piece newPiece, Piece oldPiece)
     {
         Coordinates topLeft = newPiece.getTopLeft();
