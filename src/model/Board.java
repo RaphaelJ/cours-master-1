@@ -19,6 +19,8 @@ public class Board {
         , PAUSED      // The game is running but the timer has been stopped.
         , GAMEOVER    // The game as been finished. The board need to be
                       // reinitialised before being started.
+        , STOPPED	  // The game is finished because another player has a
+        			  // GAMEOVER state.
     }
 
     public static final int DEFAULT_WIDTH  = 10;
@@ -153,7 +155,7 @@ public class Board {
     /** Push the piece down to the last free line. */
     public synchronized void hardDrop()
     {
-        if (this._currentState != GameState.RUNNING)
+        if (this._currentState != GameState.RUNNING || this._current == null)
             return;
 
         Piece finalPiece = this._current;
@@ -299,7 +301,7 @@ public class Board {
 
         this.placePiece(piece);
 
-        this.emitNewPiece(this._next);
+    	this.emitNewPiece(this._next);
 
         return piece;
     }
@@ -319,7 +321,6 @@ public class Board {
         this.removePiece(this._current);
         this._current = newPiece;
         this.placePiece(this._current);
-
     }
 
     /** Returns true if the piece collide with the left/right/bottom border or

@@ -17,7 +17,7 @@ public abstract class DefaultGamePlay implements GamePlay {
 
     private int _speed;
     private Timer _timer = null;
-
+    
     private ArrayList<GamePlayListener> _listeners
         = new ArrayList<GamePlayListener>();
 
@@ -37,7 +37,7 @@ public abstract class DefaultGamePlay implements GamePlay {
             this.reset();
 
         this.startTimer();
-
+        
         this._board.setCurrentState(Board.GameState.RUNNING);
     }
 
@@ -47,7 +47,7 @@ public abstract class DefaultGamePlay implements GamePlay {
     {
         switch (this._board.getCurrentState()) {
         case RUNNING:
-            this._timer.cancel();
+        	this.stopTimer();
             this._board.setCurrentState(Board.GameState.PAUSED);
             break;
         case PAUSED:
@@ -56,6 +56,14 @@ public abstract class DefaultGamePlay implements GamePlay {
             break;
         default:
         }
+    }
+    
+    public synchronized void stop()
+    {
+    	if (this._board.getCurrentState() == Board.GameState.RUNNING) {
+            this.stopTimer();
+            this._board.setCurrentState(Board.GameState.STOPPED);
+    	}
     }
 
     public void moveLeft()
@@ -85,8 +93,8 @@ public abstract class DefaultGamePlay implements GamePlay {
 
     public synchronized void reset()
     {
-        if (this._board.getCurrentState() == Board.GameState.RUNNING)
-            this._timer.cancel();
+        //if (this._board.getCurrentState() == Board.GameState.RUNNING)
+    	this.stopTimer();
 
         this._board.reset();
     }
@@ -108,24 +116,28 @@ public abstract class DefaultGamePlay implements GamePlay {
 
     private synchronized void startTimer()
     {
-        TimerTask task = new TimerTask() {
+    	TimerTask task = new TimerTask() {
             @Override
             public void run()
             {
-                if (!_board.gameTick())
-                    gameOver();
+            	_board.gameTick();
             }
         };
-
+        
         this._timer = new Timer();
         this._timer.scheduleAtFixedRate(
             task, this._speed, this._speed
         );
     }
+    
+    private synchronized void stopTimer()
+    {
+        this._timer.cancel();
+    }
 
     private synchronized void gameOver()
     {
-        this._timer.cancel();
+    	this.stopTimer();
     }
 
     /*********************** Getters/Setters and events ***********************/
@@ -174,7 +186,7 @@ public abstract class DefaultGamePlay implements GamePlay {
         this._speed = newClockSpeed;
 
         if (this._board.getCurrentState() == GameState.RUNNING) {
-            this._timer.cancel();
+            this.stopTimer();
             this.startTimer();
         }
 

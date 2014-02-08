@@ -41,6 +41,11 @@ public class MultiGamePlayProxy implements GamePlay {
             	opponent.pause();
         }
     }
+    
+    public void stop()
+    {
+        this._player.stop();
+    }
 
     public void moveLeft()
     {

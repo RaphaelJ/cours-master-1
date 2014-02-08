@@ -4,9 +4,12 @@ import gameplay.*;
 
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.*;
 
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 
 import controller.GameController;
 
@@ -30,6 +33,12 @@ public class SinglePlayerSwingView extends SwingView implements KeyListener {
         pack();
 
         this.addKeyListener(this);
+        
+        this.addWindowListener(new WindowAdapter() {
+			public void windowClosing(java.awt.event.WindowEvent evt){
+				_game.stop();
+			}
+		});
     }
 
     public void addController(GameController controller)
@@ -84,4 +93,21 @@ public class SinglePlayerSwingView extends SwingView implements KeyListener {
     public void keyReleased(KeyEvent e) { }
 
     public void keyTyped(KeyEvent e) { }
+    
+    @Override
+    public void gameOver() {
+    	
+    	int choice = 0;
+    	choice = JOptionPane.showConfirmDialog(
+    			this,
+    			"Would you like to retry ?",
+    			"Game Over",
+    			JOptionPane.YES_NO_OPTION);
+    	
+    	if(choice == 0)
+    		newGame();
+    	else
+    		this.dispatchEvent(new WindowEvent(this,
+    				WindowEvent.WINDOW_CLOSING));
+    }
 }

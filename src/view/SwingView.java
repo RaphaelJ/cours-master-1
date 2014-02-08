@@ -126,5 +126,5 @@ public abstract class SwingView extends JFrame implements BoardListener {
 
     public void newPiece(Piece piece) { }
 
-    
+    public abstract void gameOver();
 }

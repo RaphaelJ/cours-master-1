@@ -4,9 +4,12 @@ import gameplay.*;
 
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.*;
 
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 
 import controller.GameController;
 
@@ -37,6 +40,13 @@ public class MultiPlayerSwingView extends SwingView implements KeyListener {
         pack();
 
         this.addKeyListener(this);
+        
+        this.addWindowListener(new WindowAdapter() {
+			public void windowClosing(java.awt.event.WindowEvent evt){
+				for(GamePlay game : _games)
+					game.stop();
+			}
+		});
     }
 
     public void addControllerPlayer(int nbPlayer, GameController controller)
@@ -117,4 +127,42 @@ public class MultiPlayerSwingView extends SwingView implements KeyListener {
 
     @Override
     public void keyTyped(KeyEvent e) { }
+    
+    @Override
+    public void gameOver() {
+    	int numWinner = 0;
+    	int scoreWinner = this._games.get(0).getScore();
+    	
+    	for(int i = 0; i < this._games.size(); i++) {
+    		int score = this._games.get(i).getScore();
+    		
+    		if(score > scoreWinner) {
+    			numWinner = i;
+    			scoreWinner = score;
+    		}
+    	}
+    	
+    	for(GamePlay game : this._games)
+    		game.stop();
+    	
+    	JOptionPane.showMessageDialog(
+    			this,
+    			"Player " + (numWinner+1) + " wins the game with " +
+    					scoreWinner + " points !",
+				"Game Over",
+				JOptionPane.INFORMATION_MESSAGE);
+    	
+    	int choice = 0;
+    	choice = JOptionPane.showConfirmDialog(
+    			this,
+    			"Would you like to retry ?",
+    			"Game Over",
+    			JOptionPane.YES_NO_OPTION);
+    	
+    	if(choice == 0)
+    		newGame();
+    	else
+    		this.dispatchEvent(new WindowEvent(this,
+    				WindowEvent.WINDOW_CLOSING));
+    }
 }

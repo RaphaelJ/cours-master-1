@@ -149,21 +149,10 @@ public class GamePanel extends JPanel
             this.drawString("Game paused");
             break;
         case GAMEOVER:
-        	int choice = 0;
-        	choice = JOptionPane.showConfirmDialog(
-        			this,
-        			"Would you like to retry ?",
-        			"Game Over",
-        			JOptionPane.YES_NO_OPTION);
-        	
-        	if(choice == 0)
-        		this._parent.newGame();
-        	else
-        		this._parent.dispatchEvent(
-        				new WindowEvent(this._parent,
-        								WindowEvent.WINDOW_CLOSING));
-        	
+        	this._parent.gameOver();
             break;
+        case STOPPED:
+        	break;
         }
     }
 
