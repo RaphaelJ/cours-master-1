@@ -39,7 +39,6 @@ public abstract class DefaultGamePlay implements GamePlay {
         this.startTimer();
 
         this._board.setCurrentState(Board.GameState.RUNNING);
-        this._board.gameTick();
     }
 
     /** Pauses/Unpauses the timer if the game is running/in pause.
