@@ -142,7 +142,7 @@ public class WelcomeView extends javax.swing.JFrame {
     }
 
     private void jButtonMultiSimpleActionPerformed(ActionEvent evt) {
-        ArrayList<Board> boards = new ArrayList<>();
+        ArrayList<Board> boards = new ArrayList<Board>();
         
         for(int i = 0; i < NB_PLAYERS; i++) {
         	Board board = new Board(new LCGRandom());
@@ -156,7 +156,7 @@ public class WelcomeView extends javax.swing.JFrame {
     }
 
     private void jButtonMultiClassicActionPerformed(ActionEvent evt) {
-    	ArrayList<Board> boards = new ArrayList<>();
+    	ArrayList<Board> boards = new ArrayList<Board>();
     	long commonSeed = new LCGRandom().getSeed();
 
         for(int i = 0; i < NB_PLAYERS; i++) {
@@ -176,7 +176,7 @@ public class WelcomeView extends javax.swing.JFrame {
     }
 
     private void jButtonCoopActionPerformed(ActionEvent evt) {
-		ArrayList<Board> boards = new ArrayList<>();
+		ArrayList<Board> boards = new ArrayList<Board>();
 		
         for(int i = 0; i < NB_PLAYERS; i++) {
         	Board board = new Board();
@@ -193,7 +193,7 @@ public class WelcomeView extends javax.swing.JFrame {
     {
         this.setVisible(false);
         
-        ArrayList<GamePlay> games = new ArrayList<>();
+        ArrayList<GamePlay> games = new ArrayList<GamePlay>();
 
         for(int i = 0; i < NB_PLAYERS; i++) {
         	GamePlay gameplay = game.getPlayerGamePlay(i);
@@ -211,7 +211,7 @@ public class WelcomeView extends javax.swing.JFrame {
     }
     
     private void jButtonOptionsActionPerformed(ActionEvent evt) {
-        ArrayList<Board> boards = new ArrayList<>();
+        ArrayList<Board> boards = new ArrayList<Board>();
         
         for(int i = 0; i < NB_PLAYERS; i++)
         	boards.add(new Board());

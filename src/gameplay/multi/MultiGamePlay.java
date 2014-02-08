@@ -11,7 +11,7 @@ public class MultiGamePlay {
 
     public MultiGamePlay(GamePlayFactory innerGamePlay, ArrayList<Board> boards)
     {
-    	this._gameplays = new ArrayList<>();
+    	this._gameplays = new ArrayList<GamePlay>();
     	
     	for(Board board : boards) {
     		
@@ -22,7 +22,7 @@ public class MultiGamePlay {
     	for(int i = 0; i < this._gameplays.size(); i++) {
     		
     		GamePlay player = this._gameplays.get(i);
-    		ArrayList<GamePlay> opponents = new ArrayList<>();
+    		ArrayList<GamePlay> opponents = new ArrayList<GamePlay>();
     		
     		for(int j = 0; j < this._gameplays.size(); j++)
     			if(j != i)

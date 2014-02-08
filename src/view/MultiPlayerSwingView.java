@@ -24,8 +24,8 @@ public class MultiPlayerSwingView extends SwingView implements KeyListener {
         super(parent, games.get(0).getBoard());
 
         this._games = games;
-        this._panels = new ArrayList<>();
-        this._controllers = new ArrayList<>();
+        this._panels = new ArrayList<GamePanel>();
+        this._controllers = new ArrayList<ArrayList<GameController>>();
 
         for(GamePlay game : games) {
         	GamePanel panel = new GamePanel(this, game, useImages);
