@@ -3,13 +3,17 @@ package view;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Rectangle;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.WindowEvent;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
+import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -24,7 +28,7 @@ import model.piece.Piece;
 import view.piece.PieceViewModel;
 
 public class GamePanel extends JPanel 
-        implements BoardListener, GamePlayListener {
+        implements BoardListener, GamePlayListener, ItemListener {
 
 	private SwingView _parent;
 	
@@ -33,6 +37,10 @@ public class GamePanel extends JPanel
     private JLabel _score;
     private JLabel _level;
     private JPanel _nextPiecePanel;
+    
+    private JPanel _autoPlayerPanel;
+    private JLabel _autoPlayerLabel;
+    private JCheckBox _autoPlayerCheckBox;
 
     private GamePlay _game;
     private boolean _useImages;
@@ -61,6 +69,11 @@ public class GamePanel extends JPanel
         this._level = new JLabel(Integer.toString(this._game.getLevel()));
 
         this._nextPiecePanel = new JPanel();
+        
+        this._autoPlayerPanel = new JPanel();
+        this._autoPlayerLabel = new JLabel("Auto player :");
+        this._autoPlayerCheckBox = new JCheckBox();
+        this._autoPlayerCheckBox.addItemListener(this);
 
         this._playPanel.setBackground(new java.awt.Color(255, 255, 255));
         this._playPanel.setPreferredSize(
@@ -80,17 +93,22 @@ public class GamePanel extends JPanel
                 4 * PieceViewModel.TILES_SIZE, 4 * PieceViewModel.TILES_SIZE
             )
         );
-
+        
         rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
         rightPanel.add(scoreTitle);
         rightPanel.add(this._score);
         rightPanel.add(levelTitle);
         rightPanel.add(this._level);
         rightPanel.add(this._nextPiecePanel);
+        
+        this._autoPlayerPanel.setLayout(new FlowLayout());
+        this._autoPlayerPanel.add(this._autoPlayerLabel);
+        this._autoPlayerPanel.add(this._autoPlayerCheckBox);
 
         this.setLayout(new BorderLayout());
         this.add(this._playPanel, BorderLayout.CENTER);
         this.add(rightPanel, BorderLayout.EAST);
+        this.add(this._autoPlayerPanel, BorderLayout.SOUTH);
     }
 
     public void gridChange(Rectangle bounds)
@@ -240,4 +258,27 @@ public class GamePanel extends JPanel
 
         g.finalize();
     }
+    
+    @Override
+    public void itemStateChanged(ItemEvent e) {
+    	Object source = e.getItemSelectable();
+    	
+    	if(source == this._autoPlayerCheckBox) {
+    		
+    		if(e.getStateChange() == ItemEvent.SELECTED)
+    			this.startAutoPlayer();
+    		
+    		else if(e.getStateChange() == ItemEvent.DESELECTED)
+    			this.stopAutoPlayer();
+    	}
+    }
+
+	private void startAutoPlayer() {
+		// TODO: Implement this
+	}
+	
+	private void stopAutoPlayer() {
+		// TODO: Implement this
+		
+	}
 }
