@@ -58,7 +58,10 @@ public class CLIView implements BoardListener {
             break;
         case PAUSED:
         case RUNNING:
-        	break;
+		case STOPPED:
+			break;
+		default:
+			break;
         }
     }
 

@@ -34,17 +34,14 @@ public class WelcomeView extends javax.swing.JFrame {
     private JButton jButtonOptions;
     private JButton jButtonSolo;
     private JButton jButtonExit;
-    
-    /* TODO: The following constants should be in a Configuration object and
-     *       could be changed through an option menu.
-     */
-    private int NB_PLAYERS = 3;
-    private int BOARD_WIDTH = Board.DEFAULT_WIDTH;
-    private int BOARD_HEIGHT = Board.DEFAULT_HEIGHT;
+
+    private Configuration _config;
 	
     public WelcomeView()
     {
     	super("Tetris MVC");
+    	
+    	this._config = new Configuration();
     	
         initComponents();
     }
@@ -134,12 +131,14 @@ public class WelcomeView extends javax.swing.JFrame {
     private void jButtonSoloActionPerformed(ActionEvent evt) {
         this.setVisible(false);
 
-        Board board = new Board(BOARD_WIDTH, BOARD_HEIGHT);
+        Board board = new Board(this._config.getBoardWidth(),
+        		this._config.getBoardHeight());
         GamePlay game = new NintendoGameBoy(board);
 
         board.setGamePlay(game);
 
-        SinglePlayerSwingView gui = new SinglePlayerSwingView(this, game, true);
+        SinglePlayerSwingView gui = new SinglePlayerSwingView(this, game,
+        		this._config, true);
 
         gui.addController(new LocalController(game));
 
@@ -149,24 +148,33 @@ public class WelcomeView extends javax.swing.JFrame {
     private void jButtonMultiSimpleActionPerformed(ActionEvent evt) {
         ArrayList<Board> boards = new ArrayList<Board>();
         
-        for(int i = 0; i < NB_PLAYERS; i++) {
-        	Board board = new Board(new LCGRandom(), BOARD_WIDTH, BOARD_HEIGHT);
-        	boards.add(board);
+        for(int i = 0; i < this._config.getNbPlayersMulti(); i++) {
+        	boards.add(new Board(new LCGRandom(),
+        						this._config.getBoardWidth(),
+        						this._config.getBoardHeight()));
+
+        	// Sleep a little bit to avoid having the same seed for all boards.
+        	try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
         }
 
         GamePlayFactory innerGameplay = new NintendoGameBoyFactory();
         MultiGamePlay game = new MultiGamePlay(innerGameplay, boards);
 
-        startMultiPlayersGame(game, NB_PLAYERS);
+        startMultiPlayersGame(game, this._config.getNbPlayersMulti());
     }
 
     private void jButtonMultiClassicActionPerformed(ActionEvent evt) {
     	ArrayList<Board> boards = new ArrayList<Board>();
     	long commonSeed = new LCGRandom().getSeed();
 
-        for(int i = 0; i < NB_PLAYERS; i++)
-        	boards.add(new Board(new LCGRandom(commonSeed), BOARD_WIDTH,
-        			BOARD_HEIGHT));
+        for(int i = 0; i < this._config.getNbPlayersMulti(); i++)
+        	boards.add(new Board(new LCGRandom(commonSeed),
+        			this._config.getBoardWidth(),
+        			this._config.getBoardHeight()));
 
         GamePlayFactory innerGameplay = new NintendoGameBoyFactory();
         
@@ -176,19 +184,28 @@ public class WelcomeView extends javax.swing.JFrame {
         		boards,
         		posHole);
 
-        startMultiPlayersGame(game, NB_PLAYERS);
+        startMultiPlayersGame(game, this._config.getNbPlayersMulti());
     }
 
     private void jButtonCoopActionPerformed(ActionEvent evt) {
 		ArrayList<Board> boards = new ArrayList<Board>();
 		
-        for(int i = 0; i < NB_PLAYERS; i++)
-        	boards.add(new Board(BOARD_WIDTH, BOARD_HEIGHT));
+        for(int i = 0; i < this._config.getNbPlayersMulti(); i++) {
+        	boards.add(new Board(this._config.getBoardWidth(),
+        			this._config.getBoardHeight()));
+        	
+        	// Sleep a little bit to avoid having the same seed for all boards.
+        	try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+        }
 
         GamePlayFactory innerGameplay = new NintendoGameBoyFactory();
         MultiCooperative game = new MultiCooperative(innerGameplay, boards);
 
-        startMultiPlayersGame(game, NB_PLAYERS);
+        startMultiPlayersGame(game, this._config.getNbPlayersMulti());
     }
     
     private void startMultiPlayersGame(MultiGamePlay game, int nbPlayers)
@@ -197,31 +214,26 @@ public class WelcomeView extends javax.swing.JFrame {
         
         ArrayList<GamePlay> games = new ArrayList<GamePlay>();
 
-        for(int i = 0; i < NB_PLAYERS; i++) {
+        for(int i = 0; i < this._config.getNbPlayersMulti(); i++) {
         	GamePlay gameplay = game.getPlayerGamePlay(i);
         	games.add(gameplay);
         	
         	gameplay.getBoard().setGamePlay(gameplay);
         }
 
-        MultiPlayerSwingView gui = new MultiPlayerSwingView(this, games, true);
+        MultiPlayerSwingView gui = new MultiPlayerSwingView(this, games,
+        		this._config, true);
 
-        for(int i = 0; i < NB_PLAYERS; i++)
+        for(int i = 0; i < this._config.getNbPlayersMulti(); i++)
         	gui.addControllerPlayer(i, new LocalController(games.get(i)));
 
         gui.run();
     }
     
     private void jButtonOptionsActionPerformed(ActionEvent evt) {
-        ArrayList<Board> boards = new ArrayList<Board>();
-        
-        for(int i = 0; i < NB_PLAYERS; i++)
-        	boards.add(new Board(BOARD_WIDTH, BOARD_HEIGHT));
-
-        GamePlayFactory innerGameplay = new NintendoGameBoyFactory();
-        MultiCooperative game = new MultiCooperative(innerGameplay, boards);
-
-        startMultiPlayersGame(game, NB_PLAYERS);
+        OptionsView ov = new OptionsView(this, this._config);
+        this.setVisible(false);
+        ov.setVisible(true);
     }
 
 }

@@ -18,35 +18,55 @@ public class MultiPlayerSwingView extends SwingView implements KeyListener {
     private ArrayList<GamePlay> _games;
     private ArrayList<GamePanel> _panels;
 
+    private Configuration _config;
+    private boolean _useImages;
     private ArrayList<ArrayList<GameController>> _controllers;
-    private Set<Integer> _activeKeys = new HashSet<Integer>();
+    private Set<Integer> _activeKeys;
+    private ArrayList<KeyboardHandler> _keyboardHandlers;
 
     public MultiPlayerSwingView(JFrame parent, ArrayList<GamePlay> games,
-                                 boolean useImages)
+    		Configuration config, boolean useImages)
     {
         super(parent, games.get(0).getBoard());
 
         this._games = games;
         this._panels = new ArrayList<GamePanel>();
+        
+        this._config = config;
+        this._useImages = useImages;
+        this._activeKeys = new HashSet<Integer>();
         this._controllers = new ArrayList<ArrayList<GameController>>();
-
-        for(GamePlay game : games) {
-        	GamePanel panel = new GamePanel(this, game, useImages);
+        this._keyboardHandlers = new ArrayList<KeyboardHandler>();
+        
+        initComponents();
+        
+        for(int i = 0; i < this._config.getNbPlayersMulti(); i++) {
+        	this._keyboardHandlers.add(
+        			new KeyboardHandler(
+        					this._activeKeys,
+        					this._config.getKeySet(i),
+        					this._controllers.get(i)));
+        }
+    }
+    
+    private void initComponents() {
+    	
+    	for(GamePlay game : this._games) {
+        	GamePanel panel = new GamePanel(this, game, this._useImages);
         	this._panels.add(panel);
         	this._controllers.add(new ArrayList<GameController>());
         	this.playPanel.add(panel);
         }
-
-        pack();
-
-        this.addKeyListener(this);
         
+        this.addKeyListener(this);
         this.addWindowListener(new WindowAdapter() {
 			public void windowClosing(java.awt.event.WindowEvent evt){
 				for(GamePlay game : _games)
 					game.stop();
 			}
 		});
+
+        this.pack();
     }
 
     public void addControllerPlayer(int nbPlayer, GameController controller)
@@ -73,51 +93,13 @@ public class MultiPlayerSwingView extends SwingView implements KeyListener {
     {
         _activeKeys.add(event.getKeyCode());
 
+        // Use the first player to propagate the pause event to all controllers.
         if(_activeKeys.contains(KeyEvent.VK_P))
             for (GameController controller : this._controllers.get(0))
                 controller.pause();
 
-        // Left player
-        if(_activeKeys.contains(KeyEvent.VK_Q))
-            for (GameController controller : this._controllers.get(0))
-                controller.moveLeft();
-
-        if(_activeKeys.contains(KeyEvent.VK_D))
-            for (GameController controller : this._controllers.get(0))
-                controller.moveRight();
-
-        if(_activeKeys.contains(KeyEvent.VK_S))
-            for (GameController controller : this._controllers.get(0))
-                controller.softDrop();
-
-        if(_activeKeys.contains(KeyEvent.VK_A))
-            for (GameController controller : this._controllers.get(0))
-                controller.hardDrop();
-
-        if(_activeKeys.contains(KeyEvent.VK_Z))
-            for (GameController controller : this._controllers.get(0))
-                controller.rotate();
-
-        // Right player
-        if(_activeKeys.contains(KeyEvent.VK_LEFT))
-            for (GameController controller : this._controllers.get(1))
-                controller.moveLeft();
-
-        if(_activeKeys.contains(KeyEvent.VK_RIGHT))
-            for (GameController controller : this._controllers.get(1))
-                controller.moveRight();
-
-        if(_activeKeys.contains(KeyEvent.VK_DOWN))
-            for (GameController controller : this._controllers.get(1))
-                controller.softDrop();
-
-        if(_activeKeys.contains(KeyEvent.VK_ENTER))
-            for (GameController controller : this._controllers.get(1))
-                controller.hardDrop();
-
-        if(_activeKeys.contains(KeyEvent.VK_UP))
-            for (GameController controller : this._controllers.get(1))
-                controller.rotate();
+        for(KeyboardHandler handler : this._keyboardHandlers)
+        	handler.checkKeys();
     }
 
     @Override

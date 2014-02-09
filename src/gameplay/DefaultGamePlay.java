@@ -135,6 +135,7 @@ public abstract class DefaultGamePlay implements GamePlay {
         this._timer.cancel();
     }
 
+    // TODO : On fait quoi de cette méthode ? Elle n'est jamais utilisée.
     private synchronized void gameOver()
     {
     	this.stopTimer();
