@@ -57,13 +57,12 @@ public class Board {
 
     public Board()
     {
-        this._rand = new LCGRandom();
-
-        this._width = DEFAULT_WIDTH;
-        this._height = DEFAULT_HEIGHT;
-
-        this._grid = new Row[this._height];
-        this.initBoard();
+        this(new LCGRandom());
+    }
+    
+    public Board(int width, int height)
+    {
+        this(new LCGRandom(), width, height);
     }
 
     /** Initializes an empty board with a specified seed for the random

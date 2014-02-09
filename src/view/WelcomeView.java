@@ -35,7 +35,12 @@ public class WelcomeView extends javax.swing.JFrame {
     private JButton jButtonSolo;
     private JButton jButtonExit;
     
+    /* TODO: The following constants should be in a Configuration object and
+     *       could be changed through an option menu.
+     */
     private int NB_PLAYERS = 3;
+    private int BOARD_WIDTH = Board.DEFAULT_WIDTH;
+    private int BOARD_HEIGHT = Board.DEFAULT_HEIGHT;
 	
     public WelcomeView()
     {
@@ -129,7 +134,7 @@ public class WelcomeView extends javax.swing.JFrame {
     private void jButtonSoloActionPerformed(ActionEvent evt) {
         this.setVisible(false);
 
-        Board board = new Board();
+        Board board = new Board(BOARD_WIDTH, BOARD_HEIGHT);
         GamePlay game = new NintendoGameBoy(board);
 
         board.setGamePlay(game);
@@ -145,7 +150,7 @@ public class WelcomeView extends javax.swing.JFrame {
         ArrayList<Board> boards = new ArrayList<Board>();
         
         for(int i = 0; i < NB_PLAYERS; i++) {
-        	Board board = new Board(new LCGRandom());
+        	Board board = new Board(new LCGRandom(), BOARD_WIDTH, BOARD_HEIGHT);
         	boards.add(board);
         }
 
@@ -159,10 +164,9 @@ public class WelcomeView extends javax.swing.JFrame {
     	ArrayList<Board> boards = new ArrayList<Board>();
     	long commonSeed = new LCGRandom().getSeed();
 
-        for(int i = 0; i < NB_PLAYERS; i++) {
-        	Board board = new Board(new LCGRandom(commonSeed));
-        	boards.add(board);
-        }
+        for(int i = 0; i < NB_PLAYERS; i++)
+        	boards.add(new Board(new LCGRandom(commonSeed), BOARD_WIDTH,
+        			BOARD_HEIGHT));
 
         GamePlayFactory innerGameplay = new NintendoGameBoyFactory();
         
@@ -178,10 +182,8 @@ public class WelcomeView extends javax.swing.JFrame {
     private void jButtonCoopActionPerformed(ActionEvent evt) {
 		ArrayList<Board> boards = new ArrayList<Board>();
 		
-        for(int i = 0; i < NB_PLAYERS; i++) {
-        	Board board = new Board();
-        	boards.add(board);
-        }
+        for(int i = 0; i < NB_PLAYERS; i++)
+        	boards.add(new Board(BOARD_WIDTH, BOARD_HEIGHT));
 
         GamePlayFactory innerGameplay = new NintendoGameBoyFactory();
         MultiCooperative game = new MultiCooperative(innerGameplay, boards);
@@ -214,7 +216,7 @@ public class WelcomeView extends javax.swing.JFrame {
         ArrayList<Board> boards = new ArrayList<Board>();
         
         for(int i = 0; i < NB_PLAYERS; i++)
-        	boards.add(new Board());
+        	boards.add(new Board(BOARD_WIDTH, BOARD_HEIGHT));
 
         GamePlayFactory innerGameplay = new NintendoGameBoyFactory();
         MultiCooperative game = new MultiCooperative(innerGameplay, boards);
