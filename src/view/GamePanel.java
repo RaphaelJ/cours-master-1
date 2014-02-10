@@ -14,13 +14,14 @@ import javax.swing.JPanel;
 
 import gameplay.GamePlay;
 import gameplay.GamePlayListener;
+import model.Board;
 import model.Board.GameState;
 import model.BoardListener;
 import model.Row;
 import model.piece.Piece;
 import view.piece.PieceViewModel;
 
-public class GamePanel extends JPanel 
+public class GamePanel extends JPanel
         implements BoardListener, GamePlayListener {
 
     private JPanel _playPanel;
@@ -132,11 +133,11 @@ public class GamePanel extends JPanel
             break;
         case RUNNING:
             // Redraws the entire grid.
+            Board board = this._game.getBoard();
             this.gridChange(
-                new Rectangle(0, 0, this._game.getBoard().getWidth(),
-                this._game.getBoard().getHeight())
+                new Rectangle(0, 0, board.getWidth(), board.getHeight())
             );
-            this.newPiece(this._game.getBoard().getNextPiece());
+            this.newPiece(board.getCurrentPiece(), board.getNextPiece());
             break;
         case PAUSED:
             this.cleanBoards();
@@ -148,13 +149,14 @@ public class GamePanel extends JPanel
         }
     }
 
-    public void newPiece(Piece piece)
+    /** Draws the next piece in its right panel. */
+    public void newPiece(Piece piece, Piece newPiece)
     {
         Graphics g = this._nextPiecePanel.getGraphics();
-        PieceViewModel pvm = new PieceViewModel(piece, this._useImages);
+        PieceViewModel pvm = new PieceViewModel(newPiece, this._useImages);
 
-        int dimension = piece.getFactory().getExtent();
-        boolean[][] state = piece.getCurrentState();
+        int dimension = newPiece.getFactory().getExtent();
+        boolean[][] state = newPiece.getCurrentState();
 
         // Erases the next piece panel
         g.setColor(Color.WHITE);
@@ -182,7 +184,7 @@ public class GamePanel extends JPanel
 
         g.finalize();
     }
-    
+
     public void scoreChange(int newScore)
     {
         this._score.setText(Integer.toString(newScore));

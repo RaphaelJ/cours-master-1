@@ -291,7 +291,7 @@ public class Board {
 
         this.placePiece(piece);
 
-        this.emitNewPiece(this._next);
+        this.emitNewPiece(piece, this._next);
 
         return piece;
     }
@@ -311,12 +311,11 @@ public class Board {
         this.removePiece(this._current);
         this._current = newPiece;
         this.placePiece(this._current);
-
     }
 
     /** Returns true if the piece collide with the left/right/bottom border or
      * with another piece. Ignore any oldPiece collisions. */
-    private synchronized boolean pieceCollide(Piece newPiece, Piece oldPiece)
+    public synchronized boolean pieceCollide(Piece newPiece, Piece oldPiece)
     {
         Coordinates topLeft = newPiece.getTopLeft();
         boolean[][] state = newPiece.getCurrentState();
@@ -428,7 +427,7 @@ public class Board {
         for (int i = minY; i < maxY; i++) {
             boolean[] line = state[i];
 
-            // Checks each line where the piece occupes a cell.
+            // Checks every line where the piece occupies at least a cell.
             for (int j = minX; j < maxX; j++) {
                 if (line[j]) {
                     if (this._grid[i + topY].isComplete())
@@ -458,10 +457,10 @@ public class Board {
             listener.gridChange(bounds);
     }
 
-    private void emitNewPiece(Piece piece)
+    private void emitNewPiece(Piece piece, Piece nextPiece)
     {
         for (BoardListener listener : this._listeners)
-            listener.newPiece(piece);
+            listener.newPiece(piece, nextPiece);
     }
 
     /*********************** Getters/Setters ***********************/

@@ -37,41 +37,6 @@ public class DualGamePlayProxy implements GamePlay {
         }
     }
 
-    public void moveLeft()
-    {
-        synchronized (this._dualGame) {
-            this._player.moveLeft();
-        }
-    }
-
-    public void moveRight()
-    {
-        synchronized (this._dualGame) {
-            this._player.moveRight();
-        }
-    }
-
-    public void softDrop()
-    {
-        synchronized (this._dualGame) {
-            this._player.softDrop();
-        }
-    }
-
-    public void hardDrop()
-    {
-        synchronized (this._dualGame) {
-            this._player.hardDrop();
-        }
-    }
-
-    public void rotate()
-    {
-        synchronized (this._dualGame) {
-            this._player.rotate();
-        }
-    }
-
     public void reset()
     {
         synchronized (this._dualGame) {

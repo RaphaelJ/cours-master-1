@@ -8,8 +8,11 @@ import model.Board;
  * game (timer, score, speed, levels ...).
  * GamePlay instances change the game behaviour when receiving events from
  * controllers by controlling their associated Board.
+ * Gameplay are proxies between the controller and the board.
  */
 public interface GamePlay {
+
+    /*********************** Controller events ***********************/
 
     /** Starts the game and resets the game if needed. */
     public void newGame();
@@ -17,16 +20,6 @@ public interface GamePlay {
     /** Pauses/Unpauses the game if the game is running/in pause.
      * Does nothing otherwise. */
     public void pause();
-
-    public void moveLeft();
-
-    public void moveRight();
-
-    public void softDrop();
-
-    public void hardDrop();
-
-    public void rotate();
 
     /** Reinitialises the game and the board. Stop the game if it's running. */
     public void reset();

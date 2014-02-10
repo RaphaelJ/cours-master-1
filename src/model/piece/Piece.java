@@ -46,12 +46,17 @@ public abstract class Piece {
      * the same extent. */
     public abstract boolean[][][] getStates();
 
+    public int numStates()
+    {
+        return this.getStates().length;
+    }
+
     /** Performs a rotation of the piece by cycling to the next state.
      * Returns a new Piece to allow non-destructive rotations. */
     public Piece rotate()
     {
         return this.getFactory().construct(
-            this._topLeft, (this._currentState + 1) % this.getStates().length
+            this._topLeft, (this._currentState + 1) % this.numStates()
         );
     }
 
@@ -85,7 +90,7 @@ public abstract class Piece {
             boolean[] line = this.getCurrentState()[i];
 
             for (int j = 0; j < line.length; j++) {
-                if (line[j]) 
+                if (line[j])
                     return false;
             }
         }

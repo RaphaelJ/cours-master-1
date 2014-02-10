@@ -59,31 +59,6 @@ public abstract class DefaultGamePlay implements GamePlay {
         }
     }
 
-    public void moveLeft()
-    {
-        this._board.moveLeft();
-    }
-
-    public void moveRight()
-    {
-        this._board.moveRight();
-    }
-
-    public void softDrop()
-    {
-        this._board.softDrop();
-    }
-
-    public void hardDrop()
-    {
-        this._board.hardDrop();
-    }
-
-    public void rotate()
-    {
-        this._board.rotate();
-    }
-
     public synchronized void reset()
     {
         if (this._board.getCurrentState() == Board.GameState.RUNNING)

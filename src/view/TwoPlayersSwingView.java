@@ -19,7 +19,7 @@ public class TwoPlayersSwingView extends SwingView implements KeyListener {
     private Set<Integer> _activeKeys = new HashSet<Integer>();
 
     public TwoPlayersSwingView(JFrame parent, GamePlay game1, GamePlay game2,
-                                 boolean useImages)
+                               boolean useImages)
     {
         super(parent, game1.getBoard());
 

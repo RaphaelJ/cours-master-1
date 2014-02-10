@@ -8,10 +8,13 @@ import javax.swing.*;
 import model.*;
 import model.piece.*;
 
+/** Serves as a baseclass for the game's windows.
+ * Provides an empty JPanel (this.playPanel) which will be used by subclasses
+ * to implement the game's board interface. */
 public abstract class SwingView extends JFrame implements BoardListener {
 
-	protected JFrame parent;
-	
+    protected JFrame parent;
+
     protected JPanel playPanel;
 
     private JPanel infoPanel;
@@ -22,9 +25,9 @@ public abstract class SwingView extends JFrame implements BoardListener {
     public SwingView(JFrame parent, Board board) // Uses the board to update the time
     {
         super("Tetris MVC");
-        
-    	this.parent = parent;
-        
+
+        this.parent = parent;
+
         board.addListener(this);
 
         initComponents();
@@ -43,12 +46,12 @@ public abstract class SwingView extends JFrame implements BoardListener {
         this.time = new JLabel();
 
         setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
-        
+
         this.addWindowListener(new WindowAdapter() {
-			public void windowClosing(java.awt.event.WindowEvent evt){
-				parent.setVisible(true);
-			}
-		});
+                public void windowClosing(java.awt.event.WindowEvent evt){
+                        parent.setVisible(true);
+                }
+        });
 
         this.startButton.setText("Start");
         this.startButton.addActionListener(new java.awt.event.ActionListener() {
@@ -111,7 +114,7 @@ public abstract class SwingView extends JFrame implements BoardListener {
 
     protected abstract long getElapsedTime();
 
-    private void updateElapsedTime() 
+    private void updateElapsedTime()
     {
         long delta = this.getElapsedTime() / 1000;
         int elapsedHours = (int) (delta / 3600);
@@ -136,7 +139,5 @@ public abstract class SwingView extends JFrame implements BoardListener {
         this.updateElapsedTime();
     }
 
-    public void newPiece(Piece piece) { }
-
-    
+    public void newPiece(Piece piece, Piece nextPiece) { }
 }

@@ -13,7 +13,6 @@ public interface BoardListener extends EventListener {
     /** Event triggered when a some cells of the grid have been modified. */
     public void gridChange(Rectangle bounds);
 
-    /** When a new piece has been randomly chosen (not yet introduced in the
-     * grid). */
-    public void newPiece(Piece piece);
+    /** When a new piece has been randomly chosen. */
+    public void newPiece(Piece currentPiece, Piece nextPiece);
 }

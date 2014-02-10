@@ -23,26 +23,26 @@ public class LocalController implements GameController {
 
     public void moveLeft()
     {
-        this._game.moveLeft();
+        this._game.getBoard().moveLeft();
     }
 
     public void moveRight()
     {
-        this._game.moveRight();
+        this._game.getBoard().moveRight();
     }
 
     public void softDrop()
     {
-        this._game.softDrop();
+        this._game.getBoard().softDrop();
     }
 
     public void hardDrop()
     {
-        this._game.hardDrop();
+        this._game.getBoard().hardDrop();
     }
 
     public void rotate()
     {
-        this._game.rotate();
+        this._game.getBoard().rotate();
     }
 }
