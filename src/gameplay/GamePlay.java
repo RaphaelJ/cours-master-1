@@ -21,6 +21,9 @@ public interface GamePlay {
      * Does nothing otherwise. */
     public void pause();
 
+    /** Stop the game without resetting the game and the board. */
+    public void stop();
+
     /** Reinitialises the game and the board. Stop the game if it's running. */
     public void reset();
 
@@ -28,6 +31,8 @@ public interface GamePlay {
 
     /** Will be called by the board when asking to clear a set of lines. */
     public void clearLines(LinkedList<Integer> linesIndices);
+
+    public void gameOver();
 
     /*********************** Getters/Setters and events ***********************/
 

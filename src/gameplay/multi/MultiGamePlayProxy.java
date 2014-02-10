@@ -7,46 +7,56 @@ import model.Board;
 
 /** Creates a proxy for the player gameplay but with stopping the opponent game
  * when the pause() method is called. */
-public class DualGamePlayProxy implements GamePlay {
+public class MultiGamePlayProxy implements GamePlay {
 
-    protected DualGamePlay _dualGame;
-    protected GamePlay _player, _opponent;
+    protected MultiGamePlay _multiGame;
+    protected GamePlay _player;
+    protected ArrayList<GamePlay> _opponents;
 
-    public DualGamePlayProxy(DualGamePlay dualGame, GamePlay player,
-                             GamePlay opponent)
+    public MultiGamePlayProxy(MultiGamePlay multiGame, GamePlay player,
+                             ArrayList<GamePlay> opponents)
     {
-        this._dualGame = dualGame;
+        this._multiGame = multiGame;
         this._player = player;
-        this._opponent = opponent;
+        this._opponents = opponents;
     }
 
     public void newGame()
     {
-        synchronized (this._dualGame) { // Avoid both players to press pause
-                                        // at the same time.
+        synchronized (this._multiGame) { // Avoid both players to press pause
+                                         // at the same time.
             this._player.newGame();
-            this._opponent.newGame();
+
+            for(GamePlay opponent : this._opponents)
+                opponent.newGame();
         }
     }
 
     public void pause()
     {
-        synchronized (this._dualGame) {
+        synchronized (this._multiGame) {
             this._player.pause();
-            this._opponent.pause();
+
+            for(GamePlay opponent : this._opponents)
+                opponent.pause();
         }
+    }
+
+    public void stop()
+    {
+        this._player.stop();
     }
 
     public void reset()
     {
-        synchronized (this._dualGame) {
+        synchronized (this._multiGame) {
             this._player.reset();
         }
     }
 
     public void clearLines(LinkedList<Integer> lines)
     {
-        synchronized (this._dualGame) {
+        synchronized (this._multiGame) {
             this._player.clearLines(lines);
         }
     }
@@ -78,7 +88,7 @@ public class DualGamePlayProxy implements GamePlay {
 
     public void setSpeed(int newClockSpeed)
     {
-        synchronized (this._dualGame) {
+        synchronized (this._multiGame) {
             this._player.setSpeed(newClockSpeed);
         }
     }

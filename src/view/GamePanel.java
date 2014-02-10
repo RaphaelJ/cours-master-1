@@ -3,15 +3,20 @@ package view;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Rectangle;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
+import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+import ai.*;
 import gameplay.GamePlay;
 import gameplay.GamePlayListener;
 import model.Board;
@@ -22,7 +27,9 @@ import model.piece.Piece;
 import view.piece.PieceViewModel;
 
 public class GamePanel extends JPanel
-        implements BoardListener, GamePlayListener {
+        implements BoardListener, GamePlayListener, ItemListener {
+
+    private SwingView _parent;
 
     private JPanel _playPanel;
 
@@ -30,11 +37,18 @@ public class GamePanel extends JPanel
     private JLabel _level;
     private JPanel _nextPiecePanel;
 
+    private JPanel _autoPlayerPanel;
+    private JLabel _autoPlayerLabel;
+    private JCheckBox _autoPlayerCheckBox;
+
     private GamePlay _game;
     private boolean _useImages;
 
-    public GamePanel(GamePlay game, boolean useImages)
+    private ArtificialIntelligence _ai;
+
+    public GamePanel(SwingView parent, GamePlay game, boolean useImages)
     {
+        this._parent = parent;
         this._game = game;
         game.addListener(this);
         game.getBoard().addListener(this);
@@ -42,6 +56,8 @@ public class GamePanel extends JPanel
         this._useImages = useImages;
 
         initComponents();
+
+        this._ai = new ArtificialIntelligence(game, 1, 1, 4);
     }
 
     private void initComponents()
@@ -56,6 +72,11 @@ public class GamePanel extends JPanel
         this._level = new JLabel(Integer.toString(this._game.getLevel()));
 
         this._nextPiecePanel = new JPanel();
+
+        this._autoPlayerPanel = new JPanel();
+        this._autoPlayerLabel = new JLabel("Auto player :");
+        this._autoPlayerCheckBox = new JCheckBox();
+        this._autoPlayerCheckBox.addItemListener(this);
 
         this._playPanel.setBackground(new java.awt.Color(255, 255, 255));
         this._playPanel.setPreferredSize(
@@ -83,9 +104,14 @@ public class GamePanel extends JPanel
         rightPanel.add(this._level);
         rightPanel.add(this._nextPiecePanel);
 
+        this._autoPlayerPanel.setLayout(new FlowLayout());
+        this._autoPlayerPanel.add(this._autoPlayerLabel);
+        this._autoPlayerPanel.add(this._autoPlayerCheckBox);
+
         this.setLayout(new BorderLayout());
         this.add(this._playPanel, BorderLayout.CENTER);
         this.add(rightPanel, BorderLayout.EAST);
+        this.add(this._autoPlayerPanel, BorderLayout.SOUTH);
     }
 
     public void gridChange(Rectangle bounds)
@@ -144,7 +170,9 @@ public class GamePanel extends JPanel
             this.drawString("Game paused");
             break;
         case GAMEOVER:
-            this.drawString("Game over !");
+            this._parent.gameOver();
+            break;
+        case STOPPED:
             break;
         }
     }
@@ -167,9 +195,9 @@ public class GamePanel extends JPanel
         // Draws the next piece at the center of the panel.
         int offset = (PieceViewModel.TILES_SIZE * 4 - PieceViewModel.TILES_SIZE
                                                 * dimension) / 2;
-        for (int i = 0; i < dimension; i++) {
-            for (int j = 0; j < dimension; j++) {
-                if (state[i][j]) {
+        for (int i = 0; i < dimension; i++)
+            for (int j = 0; j < dimension; j++)
+                if (state[i][j])
                     try {
                         pvm.drawTexture(
                             g, offset + j * PieceViewModel.TILES_SIZE,
@@ -178,9 +206,6 @@ public class GamePanel extends JPanel
                     } catch (Exception e) { // Unable to load the tile.
                         System.err.println(e.getMessage());
                     }
-                }
-            }
-        }
 
         g.finalize();
     }
@@ -229,12 +254,35 @@ public class GamePanel extends JPanel
 
         g.drawString(
             text,
-            (this._game.getBoard().getWidth() 
+            (this._game.getBoard().getWidth()
              * PieceViewModel.TILES_SIZE - width) / 2,
             (this._game.getBoard().getHeight() 
              * PieceViewModel.TILES_SIZE - height) / 2
         );
 
         g.finalize();
+    }
+
+    @Override
+    public void itemStateChanged(ItemEvent e)
+    {
+        Object source = e.getItemSelectable();
+
+        if(source == this._autoPlayerCheckBox) {
+            if(e.getStateChange() == ItemEvent.SELECTED)
+                this.startAutoPlayer();
+            else if(e.getStateChange() == ItemEvent.DESELECTED)
+                this.stopAutoPlayer();
+        }
+    }
+
+    private void startAutoPlayer()
+    {
+        this._ai.setActive(true);
+    }
+
+    private void stopAutoPlayer()
+    {
+        this._ai.setActive(false);
     }
 }

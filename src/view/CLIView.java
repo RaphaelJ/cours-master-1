@@ -32,7 +32,7 @@ public class CLIView implements BoardListener {
         for (Row row : grid) {
             System.out.print("!");
             for (Piece piece : row.getPieces()) {
-            	if (piece != null)
+                if (piece != null)
                     System.out.print(" #");
                 else
                     System.out.print("  ");
@@ -56,9 +56,7 @@ public class CLIView implements BoardListener {
         case GAMEOVER:
             System.out.println("Game over");
             break;
-        case PAUSED:
-        case RUNNING:
-        	break;
+        default:
         }
     }
 
@@ -67,6 +65,7 @@ public class CLIView implements BoardListener {
         this.printBoard();
     }
 
-    public void newPiece(Piece piece) {
+    public void newPiece(Piece current, Piece next)
+    {
     }
 }

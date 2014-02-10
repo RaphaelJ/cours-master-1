@@ -61,7 +61,7 @@ public abstract class Piece {
     }
 
     public Piece translate(int dX, int dY)
-    {
+    {    	
         return this.getFactory().construct(
             new Coordinates(
                 this._topLeft.getX() + dX, this._topLeft.getY() + dY

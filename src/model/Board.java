@@ -19,6 +19,8 @@ public class Board {
         , PAUSED      // The game is running but the timer has been stopped.
         , GAMEOVER    // The game as been finished. The board need to be
                       // reinitialised before being started.
+        , STOPPED	  // The game is finished because another player has a
+        			  // GAMEOVER state.
     }
 
     public static final int DEFAULT_WIDTH  = 10;
@@ -55,13 +57,12 @@ public class Board {
 
     public Board()
     {
-        this._rand = new LCGRandom();
+        this(new LCGRandom());
+    }
 
-        this._width = DEFAULT_WIDTH;
-        this._height = DEFAULT_HEIGHT;
-
-        this._grid = new Row[this._height];
-        this.initBoard();
+    public Board(int width, int height)
+    {
+        this(new LCGRandom(), width, height);
     }
 
     /** Initializes an empty board with a specified seed for the random
@@ -109,7 +110,7 @@ public class Board {
             return this._currentState != GameState.GAMEOVER;
 
         if (this._current == null) // First piece.
-            this._current = this.nextPiece();
+            this.nextPiece();
         else { // Moves the piece downward.
             Piece newPiece = this._current.translate(0, 1);
 
@@ -118,7 +119,7 @@ public class Board {
                     this._current = null;
                 else { // Introduces a new piece.
                     this.clearLines();
-                    this._current = this.nextPiece();
+                    this.nextPiece();
                 }
             } else {
                 this.removePiece(this._current);
@@ -153,7 +154,7 @@ public class Board {
     /** Push the piece down to the last free line. */
     public synchronized void hardDrop()
     {
-        if (this._currentState != GameState.RUNNING)
+        if (this._currentState != GameState.RUNNING || this._current == null)
             return;
 
         Piece finalPiece = this._current;
@@ -171,6 +172,23 @@ public class Board {
         }
     }
 
+    /** Moves the current piece by the given offset.
+     * Does nothing if an collision occurs. */
+    public synchronized void moveCurrentPiece(int dX, int dY)
+    {
+        if (this._currentState != GameState.RUNNING)
+            return;
+
+        Piece newPiece = this._current.translate(dX, dY);
+
+        if (this.pieceCollide(newPiece, this._current))
+            return;
+
+        this.removePiece(this._current);
+        this._current = newPiece;
+        this.placePiece(this._current);
+    }
+
     /** Tries to rotate the piece. Does nothing if a collision occurs. */
     public synchronized void rotate()
     {
@@ -183,14 +201,105 @@ public class Board {
             return;
 
         this.removePiece(this._current);
-        this.placePiece(rotatedPiece);
-
         this._current = rotatedPiece;
+        this.placePiece(rotatedPiece);
     }
 
-    /** Adds a new line at the bottom of the grid. Emits the game over event if
-     * the top line of the grid is not empty. */
-    public synchronized void addLine()
+    /** Returns true if the piece collide with the left/right/bottom border or
+     * with another piece. Ignore any oldPiece collisions. */
+    public synchronized boolean pieceCollide(Piece newPiece, Piece oldPiece)
+    {
+        Coordinates topLeft = newPiece.getTopLeft();
+        boolean[][] state = newPiece.getCurrentState();
+
+        // Checks if the new piece overlap another piece or touch a border.
+        int topX = topLeft.getX(), topY = topLeft.getY();
+        for (int i = 0; i < state.length; i++) {
+            boolean[] line = state[i];
+            int y = topY + i;
+
+            for (int j = 0; j < line.length; j++) {
+                if (line[j]) {
+                    // Checks the left, right and bottom border.
+                    int x = topX + j;
+                    if (x < 0 || x >= this._width || y >= this._height)
+                        return true;
+
+                    // Checks if the cell is free, for cells which have been
+                    // inserted inside the board.
+                    if (y >= 0) {
+                        Piece cell = this._grid[y].getPiece(x);
+                        if (cell != null && cell != oldPiece)
+                            return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /** Places a new piece on the grid. Doesn't check for collisions. */
+    public synchronized void placePiece(Piece piece)
+    {
+        int topX = piece.getTopLeft().getX()
+          , topY = piece.getTopLeft().getY();
+
+        boolean[][] state = piece.getCurrentState();
+
+        // Only draws coordinates of the piece which are inside the grid.
+        int minX = topX < 0 ? -topX : 0
+          , maxX = Math.min(this._width, topX + state.length) - topX
+          , minY = topY < 0 ? -topY : 0
+          , maxY = Math.min(this._height, topY + state.length) - topY;
+        for (int i = minY; i < maxY; i++) {
+            boolean[] line = state[i];
+
+            for (int j = minX; j < maxX; j++) {
+                if (line[j])
+                    this._grid[topY + i].setPiece(topX + j, piece);
+            }
+        }
+
+        this.emitGridChange(
+            new Rectangle(
+                topX + minX, topY + minY, maxX, maxY
+            )
+        );
+    }
+
+    /** Removes a piece from the grid. */
+    public synchronized void removePiece(Piece piece)
+    {
+        int topX = piece.getTopLeft().getX()
+          , topY = piece.getTopLeft().getY();
+
+        boolean[][] state = piece.getCurrentState();
+
+        // Only clean coordinates of the piece which are inside the grid.
+        int minX = topX < 0 ? -topX : 0
+          , maxX = Math.min(this._width, topX + state.length) - topX
+          , minY = topY < 0 ? -topY : 0
+          , maxY = Math.min(this._height, topY + state.length) - topY;
+        for (int i = minY; i < maxY; i++) {
+            boolean[] line = state[i];
+
+            for (int j = minX; j < maxX; j++) {
+                if (line[j])
+                    this._grid[topY + i].setPiece(topX + j, null);
+            }
+        }
+
+        this.emitGridChange(
+            new Rectangle(
+                topX + minX, topY + minY, maxX, maxY
+            )
+        );
+    }
+
+    /** Adds a new line at the bottom of the grid with a hole at posHole.
+     * Emits the game over event if the top line of the grid is not empty. */
+    public synchronized void addLine(int posHole)
     {
         // Checks that the first line is empty.
         if (this._current != null)
@@ -209,9 +318,8 @@ public class Board {
         Row row = new Row(this._width);
         this._grid[this._height - 1] = row;
 
-        int empty = new LCGRandom().nextInt(this._width);
         for (int i = 0; i < this._width; i++) {
-            if (i != empty) {
+            if (i != posHole) {
                 row.setPiece(
                     i, new PieceBlock(new Coordinates(i, this._height - 1), 0)
                 );
@@ -222,6 +330,15 @@ public class Board {
             this.placePiece(this._current);
 
         this.emitGridChange(new Rectangle(0, 0, this._width, this._height));
+    }
+
+    /** Adds a new line at the bottom of the grid with a hole at a random
+     * position.
+     * Emits the game over event if the top line of the grid is not empty. */
+    public synchronized void addLine()
+    {
+        int posHole = new LCGRandom().nextInt(this._width);
+        this.addLine(posHole);
     }
 
     /** Removes the line at the given index from the grid. */
@@ -268,6 +385,7 @@ public class Board {
 
     private synchronized void gameOver()
     {
+        this._game.gameOver();
         this.setCurrentState(GameState.GAMEOVER);
     }
 
@@ -276,6 +394,7 @@ public class Board {
     private synchronized Piece nextPiece()
     {
         Piece piece = this._next;
+        this._current = piece;
         this._next = getRandomPiece();
 
         // Checks if the last line is blocked by some piece.
@@ -294,115 +413,6 @@ public class Board {
         this.emitNewPiece(piece, this._next);
 
         return piece;
-    }
-
-    /** Moves the current piece by the given offset.
-     * Does nothing if an collision occurs. */
-    private synchronized void moveCurrentPiece(int dX, int dY)
-    {
-        if (this._currentState != GameState.RUNNING)
-            return;
-
-        Piece newPiece = this._current.translate(dX, dY);
-
-        if (this.pieceCollide(newPiece, this._current))
-            return;
-
-        this.removePiece(this._current);
-        this._current = newPiece;
-        this.placePiece(this._current);
-    }
-
-    /** Returns true if the piece collide with the left/right/bottom border or
-     * with another piece. Ignore any oldPiece collisions. */
-    public synchronized boolean pieceCollide(Piece newPiece, Piece oldPiece)
-    {
-        Coordinates topLeft = newPiece.getTopLeft();
-        boolean[][] state = newPiece.getCurrentState();
-
-        // Checks if the new piece overlap another piece or touch a border.
-        int topX = topLeft.getX(), topY = topLeft.getY();
-        for (int i = 0; i < state.length; i++) {
-            boolean[] line = state[i];
-            int y = topY + i;
-
-            for (int j = 0; j < line.length; j++) {
-                if (line[j]) {
-                    // Checks the left, right and bottom border.
-                    int x = topX + j;
-                    if (x < 0 || x >= this._width || y >= this._height)
-                        return true;
-
-                    // Checks if the cell is free, for cells which have been
-                    // inserted inside the board.
-                    if (y >= 0) {
-                        Piece cell = this._grid[y].getPiece(x);
-                        if (cell != null && cell != oldPiece)
-                            return true;
-                    }
-                }
-            }
-        }
-
-        return false;
-    }
-
-    /** Places a new piece on the grid. Doesn't check for collisions. */
-    private synchronized void placePiece(Piece piece)
-    {
-        int topX = piece.getTopLeft().getX()
-          , topY = piece.getTopLeft().getY();
-
-        boolean[][] state = piece.getCurrentState();
-
-        // Only draws coordinates of the piece which are inside the grid.
-        int minX = topX < 0 ? -topX : 0
-          , maxX = Math.min(this._width, topX + state.length) - topX
-          , minY = topY < 0 ? -topY : 0
-          , maxY = Math.min(this._height, topY + state.length) - topY;
-        for (int i = minY; i < maxY; i++) {
-            boolean[] line = state[i];
-
-            for (int j = minX; j < maxX; j++) {
-                if (line[j])
-                    this._grid[topY + i].setPiece(topX + j, piece);
-            }
-        }
-
-        this.emitGridChange(
-            new Rectangle(
-                topX + minX, topY + minY, maxX, maxY
-            )
-        );
-    }
-
-    /** Removes a piece from the grid. */
-    private synchronized void removePiece(Piece piece)
-    {
-        int topX = piece.getTopLeft().getX()
-          , topY = piece.getTopLeft().getY();
-
-        boolean[][] state = piece.getCurrentState();
-
-        // Only clean coordinates of the piece which are inside the grid.
-        int minX = topX < 0 ? -topX : 0
-          , maxX = Math.min(this._width, topX + state.length) - topX
-          , minY = topY < 0 ? -topY : 0
-          , maxY = Math.min(this._height, topY + state.length) - topY;
-        for (int i = minY; i < maxY; i++) {
-            boolean[] line = state[i];
-
-            for (int j = minX; j < maxX; j++) {
-                if (line[j])
-                    this._grid[topY + i].setPiece(topX + j, null);
-            }
-        }
-
-        this.emitGridChange(
-            new Rectangle(
-                topX + minX, topY + minY, maxX, maxY
-            )
-        );
     }
 
     /** Checks every line where the current piece is complete and calls the
@@ -503,6 +513,11 @@ public class Board {
     public Piece getCurrentPiece()
     {
         return this._current;
+    }
+
+    public void setCurrentPiece(Piece piece)
+    {
+        this._current = piece;
     }
 
     public Piece getNextPiece()

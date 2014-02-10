@@ -39,7 +39,6 @@ public abstract class DefaultGamePlay implements GamePlay {
         this.startTimer();
 
         this._board.setCurrentState(Board.GameState.RUNNING);
-        this._board.gameTick();
     }
 
     /** Pauses/Unpauses the timer if the game is running/in pause.
@@ -48,7 +47,7 @@ public abstract class DefaultGamePlay implements GamePlay {
     {
         switch (this._board.getCurrentState()) {
         case RUNNING:
-            this._timer.cancel();
+            this.stopTimer();
             this._board.setCurrentState(Board.GameState.PAUSED);
             break;
         case PAUSED:
@@ -59,10 +58,17 @@ public abstract class DefaultGamePlay implements GamePlay {
         }
     }
 
+    public synchronized void stop()
+    {
+        if (this._board.getCurrentState() == Board.GameState.RUNNING) {
+            this.stopTimer();
+            this._board.setCurrentState(Board.GameState.STOPPED);
+        }
+    }
+
     public synchronized void reset()
     {
-        if (this._board.getCurrentState() == Board.GameState.RUNNING)
-            this._timer.cancel();
+        this.stop();
 
         this._board.reset();
     }
@@ -80,6 +86,11 @@ public abstract class DefaultGamePlay implements GamePlay {
             this._board.removeLine(i.intValue());
     }
 
+    public synchronized void gameOver()
+    {
+        this.stopTimer();
+    }
+
     /*********************** Internals ***********************/
 
     private synchronized void startTimer()
@@ -88,8 +99,7 @@ public abstract class DefaultGamePlay implements GamePlay {
             @Override
             public void run()
             {
-                if (!_board.gameTick())
-                    gameOver();
+                _board.gameTick();
             }
         };
 
@@ -99,7 +109,7 @@ public abstract class DefaultGamePlay implements GamePlay {
         );
     }
 
-    private synchronized void gameOver()
+    private synchronized void stopTimer()
     {
         this._timer.cancel();
     }
@@ -150,7 +160,7 @@ public abstract class DefaultGamePlay implements GamePlay {
         this._speed = newClockSpeed;
 
         if (this._board.getCurrentState() == GameState.RUNNING) {
-            this._timer.cancel();
+            this.stopTimer();
             this.startTimer();
         }
 
