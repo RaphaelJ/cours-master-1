@@ -43,7 +43,8 @@ public class GamePanel extends JPanel
 
     private GamePlay _game;
     private boolean _useImages;
-
+    private KeyboardHandler _keyboardHandler;
+    
     private ArtificialIntelligence _ai;
 
     public GamePanel(SwingView parent, GamePlay game, boolean useImages)
@@ -54,6 +55,7 @@ public class GamePanel extends JPanel
         game.getBoard().addListener(this);
 
         this._useImages = useImages;
+        this._keyboardHandler = null;
 
         initComponents();
 
@@ -273,16 +275,28 @@ public class GamePanel extends JPanel
                 this.startAutoPlayer();
             else if(e.getStateChange() == ItemEvent.DESELECTED)
                 this.stopAutoPlayer();
+
+            this._parent.requestFocus();
         }
     }
 
     private void startAutoPlayer()
     {
+    	if(this._keyboardHandler != null)
+			this._keyboardHandler.setEnabled(false);
+    	
         this._ai.setActive(true);
     }
 
     private void stopAutoPlayer()
     {
+    	if(this._keyboardHandler != null)
+			this._keyboardHandler.setEnabled(true);
+    	
         this._ai.setActive(false);
+    }
+    
+    public void setKeyboardHandler(KeyboardHandler handler) {
+    	this._keyboardHandler = handler;
     }
 }

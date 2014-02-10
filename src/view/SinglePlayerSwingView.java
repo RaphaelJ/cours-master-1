@@ -37,6 +37,8 @@ public class SinglePlayerSwingView extends SwingView implements KeyListener {
         this._keyboardHandler = new KeyboardHandler(this._activeKeys,
             this._config.getKeySet(0), this._controllers
         );
+        
+        this._panel.setKeyboardHandler(this._keyboardHandler);
 
         initComponents();
     }
