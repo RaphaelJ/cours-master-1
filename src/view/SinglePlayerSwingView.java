@@ -24,12 +24,12 @@ public class SinglePlayerSwingView extends SwingView implements KeyListener {
     private KeyboardHandler _keyboardHandler;
 
     public SinglePlayerSwingView(JFrame parent, GamePlay game,
-                                 Configuration config, boolean useImages)
+                                 Configuration config)
     {
         super(parent, game.getBoard());
 
         this._game = game;
-        this._panel = new GamePanel(this, game, useImages);
+        this._panel = new GamePanel(this, game, config);
 
         this._config = config;
         this._activeKeys = new HashSet<>();

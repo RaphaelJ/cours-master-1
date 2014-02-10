@@ -138,7 +138,7 @@ public class WelcomeView extends javax.swing.JFrame {
         board.setGamePlay(game);
 
         SinglePlayerSwingView gui = new SinglePlayerSwingView(this, game,
-                        this._config, true);
+                        this._config);
 
         gui.addController(new LocalController(game));
 

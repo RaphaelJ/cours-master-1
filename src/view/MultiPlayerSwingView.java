@@ -19,7 +19,6 @@ public class MultiPlayerSwingView extends SwingView implements KeyListener {
     private ArrayList<GamePanel> _panels;
 
     private Configuration _config;
-    private boolean _useImages;
     private ArrayList<ArrayList<GameController>> _controllers;
     private Set<Integer> _activeKeys;
     private ArrayList<KeyboardHandler> _keyboardHandlers;
@@ -33,7 +32,6 @@ public class MultiPlayerSwingView extends SwingView implements KeyListener {
         this._panels = new ArrayList<GamePanel>();
 
         this._config = config;
-        this._useImages = useImages;
         this._activeKeys = new HashSet<Integer>();
         this._controllers = new ArrayList<ArrayList<GameController>>();
         this._keyboardHandlers = new ArrayList<KeyboardHandler>();
@@ -55,7 +53,7 @@ public class MultiPlayerSwingView extends SwingView implements KeyListener {
     private void initComponents()
     {
         for(GamePlay game : this._games) {
-            GamePanel panel = new GamePanel(this, game, this._useImages);
+            GamePanel panel = new GamePanel(this, game, this._config);
             this._panels.add(panel);
             this._controllers.add(new ArrayList<GameController>());
             this.playPanel.add(panel);

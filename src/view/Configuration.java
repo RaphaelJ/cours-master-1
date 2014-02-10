@@ -7,6 +7,8 @@ import java.util.ArrayList;
 public class Configuration {
     private int _boardWidth;
     private int _boardHeight;
+    
+    private boolean _useImages;
 
     private int _nbPlayersMulti;
     private ArrayList<KeySet> _keySets;
@@ -15,6 +17,7 @@ public class Configuration {
     {
         this._boardWidth = 10;
         this._boardHeight = 22;
+        this._useImages = true;
         this._nbPlayersMulti = 2;
         this._keySets = new ArrayList<KeySet>();
 
@@ -36,6 +39,11 @@ public class Configuration {
     {
         return this._nbPlayersMulti;
     }
+    
+    public boolean isUseImages()
+    {
+        return this._useImages;
+    }
 
     public KeySet getKeySet(int numPlayer)
     {
@@ -50,6 +58,11 @@ public class Configuration {
     public void setBoardHeight(int boardHeight)
     {
         this._boardHeight = boardHeight;
+    }
+    
+    public void setUseImages(boolean useImages)
+    {
+        this._useImages = useImages;
     }
 
     public void increaseNbPlayersMulti()

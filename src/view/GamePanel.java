@@ -42,19 +42,19 @@ public class GamePanel extends JPanel
     private JCheckBox _autoPlayerCheckBox;
 
     private GamePlay _game;
-    private boolean _useImages;
+    private Configuration _config;
     private KeyboardHandler _keyboardHandler;
     
     private ArtificialIntelligence _ai;
 
-    public GamePanel(SwingView parent, GamePlay game, boolean useImages)
+    public GamePanel(SwingView parent, GamePlay game, Configuration config)
     {
         this._parent = parent;
         this._game = game;
         game.addListener(this);
         game.getBoard().addListener(this);
 
-        this._useImages = useImages;
+        this._config = config;
         this._keyboardHandler = null;
 
         initComponents();
@@ -130,7 +130,7 @@ public class GamePanel extends JPanel
                 if (piece != null) {
                     try {
                         PieceViewModel pvm = new PieceViewModel(
-                            piece, this._useImages
+                            piece, this._config.isUseImages()
                         );
                         pvm.drawTexture(
                             g, j * PieceViewModel.TILES_SIZE,
@@ -183,7 +183,8 @@ public class GamePanel extends JPanel
     public void newPiece(Piece piece, Piece newPiece)
     {
         Graphics g = this._nextPiecePanel.getGraphics();
-        PieceViewModel pvm = new PieceViewModel(newPiece, this._useImages);
+        PieceViewModel pvm = new PieceViewModel(newPiece,
+        		this._config.isUseImages());
 
         int dimension = newPiece.getFactory().getExtent();
         boolean[][] state = newPiece.getCurrentState();
