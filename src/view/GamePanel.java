@@ -272,17 +272,27 @@ public class GamePanel extends JPanel
         Object source = e.getItemSelectable();
 
         if(source == this._autoPlayerCheckBox) {
+        	
+        	// Start the AI
             if(e.getStateChange() == ItemEvent.SELECTED)
                 this.startAutoPlayer();
+            
+            // Stop the AI
             else if(e.getStateChange() == ItemEvent.DESELECTED)
                 this.stopAutoPlayer();
 
+            /* Request focus to the frame so it can still receive the key
+             * events.
+             */
             this._parent.requestFocus();
         }
     }
 
     private void startAutoPlayer()
     {
+    	/* Disable the KeyboardHandler so it's not possible to control the game
+    	 * while the AI is playing.
+    	 */
     	if(this._keyboardHandler != null)
 			this._keyboardHandler.setEnabled(false);
     	
@@ -291,6 +301,7 @@ public class GamePanel extends JPanel
 
     private void stopAutoPlayer()
     {
+    	// Enable the KeyboardHandler to give back the hand to the human player.
     	if(this._keyboardHandler != null)
 			this._keyboardHandler.setEnabled(true);
     	
