@@ -8,6 +8,8 @@ import model.piece.*;
 import util.random.LCGRandom;
 import util.random.Random;
 
+import ai.*;
+
 /** Saves the current status of the board and communicates with views to share
  * changes and game events with the user. */
 public class Board {
@@ -19,8 +21,8 @@ public class Board {
         , PAUSED      // The game is running but the timer has been stopped.
         , GAMEOVER    // The game as been finished. The board need to be
                       // reinitialised before being started.
-        , STOPPED	  // The game is finished because another player has a
-        			  // GAMEOVER state.
+        , STOPPED     // The game is finished because another player has a
+                      // GAMEOVER state.
     }
 
     public static final int DEFAULT_WIDTH  = 10;
@@ -187,6 +189,8 @@ public class Board {
         this.removePiece(this._current);
         this._current = newPiece;
         this.placePiece(this._current);
+/*        
+        new ArtificialIntelligence(this._game, 1, 1, 1).tryMove(this._current, null);*/
     }
 
     /** Tries to rotate the piece. Does nothing if a collision occurs. */
@@ -203,6 +207,8 @@ public class Board {
         this.removePiece(this._current);
         this._current = rotatedPiece;
         this.placePiece(rotatedPiece);
+/*        
+        new ArtificialIntelligence(this._game, 1, 1, 1).tryMove(this._current, null);*/
     }
 
     /** Returns true if the piece collide with the left/right/bottom border or
