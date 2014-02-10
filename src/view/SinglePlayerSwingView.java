@@ -32,7 +32,7 @@ public class SinglePlayerSwingView extends SwingView implements KeyListener {
         this._panel = new GamePanel(this, game, config);
 
         this._config = config;
-        this._activeKeys = new HashSet<>();
+        this._activeKeys = new HashSet<Integer>();
         this._controllers = new ArrayList<GameController>();
         this._keyboardHandler = new KeyboardHandler(this._activeKeys,
             this._config.getKeySet(0), this._controllers

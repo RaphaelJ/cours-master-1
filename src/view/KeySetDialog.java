@@ -216,29 +216,32 @@ public class KeySetDialog extends JDialog
 
         if(source instanceof JTextField) {
             JTextField textField = (JTextField) source;
-
-            switch(textField.getName()) {
-            case "rotate":
+            String name = textField.getName();
+            
+           if(name.compareTo("rotate") == 0) {
                 this._rotateTextField.setText(
                     KeyEvent.getKeyText(this._keySet.getKeyRotate()));
-                break;
-            case "left":
+           }
+           
+           else if(name.compareTo("left") == 0) {
                 this._leftTextField.setText(
                     KeyEvent.getKeyText(this._keySet.getKeyLeft()));
-                break;
-            case "right":
+           }
+           
+           else if(name.compareTo("right") == 0) {
                 this._rightTextField.setText(
                     KeyEvent.getKeyText(this._keySet.getKeyRight()));
-                break;
-            case "softDrop":
+           }
+           
+           else if(name.compareTo("softDrop") == 0) {
                 this._softDropTextField.setText(
                     KeyEvent.getKeyText(this._keySet.getKeySoftDrop()));
-                break;
-            case "hardDrop":
+           }
+           
+           else if(name.compareTo("hardDrop") == 0) {
                 this._hardDropTextField.setText(
                     KeyEvent.getKeyText(this._keySet.getKeyHardDrop()));
-                break;
-            }
+           }
         }
     }
 
@@ -256,41 +259,46 @@ public class KeySetDialog extends JDialog
 
         if(source instanceof JTextField) {
             JTextField textField = (JTextField) source;
+            String name = textField.getName();
 
-            switch(textField.getName()) {
-                case "rotate":
-                    this._keySet.setKeyRotate(e.getKeyCode());
-                    this._rotateTextField.setText(
-                        KeyEvent.getKeyText(this._keySet.getKeyRotate()));
-                    break;
-                case "left":
-                    this._keySet.setKeyLeft(e.getKeyCode());
-                    this._leftTextField.setText(
-                        KeyEvent.getKeyText(this._keySet.getKeyLeft()));
-                    break;
-                case "right":
-                    this._keySet.setKeyRight(e.getKeyCode());
-                    this._rightTextField.setText(
-                        KeyEvent.getKeyText(this._keySet.getKeyRight()));
-                    break;
-                case "softDrop":
-                    this._keySet.setKeySoftDrop(e.getKeyCode());
-                    this._softDropTextField.setText(
-                        KeyEvent.getKeyText(this._keySet.getKeySoftDrop()));
-                    break;
-                case "hardDrop":
-                    this._keySet.setKeyHardDrop(e.getKeyCode());
-                    this._hardDropTextField.setText(
-                        KeyEvent.getKeyText(this._keySet.getKeyHardDrop()));
-                    break;
+            if(name.compareTo("rotate") == 0) {
+            	this._keySet.setKeyRotate(e.getKeyCode());
+            	this._rotateTextField.setText(
+                    KeyEvent.getKeyText(this._keySet.getKeyRotate()));
             }
-
+           
+            else if(name.compareTo("left") == 0) {
+            	this._keySet.setKeyLeft(e.getKeyCode());
+            	this._leftTextField.setText(
+                    KeyEvent.getKeyText(this._keySet.getKeyLeft()));
+           	}
+           
+            else if(name.compareTo("right") == 0) {
+            	this._keySet.setKeyRight(e.getKeyCode());
+                this._rightTextField.setText(
+                    KeyEvent.getKeyText(this._keySet.getKeyRight()));
+           	}
+           
+            else if(name.compareTo("softDrop") == 0) {
+            	this._keySet.setKeySoftDrop(e.getKeyCode());
+                this._softDropTextField.setText(
+                    KeyEvent.getKeyText(this._keySet.getKeySoftDrop()));
+           	}
+           
+            else if(name.compareTo("hardDrop") == 0) {
+            	this._keySet.setKeyHardDrop(e.getKeyCode());
+                this._hardDropTextField.setText(
+                    KeyEvent.getKeyText(this._keySet.getKeyHardDrop()));
+            }
+            
             _rotateLabel.requestFocusInWindow();
         }
     }
 
     @Override
-    public void keyReleased(KeyEvent e) { }
+    public void keyReleased(KeyEvent e) {
+    	this.requestFocus();
+    }
 
     @Override
     public void keyTyped(KeyEvent e) { }
