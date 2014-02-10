@@ -44,7 +44,7 @@ public class GamePanel extends JPanel
     private GamePlay _game;
     private Configuration _config;
     private KeyboardHandler _keyboardHandler;
-    
+
     private ArtificialIntelligence _ai;
 
     public GamePanel(SwingView parent, GamePlay game, Configuration config)
@@ -272,25 +272,35 @@ public class GamePanel extends JPanel
         Object source = e.getItemSelectable();
 
         if(source == this._autoPlayerCheckBox) {
+            // Start the AI
             if(e.getStateChange() == ItemEvent.SELECTED)
                 this.startAutoPlayer();
+
+            // Stop the AI
             else if(e.getStateChange() == ItemEvent.DESELECTED)
                 this.stopAutoPlayer();
 
+            /* Request focus to the frame so it can still receive the key
+             * events.
+             */
             this._parent.requestFocus();
         }
     }
 
     private void startAutoPlayer()
     {
+        /* Disable the KeyboardHandler so it's not possible to control the game
+         * while the AI is playing.
+         */
         if(this._keyboardHandler != null)
-                        this._keyboardHandler.setEnabled(false);
+            this._keyboardHandler.setEnabled(false);
 
         this._ai.setActive(true);
     }
 
     private void stopAutoPlayer()
     {
+        // Enable the KeyboardHandler to give the hand back to the human player.
         if(this._keyboardHandler != null)
             this._keyboardHandler.setEnabled(true);
 

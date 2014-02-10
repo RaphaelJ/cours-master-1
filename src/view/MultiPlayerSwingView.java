@@ -39,12 +39,11 @@ public class MultiPlayerSwingView extends SwingView implements KeyListener {
         initComponents();
 
         for(int i = 0; i < this._config.getNbPlayersMulti(); i++) {
-        	
-        	KeyboardHandler handler = new KeyboardHandler(
-                    this._activeKeys,
-                    this._config.getKeySet(i),
-                    this._controllers.get(i));
-        	
+            KeyboardHandler handler = new KeyboardHandler(
+                this._activeKeys,
+                this._config.getKeySet(i),
+                this._controllers.get(i));
+
             this._keyboardHandlers.add(handler);
             this._panels.get(i).setKeyboardHandler(handler);
         }
