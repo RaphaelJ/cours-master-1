@@ -74,7 +74,7 @@ public class GamePanel extends JPanel
         this._nextPiecePanel = new JPanel();
 
         this._autoPlayerPanel = new JPanel();
-        this._autoPlayerLabel = new JLabel("Auto player :");
+        this._autoPlayerLabel = new JLabel("Let the computer play :");
         this._autoPlayerCheckBox = new JCheckBox();
         this._autoPlayerCheckBox.addItemListener(this);
 
