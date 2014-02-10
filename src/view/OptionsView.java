@@ -163,8 +163,8 @@ public class OptionsView extends JFrame
 
     private void afterWindowClosed()
     {
-        this._config.setBoardWidth((int) this._boardWidth.getValue());
-        this._config.setBoardHeight((int) this._boardHeight.getValue());
+        this._config.setBoardWidth((Integer) this._boardWidth.getValue());
+        this._config.setBoardHeight((Integer) this._boardHeight.getValue());
 
         if(this._parent != null)
             this._parent.setVisible(true);
@@ -198,7 +198,7 @@ public class OptionsView extends JFrame
     {
         if(e.getSource() == this._nbPlayersMulti) {
             int oldNbPlayersValue = this._config.getNbPlayersMulti();
-            int newNbPlayersValue = (int) this._nbPlayersMulti.getValue();
+            int newNbPlayersValue = (Integer) this._nbPlayersMulti.getValue();
 
             if(oldNbPlayersValue < newNbPlayersValue) {
                     this.addPlayerInPlayerPanel(newNbPlayersValue-1);
