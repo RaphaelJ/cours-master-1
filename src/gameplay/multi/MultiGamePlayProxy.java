@@ -61,6 +61,14 @@ public class MultiGamePlayProxy implements GamePlay {
         }
     }
 
+    public void gameOver()
+    {
+        synchronized (this._multiGame) {
+            for(GamePlay opponent : this._opponents)
+                opponent.gameOver();
+        }
+    }
+
     public void addListener(GamePlayListener listener)
     {
         this._player.addListener(listener);
