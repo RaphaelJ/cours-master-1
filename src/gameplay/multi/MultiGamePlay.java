@@ -12,7 +12,7 @@ public class MultiGamePlay {
     public MultiGamePlay(GamePlayFactory innerGamePlay, ArrayList<Board> boards)
     {
         this._gameplays = new ArrayList<GamePlay>();
-        
+
         ArrayList<GamePlay> tmpGamePlays = new ArrayList<GamePlay>();
 
         for(Board board : boards) {

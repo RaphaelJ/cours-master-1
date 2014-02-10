@@ -283,21 +283,22 @@ public class GamePanel extends JPanel
 
     private void startAutoPlayer()
     {
-    	if(this._keyboardHandler != null)
-			this._keyboardHandler.setEnabled(false);
-    	
+        if(this._keyboardHandler != null)
+                        this._keyboardHandler.setEnabled(false);
+
         this._ai.setActive(true);
     }
 
     private void stopAutoPlayer()
     {
-    	if(this._keyboardHandler != null)
-			this._keyboardHandler.setEnabled(true);
-    	
+        if(this._keyboardHandler != null)
+            this._keyboardHandler.setEnabled(true);
+
         this._ai.setActive(false);
     }
-    
-    public void setKeyboardHandler(KeyboardHandler handler) {
-    	this._keyboardHandler = handler;
+
+    public void setKeyboardHandler(KeyboardHandler handler)
+    {
+        this._keyboardHandler = handler;
     }
 }

@@ -25,10 +25,10 @@ public class KeyboardHandler {
 
     public void checkKeys()
     {
-    	// Check keys only if the handler is enabled (if a human is playing)
-    	if(!this._enabled)
-    		return;
-    	
+        // Check keys only if the handler is enabled (if a human is playing)
+        if(!this._enabled)
+            return;
+
         if(_activeKeys.contains(_keySet.getKeyRotate()))
             for(GameController controller : _controllers)
                 controller.rotate();

@@ -26,14 +26,14 @@ public class ArtificialIntelligence implements BoardListener {
 
     private final double _α;
     private final double _β;
-    private final double _ln_γ;
+    private final double _γ;
 
     public ArtificialIntelligence(GamePlay game, double α, double β,
                                   double γ) {
         this._game = game;
         this._α = α;
         this._β = β;
-        this._ln_γ = Math.log(γ);
+        this._γ = γ;
 
         game.getBoard().addListener(this);
     }
@@ -156,8 +156,7 @@ public class ArtificialIntelligence implements BoardListener {
         synchronized (board) {
             return this._α * this.bockedCells(piece)
                  - this._β * this.completedRows(piece)
-                 + Math.log(board.getHeight() - this.topIndex(piece))
-                   / this._ln_γ;
+                 + this._γ / Math.sqrt(this.topIndex(piece) + 1);
         }
     }
 
