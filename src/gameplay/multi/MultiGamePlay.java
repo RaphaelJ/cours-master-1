@@ -12,22 +12,24 @@ public class MultiGamePlay {
     public MultiGamePlay(GamePlayFactory innerGamePlay, ArrayList<Board> boards)
     {
         this._gameplays = new ArrayList<GamePlay>();
+        
+        ArrayList<GamePlay> tmpGamePlays = new ArrayList<GamePlay>();
 
         for(Board board : boards) {
             GamePlay gameplay = innerGamePlay.construct(board);
-            this._gameplays.add(gameplay);
+            tmpGamePlays.add(gameplay);
         }
 
-        for(int i = 0; i < this._gameplays.size(); i++) {
-            GamePlay player = this._gameplays.get(i);
+        for(int i = 0; i < tmpGamePlays.size(); i++) {
+            GamePlay player = tmpGamePlays.get(i);
             ArrayList<GamePlay> opponents = new ArrayList<GamePlay>();
 
-            for(int j = 0; j < this._gameplays.size(); j++) {
+            for(int j = 0; j < tmpGamePlays.size(); j++) {
                 if(j != i)
-                    opponents.add(this._gameplays.get(j));
+                    opponents.add(tmpGamePlays.get(j));
             }
 
-            this.wrapGamePlay(player, opponents);
+            this._gameplays.add(this.wrapGamePlay(player, opponents));
         }
     }
 

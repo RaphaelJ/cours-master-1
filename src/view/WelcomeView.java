@@ -165,7 +165,7 @@ public class WelcomeView extends javax.swing.JFrame {
         GamePlayFactory innerGameplay = new NintendoGameBoyFactory();
         MultiGamePlay game = new MultiGamePlay(innerGameplay, boards);
 
-        startMultiPlayersGame(game, this._config.getNbPlayersMulti());
+        startMultiPlayersGame(game);
     }
 
     private void jButtonMultiClassicActionPerformed(ActionEvent evt)
@@ -186,7 +186,7 @@ public class WelcomeView extends javax.swing.JFrame {
                         boards,
                         posHole);
 
-        startMultiPlayersGame(game, this._config.getNbPlayersMulti());
+        startMultiPlayersGame(game);
     }
 
     private void jButtonCoopActionPerformed(ActionEvent evt) {
@@ -207,10 +207,10 @@ public class WelcomeView extends javax.swing.JFrame {
         GamePlayFactory innerGameplay = new NintendoGameBoyFactory();
         MultiCooperative game = new MultiCooperative(innerGameplay, boards);
 
-        startMultiPlayersGame(game, this._config.getNbPlayersMulti());
+        startMultiPlayersGame(game);
     }
 
-    private void startMultiPlayersGame(MultiGamePlay game, int nbPlayers)
+    private void startMultiPlayersGame(MultiGamePlay game)
     {
         this.setVisible(false);
 
