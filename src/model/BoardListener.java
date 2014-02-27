@@ -8,8 +8,6 @@ import model.piece.Piece;
 /** Provides an interface for views and other objects which listen to game's
  * board changes. */
 public interface BoardListener extends EventListener {
-    public void stateChange(Board.GameState newState);
-
     /** Event triggered when a some cells of the grid have been modified. */
     public void gridChange(Rectangle bounds);
 

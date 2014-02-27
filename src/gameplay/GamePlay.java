@@ -2,17 +2,29 @@ package gameplay;
 
 import java.util.*;
 
+import gameplay.rules.*;
 import model.Board;
+import util.*;
 
-/** Provides an interface for "rules" which manage the dynamic aspect of the
- * game (timer, score, speed, levels ...).
+/** Manages the dynamic aspect of the game (timer, score, speed, levels ...).
  * GamePlay instances change the game behaviour when receiving events from
- * controllers by controlling their associated Board.
- * Gameplay are proxies between the controller and the board.
- */
+ * controllers. Catches game over over and clear lines events from the board. */
 public interface GamePlay {
 
-    /*********************** Controller events ***********************/
+    public enum GameState {
+          INITIALIZED // The board is empty and the timer hasn't been started.
+                      // This is the initial state when the Board is instanced.
+        , RUNNING     // The timer and the game are running.
+        , PAUSED      // The game is running but the timer has been stopped.
+        , GAMEOVER    // The game as been finished. The board(s) need to be
+                      // reinitialised before being started.
+        , STOPPED     // The game is finished because another player has a
+                      // GAMEOVER state.
+    }
+
+    public void addListener(GamePlayListener listener);
+
+    /*********************** User actions ***********************/
 
     /** Starts the game and resets the game if needed. */
     public void newGame();
@@ -21,32 +33,43 @@ public interface GamePlay {
      * Does nothing otherwise. */
     public void pause();
 
-    /** Stop the game without resetting the game and the board. */
-    public void stop();
-
     /** Reinitialises the game and the board. Stop the game if it's running. */
     public void reset();
 
+    public void stop();
+
+    public void moveLeft();
+
+    public void moveRight();
+
+    /** Push the piece one line down. */
+    public void softDrop();
+
+    /** Push the piece down to the last free line. */
+    public void hardDrop();
+
+    /** Tries to rotate the piece. */
+    public void rotate();
+
+    /** Enable/disable the Artificial intelligence. Disabled by default. */
+    public void setAI(boolean enable);
+
     /*********************** Board events ***********************/
 
-    /** Will be called by the board when asking to clear a set of lines. */
+    /** Will be called by the board when asking to clear a set of lines.
+     * Is needed to synchronise clear-lines events over multiplayer games. */
     public void clearLines(LinkedList<Integer> linesIndices);
 
     public void gameOver();
 
-    /*********************** Getters/Setters and events ***********************/
-
-    public void addListener(GamePlayListener listener);
+    /*********************** Getters ***********************/
 
     public Board getBoard();
 
-    public int getScore();
+    public Rule getRule();
 
-    public int getLevel();
+    /** Returns the timer which controls the game. */
+    public GameTimer getTimer();
 
-    /** Returns the current delay between two "ticks" in milliseconds. */
-    public int getSpeed();
-
-    /** Changes the speed of the game. */
-    public void setSpeed(int newClockSpeed);
+    public GameState getCurrentState();
 }

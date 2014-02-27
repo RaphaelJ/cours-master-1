@@ -5,30 +5,29 @@ import java.awt.event.WindowAdapter;
 
 import javax.swing.*;
 
+import gameplay.*;
 import model.*;
 import model.piece.*;
+import util.*;
 
 /** Serves as a baseclass for the game's windows.
- * Provides an empty JPanel (this.playPanel) which will be used by subclasses
- * to implement the game's board interface. */
-public abstract class SwingView extends JFrame implements BoardListener {
+ * Provides an empty JPanel (this.gamePanel) which will be used by subclasses
+ * to implement the game's board user interface(s). */
+public abstract class SwingView extends JFrame implements GamePlayListener {
 
     protected JFrame parent;
 
-    protected JPanel playPanel;
+    protected JPanel gamePanel;
 
     private JPanel infoPanel;
     private JLabel time;
     private JLabel timeTitle;
 
-    public SwingView(JFrame parent, Board board) // Uses the board to update
-                                                 // the game's time
+    public SwingView(JFrame parent)
     {
         super("Tetris MVC");
 
         this.parent = parent;
-
-        board.addListener(this);
 
         initComponents();
 
@@ -37,8 +36,8 @@ public abstract class SwingView extends JFrame implements BoardListener {
 
     private void initComponents()
     {
-        this.playPanel = new JPanel();
-        this.playPanel.setLayout(new BoxLayout(playPanel, BoxLayout.X_AXIS));
+        this.gamePanel = new JPanel();
+        this.gamePanel.setLayout(new BoxLayout(gamePanel, BoxLayout.X_AXIS));
 
         this.infoPanel = new JPanel();
         this.timeTitle = new JLabel();
@@ -81,7 +80,7 @@ public abstract class SwingView extends JFrame implements BoardListener {
         );
 
         this.setLayout(new BorderLayout());
-        this.add(this.playPanel, BorderLayout.CENTER);
+        this.add(this.gamePanel, BorderLayout.CENTER);
         this.add(this.infoPanel, BorderLayout.SOUTH);
 
         this.setResizable(false);
@@ -101,11 +100,11 @@ public abstract class SwingView extends JFrame implements BoardListener {
 
     protected abstract void newGame();
 
-    protected abstract long getElapsedTime();
+    public abstract void stateChanged(GamePlay.GameState newState);
 
-    private void updateElapsedTime()
+    public void timeChanged(long elapsedTime)
     {
-        long delta = this.getElapsedTime() / 1000;
+        long delta = elapsedTime / 1000;
         int elapsedHours = (int) (delta / 3600);
         delta = delta % 3600;
  
@@ -120,15 +119,4 @@ public abstract class SwingView extends JFrame implements BoardListener {
             )
         );
     }
-
-    public void stateChange(Board.GameState newState) { }
-
-    public void gridChange(Rectangle bounds)
-    {
-        this.updateElapsedTime();
-    }
-
-    public void newPiece(Piece piece, Piece nextPiece) { }
-
-    public abstract void gameOver();
 }

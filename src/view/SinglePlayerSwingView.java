@@ -1,7 +1,5 @@
 package view;
 
-import gameplay.*;
-
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowAdapter;
@@ -11,7 +9,8 @@ import java.util.*;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
-import controller.GameController;
+import gameplay.*;
+import model.*;
 
 public class SinglePlayerSwingView extends SwingView implements KeyListener {
 
@@ -20,22 +19,22 @@ public class SinglePlayerSwingView extends SwingView implements KeyListener {
 
     private Configuration _config;
     private Set<Integer> _activeKeys;
-    private ArrayList<GameController> _controllers;
     private KeyboardHandler _keyboardHandler;
 
     public SinglePlayerSwingView(JFrame parent, GamePlay game,
                                  Configuration config)
     {
-        super(parent, game.getBoard());
+        super(parent);
 
         this._game = game;
+        game.addListener(this);
+
         this._panel = new GamePanel(this, game, config);
 
         this._config = config;
         this._activeKeys = new HashSet<Integer>();
-        this._controllers = new ArrayList<GameController>();
-        this._keyboardHandler = new KeyboardHandler(this._activeKeys,
-            this._config.getKeySet(0), this._controllers
+        this._keyboardHandler = new KeyboardHandler(
+            this._activeKeys, this._config.getKeySet(0), game
         );
 
         this._panel.setKeyboardHandler(this._keyboardHandler);
@@ -45,34 +44,22 @@ public class SinglePlayerSwingView extends SwingView implements KeyListener {
 
     private void initComponents()
     {
-        this.playPanel.add(this._panel);
+        this.gamePanel.add(this._panel);
 
         this.addKeyListener(this);
         this.addWindowListener(new WindowAdapter() {
             public void windowClosing(java.awt.event.WindowEvent evt){
-                    _game.stop();
+                _game.stop();
             }
         });
 
         this.pack();
     }
 
-    public void addController(GameController controller)
-    {
-        this._controllers.add(controller);
-    }
-
     @Override
     protected void newGame()
     {
-        for (GameController controller : _controllers)
-            controller.newGame();
-    }
-
-    @Override
-    protected long getElapsedTime()
-    {
-        return this._game.getBoard().getElapsedTime();
+        this._game.newGame();
     }
 
     @Override
@@ -80,10 +67,8 @@ public class SinglePlayerSwingView extends SwingView implements KeyListener {
     {
         _activeKeys.add(event.getKeyCode());
 
-        // Use the first player to propagate the pause event to all controllers.
-        if(_activeKeys.contains(KeyEvent.VK_P))
-            for (GameController controller : this._controllers)
-                controller.pause();
+        if (_activeKeys.contains(KeyEvent.VK_P))
+            this._game.pause();
 
         _keyboardHandler.checkKeys();
     }
@@ -96,18 +81,21 @@ public class SinglePlayerSwingView extends SwingView implements KeyListener {
     public void keyTyped(KeyEvent e) { }
 
     @Override
-    public void gameOver() {
-        int choice = 0;
-        choice = JOptionPane.showConfirmDialog(
-            this,
-            "Would you like to retry ?",
-            "Game Over",
-            JOptionPane.YES_NO_OPTION);
+    public void stateChanged(GamePlay.GameState newState)
+    {
+        if (newState == GamePlay.GameState.GAMEOVER) {
+            int choice = JOptionPane.showConfirmDialog(
+                this, "Would you like to retry ?", "Game Over",
+                JOptionPane.YES_NO_OPTION
+            );
 
-        if(choice == 0)
-            newGame();
-        else
-            this.dispatchEvent(new WindowEvent(this,
-                            WindowEvent.WINDOW_CLOSING));
+            if (choice == 0)
+                this.newGame();
+            else {
+                this.dispatchEvent(
+                    new WindowEvent(this, WindowEvent.WINDOW_CLOSING)
+                );
+            }
+        }
     }
 }

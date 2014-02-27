@@ -2,29 +2,45 @@ package gameplay;
 
 import java.util.*;
 
+import ai.ArtificialIntelligence;
+import gameplay.rules.*;
 import model.Board;
-import model.Board.GameState;
+import util.*;
 
-/** Provides a base class for gameplays which use a timer to controll the game.
- * Most concrete gameplays should derive from this class whereas gameplays which
- * are relying on another gameplay, as the proxies used in multiplayer games,
- * are using the timer of the transformed gameplay and thus shouldn't derive 
- * from this class.
- */
-public abstract class DefaultGamePlay implements GamePlay {
+/** Provides a base class for single player gameplays which use a timer to
+ * controll the game. */
+public class DefaultGamePlay implements GamePlay, RuleListener {
 
     protected Board _board;
+    protected Rule _rule;
 
-    private int _speed;
-    private Timer _timer = null;
+    private GamePlay.GameState _currentState = GamePlay.GameState.INITIALIZED;
 
-    private ArrayList<GamePlayListener> _listeners
-        = new ArrayList<GamePlayListener>();
+    // For the game "ticks".
+    private GameTimer _game_timer;
 
-    public DefaultGamePlay(Board board, int speed)
+    // For the elapsed time.
+    private GameTimer _timer;
+
+    private ArtificialIntelligence _ai = null;
+
+    private ArrayList<GamePlayListener> _listeners =
+        new ArrayList<GamePlayListener>();
+
+    public DefaultGamePlay(Board board, Rule rule)
     {
         this._board = board;
-        this._speed = speed;
+        board.setGamePlay(this);
+
+        this._rule = rule;
+        rule.addListener(this);
+
+        this.initTimers();
+    }
+
+    public synchronized void addListener(GamePlayListener listener)
+    {
+        this._listeners.add(listener);
     }
 
     /*********************** User actions ***********************/
@@ -33,44 +49,94 @@ public abstract class DefaultGamePlay implements GamePlay {
      * Resets the game if needed. */
     public synchronized void newGame()
     {
-        if (this._board.getCurrentState() != Board.GameState.INITIALIZED)
+        if (this._currentState != GamePlay.GameState.INITIALIZED)
             this.reset();
 
-        this.startTimer();
+        this.setCurrentState(GamePlay.GameState.RUNNING);
 
-        this._board.setCurrentState(Board.GameState.RUNNING);
+        this.startTimers();
     }
 
     /** Pauses/Unpauses the timer if the game is running/in pause.
      * Does nothing otherwise. */
     public synchronized void pause()
     {
-        switch (this._board.getCurrentState()) {
+        switch (this._currentState) {
         case RUNNING:
-            this.stopTimer();
-            this._board.setCurrentState(Board.GameState.PAUSED);
+            this.stopTimers();
+            this.setCurrentState(GamePlay.GameState.PAUSED);
             break;
         case PAUSED:
-            this._board.setCurrentState(Board.GameState.RUNNING);
-            this.startTimer();
+            this.setCurrentState(GamePlay.GameState.RUNNING);
+            this.startTimers();
             break;
         default:
         }
     }
 
-    public synchronized void stop()
-    {
-        if (this._board.getCurrentState() == Board.GameState.RUNNING) {
-            this.stopTimer();
-            this._board.setCurrentState(Board.GameState.STOPPED);
-        }
-    }
-
     public synchronized void reset()
     {
-        this.stop();
+        if (this._currentState == GamePlay.GameState.RUNNING
+            || this._currentState == GamePlay.GameState.PAUSED)
+            this.stopTimers();
 
         this._board.reset();
+        this._rule.reset();
+
+        this.initTimers();
+
+        this.setCurrentState(GamePlay.GameState.INITIALIZED);
+    }
+
+    public synchronized void stop()
+    {
+        if (this._currentState == GamePlay.GameState.RUNNING
+            || _currentState == GamePlay.GameState.PAUSED)
+            this.stopTimers();
+
+        this.setCurrentState(GamePlay.GameState.STOPPED);
+    }
+
+    public synchronized void moveLeft()
+    {
+        if (this._currentState == GamePlay.GameState.RUNNING)
+            this._board.moveLeft();
+    }
+
+    public synchronized void moveRight()
+    {
+        if (this._currentState == GamePlay.GameState.RUNNING)
+            this._board.moveRight();
+    }
+
+    /** Push the piece one line down. */
+    public synchronized void softDrop()
+    {
+        if (this._currentState == GamePlay.GameState.RUNNING)
+            this._board.softDrop();
+    }
+
+    /** Push the piece down to the last free line. */
+    public synchronized void hardDrop()
+    {
+        if (this._currentState == GamePlay.GameState.RUNNING)
+            this._board.hardDrop();
+    }
+
+    /** Tries to rotate the piece. */
+    public synchronized void rotate()
+    {
+        if (this._currentState == GamePlay.GameState.RUNNING)
+            this._board.rotate();
+    }
+
+    /** Enable/disable the Artificial intelligence. Disabled by default. */
+    public synchronized void setAI(boolean enable)
+    {
+        if (this._ai == null)
+            this._ai = new ArtificialIntelligence(this);
+
+        this._ai.setActive(enable);
     }
 
     /*********************** Board events ***********************/
@@ -84,86 +150,97 @@ public abstract class DefaultGamePlay implements GamePlay {
     {
         for (Integer i : linesIndices)
             this._board.removeLine(i.intValue());
+
+        this._rule.clearLines(linesIndices.size());
     }
 
     public synchronized void gameOver()
     {
-        this.stopTimer();
+        if (this._currentState == GamePlay.GameState.RUNNING
+            || _currentState == GamePlay.GameState.PAUSED)
+            this.stopTimers();
+
+        this.setCurrentState(GamePlay.GameState.GAMEOVER);
     }
 
     /*********************** Internals ***********************/
 
-    private synchronized void startTimer()
+    public synchronized void initTimers()
     {
-        TimerTask task = new TimerTask() {
-            @Override
-            public void run()
-            {
-                _board.gameTick();
-            }
-        };
+        this._timer = new GameTimer(
+            new Runnable() {
+                @Override
+                public void run()
+                {
+                    long elapsed = _timer.getElapsedTime();
+                    for (GamePlayListener listener : _listeners)
+                        listener.timeChanged(elapsed);
+                }
+            }, 1000
+        );
 
-        this._timer = new Timer();
-        this._timer.scheduleAtFixedRate(
-            task, this._speed, this._speed
+        this._game_timer = new GameTimer(
+            new Runnable() {
+                @Override
+                public void run()
+                {
+                    if (_currentState == GamePlay.GameState.RUNNING)
+                        _board.gameTick();
+                }
+            }, this._rule.getClockDelay()
         );
     }
 
-    private synchronized void stopTimer()
+    public synchronized void startTimers()
     {
-        this._timer.cancel();
+        this._timer.start();
+        this._game_timer.start();
     }
 
-    /*********************** Getters/Setters and events ***********************/
-
-    public void addListener(GamePlayListener listener)
+    public synchronized void stopTimers()
     {
-        this._listeners.add(listener);
+        this._timer.stop();
+        this._game_timer.stop();
     }
 
-    public void emitScoreChange(int newScore)
+    public void scoreChange(int newScore) { }
+
+    public void levelChange(int newLevel) { }
+
+    public void clockDelayChange(int newClockDelay)
     {
-        for (GamePlayListener listener : this._listeners)
-            listener.scoreChange(newScore);
+        this._game_timer.changeSpeed(newClockDelay);
     }
 
-    public void emitLevelChange(int newLevel)
-    {
-        for (GamePlayListener listener : this._listeners)
-            listener.levelChange(newLevel);
-    }
-
-    public void emitSpeedChange(int newClockSpeed)
-    {
-        for (GamePlayListener listener : this._listeners)
-            listener.speedChange(newClockSpeed);
-    }
+    /*********************** Getters ***********************/
 
     public Board getBoard()
     {
         return this._board;
     }
 
-    public abstract int getScore();
-
-    public abstract int getLevel();
-
-    public int getSpeed()
+    public Rule getRule()
     {
-        return this._speed;
+        return this._rule;
     }
 
-    /** Changes the speed of the game. Will restart the timer if the game is
-     * running. */
-    public synchronized void setSpeed(int newClockSpeed)
+    public GameTimer getTimer()
     {
-        this._speed = newClockSpeed;
+        return this._timer;
+    }
 
-        if (this._board.getCurrentState() == GameState.RUNNING) {
-            this.stopTimer();
-            this.startTimer();
+    public GamePlay.GameState getCurrentState()
+    {
+        return this._currentState;
+    }
+
+    private void setCurrentState(GamePlay.GameState newState)
+    {
+        if (newState != this._currentState) {
+            this._currentState = newState;
+
+            for (GamePlayListener listener : this._listeners)
+                listener.stateChanged(newState);
         }
-
-        this.emitSpeedChange(newClockSpeed);
     }
 }

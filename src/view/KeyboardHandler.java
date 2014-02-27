@@ -3,7 +3,7 @@ package view;
 import java.util.ArrayList;
 import java.util.Set;
 
-import controller.GameController;
+import gameplay.GamePlay;
 
 /** Given a KeySet, calls the corresponding methods of the controllers for each
  * pressed key. */
@@ -11,15 +11,15 @@ public class KeyboardHandler {
 
     private Set<Integer> _activeKeys;
     private KeySet _keySet;
-    private ArrayList<GameController> _controllers;
+    private GamePlay _game;
     private boolean _enabled;
 
     public KeyboardHandler(Set<Integer> activeKeys, KeySet keySet,
-                           ArrayList<GameController> controllers)
+                           GamePlay game)
     {
         this._activeKeys = activeKeys;
         this._keySet = keySet;
-        this._controllers = controllers;
+        this._game = game;
         this._enabled = true;
     }
 
@@ -30,31 +30,26 @@ public class KeyboardHandler {
             return;
 
         if(_activeKeys.contains(_keySet.getKeyRotate()))
-            for(GameController controller : _controllers)
-                controller.rotate();
+            this._game.rotate();
 
         if(_activeKeys.contains(_keySet.getKeyLeft()))
-            for(GameController controller : _controllers)
-                controller.moveLeft();
+            this._game.moveLeft();
 
         if(_activeKeys.contains(_keySet.getKeyRight()))
-            for(GameController controller : _controllers)
-                controller.moveRight();
+            this._game.moveRight();
 
         if(_activeKeys.contains(_keySet.getKeySoftDrop()))
-            for(GameController controller : _controllers)
-                controller.softDrop();
+            this._game.softDrop();
 
         if(_activeKeys.contains(_keySet.getKeyHardDrop()))
-            for(GameController controller : _controllers)
-                controller.hardDrop();
+            this._game.hardDrop();
     }
-    
+
     public boolean isEnabled() {
-    	return this._enabled;
+        return this._enabled;
     }
-    
+
     public void setEnabled(boolean enabled) {
-    	this._enabled = enabled;
+        this._enabled = enabled;
     }
 }

@@ -9,12 +9,13 @@ import model.Row;
 import model.piece.Piece;
 
 /** Provides a view which prints the grid to the standard output. */
-public class CLIView implements BoardListener {
+public class CLIView implements BoardListener, GamePlayListener {
     private GamePlay _game;
 
     public CLIView(GamePlay game)
     {
         this._game = game;
+        game.addListener(this);
         game.getBoard().addListener(this);
 
         this.printBoard();
@@ -47,7 +48,7 @@ public class CLIView implements BoardListener {
         System.out.println();
     }
 
-    public void stateChange(Board.GameState newState)
+    public void stateChanged(GamePlay.GameState newState)
     {
         switch (newState) {
         case INITIALIZED:
@@ -59,6 +60,8 @@ public class CLIView implements BoardListener {
         default:
         }
     }
+
+    public void timeChanged(long elapsed) { }
 
     public void gridChange(Rectangle bounds)
     {

@@ -14,17 +14,6 @@ import ai.*;
  * changes and game events with the user. */
 public class Board {
 
-    public enum GameState {
-          INITIALIZED // The board is empty and the timer hasn't been started.
-                      // This is the initial state when the Board is instanced.
-        , RUNNING     // The timer and the game are running.
-        , PAUSED      // The game is running but the timer has been stopped.
-        , GAMEOVER    // The game as been finished. The board need to be
-                      // reinitialised before being started.
-        , STOPPED     // The game is finished because another player has a
-                      // GAMEOVER state.
-    }
-
     public static final int DEFAULT_WIDTH  = 10;
     public static final int DEFAULT_HEIGHT = 22;
 
@@ -40,17 +29,8 @@ public class Board {
      * of references. */
     private final Row[] _grid;
 
-    private GameState _currentState;
-
     private Piece _current = null;
     private Piece _next = null;
-
-    // Computes the duration of the game by taking into account pauses with two
-    // variables. The first contains the number of milliseconds which have been
-    // elapsed before the last pause (0 when no previous pauses). The second
-    // contains the ending time of the last pause.
-    private long _elapsed;
-    private Date _lastStart;
 
     private GamePlay _game = null;
 
@@ -100,7 +80,6 @@ public class Board {
         this.initBoard();
 
         this.emitGridChange(new Rectangle(0, 0, this._width, this._height));
-        this.setCurrentState(GameState.INITIALIZED);
     }
 
     /** Runs one step of the game: moves the current piece.
@@ -108,9 +87,6 @@ public class Board {
      * is over. */
     public synchronized boolean gameTick()
     {
-        if (this._currentState != GameState.RUNNING)
-            return this._currentState != GameState.GAMEOVER;
-
         if (this._current == null) // First piece.
             this.nextPiece();
         else { // Moves the piece downward.
@@ -118,7 +94,7 @@ public class Board {
 
             if (this.pieceCollide(newPiece, this._current)) {
                 if (!this._current.isFullyIntroduced())
-                    this._current = null;
+                    this._current = null; // Game over
                 else { // Introduces a new piece.
                     this.clearLines();
                     this.nextPiece();
@@ -156,7 +132,7 @@ public class Board {
     /** Push the piece down to the last free line. */
     public synchronized void hardDrop()
     {
-        if (this._currentState != GameState.RUNNING || this._current == null)
+        if (this._current == null)
             return;
 
         Piece finalPiece = this._current;
@@ -178,9 +154,6 @@ public class Board {
      * Does nothing if an collision occurs. */
     public synchronized void moveCurrentPiece(int dX, int dY)
     {
-        if (this._currentState != GameState.RUNNING)
-            return;
-
         Piece newPiece = this._current.translate(dX, dY);
 
         if (this.pieceCollide(newPiece, this._current))
@@ -189,16 +162,11 @@ public class Board {
         this.removePiece(this._current);
         this._current = newPiece;
         this.placePiece(this._current);
-/*        
-        new ArtificialIntelligence(this._game, 1, 1, 1).tryMove(this._current, null);*/
     }
 
     /** Tries to rotate the piece. Does nothing if a collision occurs. */
     public synchronized void rotate()
     {
-        if (this._currentState != GameState.RUNNING)
-            return;
-
         Piece rotatedPiece = this._current.rotate();
 
         if (this.pieceCollide(rotatedPiece, this._current))
@@ -207,8 +175,6 @@ public class Board {
         this.removePiece(this._current);
         this._current = rotatedPiece;
         this.placePiece(rotatedPiece);
-/*        
-        new ArtificialIntelligence(this._game, 1, 1, 1).tryMove(this._current, null);*/
     }
 
     /** Returns true if the piece collide with the left/right/bottom border or
@@ -367,12 +333,8 @@ public class Board {
         for (int i = 0; i < this._height; i++)
             this._grid[i] = new Row(this._width);
 
-        this._currentState = GameState.INITIALIZED;
-
         this._current = null;
         this._next = this.getRandomPiece();
-
-        this._elapsed = 0;
     }
 
     /** Choose the next random piece without placing it on the grid. */
@@ -392,7 +354,6 @@ public class Board {
     private synchronized void gameOver()
     {
         this._game.gameOver();
-        this.setCurrentState(GameState.GAMEOVER);
     }
 
     /** Returns the next random piece and places it at the top of the grid.
@@ -461,12 +422,6 @@ public class Board {
 
     /*********************** Events ***********************/
 
-    private void emitStateChange(GameState newState)
-    {
-        for (BoardListener listener : this._listeners)
-            listener.stateChange(newState);
-    }
-
     private void emitGridChange(Rectangle bounds)
     {
         for (BoardListener listener : this._listeners)
@@ -496,26 +451,6 @@ public class Board {
         return this._grid;
     }
 
-    public GameState getCurrentState()
-    {
-        return this._currentState;
-    }
-
-    public synchronized void setCurrentState(GameState newState)
-    {
-        // Updates the elapsed time if the game is going on pause ...
-        if (this._currentState == GameState.RUNNING
-            && newState == GameState.PAUSED)
-            this._elapsed = this.getElapsedTime();
-        // .. or updates the last start time if the game is being (re)started.
-        else if (this._currentState != GameState.RUNNING
-                 && newState == GameState.RUNNING)
-            this._lastStart = new Date();
-
-        this._currentState = newState;
-        this.emitStateChange(newState);
-    }
-
     public Piece getCurrentPiece()
     {
         return this._current;
@@ -531,19 +466,7 @@ public class Board {
         return this._next;
     }
 
-    /** Returns the total gaming time without pauses in milliseconds. */
-    public long getElapsedTime()
-    {
-        if (this._currentState != GameState.RUNNING)
-            return this._elapsed;
-        else {
-            long sinceStart = System.currentTimeMillis() - _lastStart.getTime();
-            return this._elapsed + sinceStart;
-        }
-    }
-
-    /** Sets the GamePlay instance which will be called when lines are being
-     * cleared. */
+    /** Sets the GamePlay instance which controls the game. */
     public void setGamePlay(GamePlay game)
     {
         this._game = game;

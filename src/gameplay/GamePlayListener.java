@@ -2,11 +2,11 @@ package gameplay;
 
 import java.util.*;
 
-/** Provides a way to listen to game play events. */
+/** Provides a way to listen to game's state changes. */
 public interface GamePlayListener extends EventListener {
-    public void scoreChange(int newScore);
+    public void stateChanged(GamePlay.GameState newState);
 
-    public void levelChange(int newLevel);
-
-    public void speedChange(int newClockSpeed);
+    /** Is called ~ every second with the elapsed number of milliseconds since
+     * the game has been started (without pauses). */
+    public void timeChanged(long elapsedTime);
 }

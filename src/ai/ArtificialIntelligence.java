@@ -6,7 +6,7 @@ import model.*;
 import model.piece.*;
 
 /** Creates an artificial intelligence which controls the game in place of the
- * user. The AI is configured with three variables. */ 
+ * user. The AI is configured with three variables. */
 public class ArtificialIntelligence implements BoardListener {
 
     private class PieceMove {
@@ -27,6 +27,12 @@ public class ArtificialIntelligence implements BoardListener {
     private final double _α;
     private final double _β;
     private final double _γ;
+
+    /** Creates a new artificial intelligence with default α, β and γ values. */
+    public ArtificialIntelligence(GamePlay game)
+    {
+        this(game, 1, 1, 4);
+    }
 
     public ArtificialIntelligence(GamePlay game, double α, double β,
                                   double γ) {
@@ -56,8 +62,6 @@ public class ArtificialIntelligence implements BoardListener {
             }
         }
     }
-
-    public void stateChange(Board.GameState newState) { }
 
     public void gridChange(Rectangle bounds) { }
 

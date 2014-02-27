@@ -11,82 +11,68 @@ import java.util.*;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
-import controller.GameController;
+import gameplay.multi.*;
 
 public class MultiPlayerSwingView extends SwingView implements KeyListener {
 
-    private ArrayList<GamePlay> _games;
+    private MultiGamePlay _multiGame;
     private ArrayList<GamePanel> _panels;
 
     private Configuration _config;
-    private ArrayList<ArrayList<GameController>> _controllers;
     private Set<Integer> _activeKeys;
     private ArrayList<KeyboardHandler> _keyboardHandlers;
 
-    public MultiPlayerSwingView(JFrame parent, ArrayList<GamePlay> games,
+    public MultiPlayerSwingView(JFrame parent, MultiGamePlay multiGame,
                                 Configuration config, boolean useImages)
     {
-        super(parent, games.get(0).getBoard());
+        super(parent);
 
-        this._games = games;
+        this._multiGame = multiGame;
+        multiGame.addListener(this);
+
         this._panels = new ArrayList<GamePanel>();
 
         this._config = config;
         this._activeKeys = new HashSet<Integer>();
-        this._controllers = new ArrayList<ArrayList<GameController>>();
         this._keyboardHandlers = new ArrayList<KeyboardHandler>();
 
         initComponents();
+    }
 
-        for(int i = 0; i < this._config.getNbPlayersMulti(); i++) {
+    private void initComponents()
+    {
+        // Creates a game panel for each player.
+        for (GamePlay game : this._multiGame.getGamePlays()) {
+            GamePanel panel = new GamePanel(this, game, this._config);
+            this._panels.add(panel);
+            this.gamePanel.add(panel);
+        }
+
+        this.addKeyListener(this);
+        this.addWindowListener(new WindowAdapter() {
+            public void windowClosing(java.awt.event.WindowEvent evt){
+                _multiGame.stop();
+            }
+        });
+
+        this.pack();
+
+        // Attachs keyboard handlers to their respective player's game.
+        for (int i = 0; i < this._config.getNbPlayersMulti(); i++) {
             KeyboardHandler handler = new KeyboardHandler(
-                this._activeKeys,
-                this._config.getKeySet(i),
-                this._controllers.get(i));
+                this._activeKeys, this._config.getKeySet(i),
+                this._multiGame.getPlayerGamePlay(i)
+            );
 
             this._keyboardHandlers.add(handler);
             this._panels.get(i).setKeyboardHandler(handler);
         }
     }
 
-    private void initComponents()
-    {
-        for(GamePlay game : this._games) {
-            GamePanel panel = new GamePanel(this, game, this._config);
-            this._panels.add(panel);
-            this._controllers.add(new ArrayList<GameController>());
-            this.playPanel.add(panel);
-        }
-
-        this.addKeyListener(this);
-        this.addWindowListener(new WindowAdapter() {
-            public void windowClosing(java.awt.event.WindowEvent evt){
-                for(GamePlay game : _games)
-                        game.stop();
-            }
-        });
-
-        this.pack();
-    }
-
-    public void addControllerPlayer(int nbPlayer, GameController controller)
-    {
-        this._controllers.get(nbPlayer).add(controller);
-    }
-
     @Override
     protected void newGame()
     {
-        for (ArrayList<GameController> playerControllers : this._controllers) {
-            for(GameController controller : playerControllers)
-                    controller.newGame();
-        }
-    }
-
-    @Override
-    protected long getElapsedTime()
-    {
-        return this._games.get(0).getBoard().getElapsedTime();
+        this._multiGame.newGame();
     }
 
     @Override
@@ -94,18 +80,16 @@ public class MultiPlayerSwingView extends SwingView implements KeyListener {
     {
         _activeKeys.add(event.getKeyCode());
 
-        // Use the first player to propagate the pause event to all controllers.
-        if(_activeKeys.contains(KeyEvent.VK_P)) {
-            for (GameController controller : this._controllers.get(0))
-                controller.pause();
-        }
+        if(_activeKeys.contains(KeyEvent.VK_P))
+            this._multiGame.pause();
 
-        for(KeyboardHandler handler : this._keyboardHandlers)
+        for (KeyboardHandler handler : this._keyboardHandlers)
             handler.checkKeys();
     }
 
     @Override
-    public void keyReleased(KeyEvent e) {
+    public void keyReleased(KeyEvent e)
+    {
         _activeKeys.remove(e.getKeyCode());
     }
 
@@ -113,44 +97,45 @@ public class MultiPlayerSwingView extends SwingView implements KeyListener {
     public void keyTyped(KeyEvent e) { }
 
     @Override
-    public void gameOver() {
-        int numWinner = 0;
-        int scoreWinner = this._games.get(0).getScore();
+    public void stateChanged(GamePlay.GameState newState)
+    {
+        if (newState == GamePlay.GameState.GAMEOVER) {
+            // Seeks the player with the top score.
+            int numWinner = 0;
+            int scoreWinner = 0;
 
-        for(int i = 0; i < this._games.size(); i++) {
-            int score = this._games.get(i).getScore();
+            int i = 0;
+            for (GamePlay game : this._multiGame.getGamePlays()) {
+                int score = game.getRule().getScore();
 
-            if(score > scoreWinner) {
-                numWinner = i;
-                scoreWinner = score;
+                if (score > scoreWinner) {
+                    numWinner = i;
+                    scoreWinner = score;
+                }
+
+                i++;
             }
-        }
 
-        for(GamePlay game : this._games)
-            game.stop();
-
-        JOptionPane.showMessageDialog(
-            this,
-            "Player " + (numWinner+1) + " wins the game with " + scoreWinner 
-            + " points !",
-            "Game Over",
-            JOptionPane.INFORMATION_MESSAGE
-        );
-
-        int choice = 0;
-        choice = JOptionPane.showConfirmDialog(
-            this,
-            "Would you like to retry ?",
-            "Game Over",
-            JOptionPane.YES_NO_OPTION
-        );
-
-        if(choice == 0)
-            newGame();
-        else {
-            this.dispatchEvent(
-                new WindowEvent(this, WindowEvent.WINDOW_CLOSING)
+            JOptionPane.showMessageDialog(
+                this,
+                "Player " + (numWinner+1) + " wins the game with " + scoreWinner 
+                + " points !",
+                "Game Over",
+                JOptionPane.INFORMATION_MESSAGE
             );
+
+            int choice = JOptionPane.showConfirmDialog(
+                this, "Would you like to retry ?", "Game Over",
+                JOptionPane.YES_NO_OPTION
+            );
+
+            if (choice == 0)
+                newGame();
+            else {
+                this.dispatchEvent(
+                    new WindowEvent(this, WindowEvent.WINDOW_CLOSING)
+                );
+            }
         }
     }
 }

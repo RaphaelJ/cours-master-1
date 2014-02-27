@@ -1,60 +1,41 @@
-package gameplay;
+package gameplay.rules;
 
 import java.util.*;
 
-import model.Board;
+import gameplay.*;
 
 /** Implements the traditional Marathon mode from the Game Boy tetris.
  * Read http://tetris.wikia.com/wiki/Tetris_(Game_Boy) for a complete
  * documentation. */
-public class NintendoGameBoy extends DefaultGamePlay {
-    /** Clock's speed for each level. */
+public class NintendoGameBoy extends DefaultRule {
+    /** Clock's delay for each level. */
     private static int[] _levels = {
         883, 817, 750, 683, 617, 550, 467, 367, 283, 183, 167, 150, 133, 117,
         100, 100, 83, 83, 67, 67, 50
     };
 
-    private int _score;
-    private int _nClearedLines;
+    private int _score = 0;
+    private int _nClearedLines = 0;
 
-    public NintendoGameBoy(Board board)
+    public NintendoGameBoy()
     {
-        super(board, _levels[0]);
-        this.initGame();
     }
 
-    private synchronized void initGame()
+    public void reset()
     {
         this._score = 0;
         this._nClearedLines = 0;
     }
 
-    @Override
-    public synchronized void reset()
+    public synchronized void clearLines(int n)
     {
-        super.reset();
-
-        this.initGame();
-
-        this.emitScoreChange(this._score);
-        this.emitLevelChange(this.getLevel());
-        this.setSpeed(_levels[0]);
-    }
-
-    @Override
-    public synchronized void clearLines(LinkedList<Integer> linesIndices)
-    {
-        super.clearLines(linesIndices);
-
-        int n = linesIndices.size();
-
         // Advances by one level every 10 lines.
         int oldClearedLines = this._nClearedLines;
         this._nClearedLines += n;
         if (this._nClearedLines / 10 > oldClearedLines / 10) {
             int newLevel = this.getLevel();
             this.emitLevelChange(newLevel);
-            this.emitSpeedChange(_levels[newLevel - 1]);
+            this.emitClockDelayChange(_levels[newLevel - 1]);
         }
 
         // Gives more points when groups of lines are erased.
@@ -74,5 +55,11 @@ public class NintendoGameBoy extends DefaultGamePlay {
     public int getLevel()
     {
         return this._nClearedLines / 10 + 1;
+    }
+
+    @Override
+    public int getClockDelay()
+    {
+        return _levels[this.getLevel() - 1];
     }
 }

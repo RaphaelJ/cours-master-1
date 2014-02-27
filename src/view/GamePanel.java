@@ -17,17 +17,16 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import ai.*;
-import gameplay.GamePlay;
-import gameplay.GamePlayListener;
+import gameplay.*;
+import gameplay.rules.*;
 import model.Board;
-import model.Board.GameState;
 import model.BoardListener;
 import model.Row;
 import model.piece.Piece;
 import view.piece.PieceViewModel;
 
 public class GamePanel extends JPanel
-        implements BoardListener, GamePlayListener, ItemListener {
+        implements BoardListener, GamePlayListener, RuleListener, ItemListener {
 
     private SwingView _parent;
 
@@ -45,21 +44,19 @@ public class GamePanel extends JPanel
     private Configuration _config;
     private KeyboardHandler _keyboardHandler;
 
-    private ArtificialIntelligence _ai;
-
     public GamePanel(SwingView parent, GamePlay game, Configuration config)
     {
         this._parent = parent;
+
         this._game = game;
         game.addListener(this);
+        game.getRule().addListener(this);
         game.getBoard().addListener(this);
 
         this._config = config;
         this._keyboardHandler = null;
 
         initComponents();
-
-        this._ai = new ArtificialIntelligence(game, 1, 1, 4);
     }
 
     private void initComponents()
@@ -67,11 +64,12 @@ public class GamePanel extends JPanel
         this._playPanel = new JPanel();
         JPanel rightPanel = new JPanel();
 
+        Rule rule = this._game.getRule();
         JLabel scoreTitle = new JLabel("Score :");
-        this._score = new JLabel(Integer.toString(this._game.getScore()));
+        this._score = new JLabel(Integer.toString(rule.getScore()));
 
         JLabel levelTitle = new JLabel("Level :");
-        this._level = new JLabel(Integer.toString(this._game.getLevel()));
+        this._level = new JLabel(Integer.toString(rule.getLevel()));
 
         this._nextPiecePanel = new JPanel();
 
@@ -153,7 +151,7 @@ public class GamePanel extends JPanel
         g.finalize();
     }
 
-    public void stateChange(GameState newState)
+    public void stateChanged(GamePlay.GameState newState)
     {
         switch (newState) {
         case INITIALIZED:
@@ -171,13 +169,11 @@ public class GamePanel extends JPanel
             this.cleanBoards();
             this.drawString("Game paused");
             break;
-        case GAMEOVER:
-            this._parent.gameOver();
-            break;
-        case STOPPED:
-            break;
+        default:
         }
     }
+
+    public void timeChanged(long elapsed) { }
 
     /** Draws the next piece in its right panel. */
     public void newPiece(Piece piece, Piece newPiece)
@@ -224,6 +220,8 @@ public class GamePanel extends JPanel
     }
 
     public void speedChange(int newClockSpeed) { }
+
+    public void clockDelayChange(int delay) { }
 
     /** Removes every drawing for the board and the next piece panels. */
     private void cleanBoards()
@@ -295,7 +293,7 @@ public class GamePanel extends JPanel
         if(this._keyboardHandler != null)
             this._keyboardHandler.setEnabled(false);
 
-        this._ai.setActive(true);
+        this._game.setAI(true);
     }
 
     private void stopAutoPlayer()
@@ -304,7 +302,7 @@ public class GamePanel extends JPanel
         if(this._keyboardHandler != null)
             this._keyboardHandler.setEnabled(true);
 
-        this._ai.setActive(false);
+        this._game.setAI(false);
     }
 
     public void setKeyboardHandler(KeyboardHandler handler)

@@ -2,102 +2,179 @@ package gameplay.multi;
 
 import java.util.*;
 
+import ai.ArtificialIntelligence;
 import gameplay.*;
+import gameplay.rules.*;
 import model.Board;
+import util.*;
 
-/** Creates a proxy for the player gameplay but with stopping the opponent game
- * when the pause() method is called. */
-public class MultiGamePlayProxy implements GamePlay {
+/** GamePlay which is a proxy for a multiplayer gameplay : actions from this
+ * object are forwarded to the associated MultiGamePlay. */
+public class MultiGamePlayProxy implements GamePlay, RuleListener {
 
     protected MultiGamePlay _multiGame;
-    protected GamePlay _player;
-    protected ArrayList<GamePlay> _opponents;
+    protected Board _board;
+    protected Rule _rule;
 
-    public MultiGamePlayProxy(MultiGamePlay multiGame, GamePlay player,
-                             ArrayList<GamePlay> opponents)
+    // Each player has its own timer as the speed of the game will change
+    // independently for each player.
+    protected GameTimer _timer;
+
+    private ArtificialIntelligence _ai = null;
+
+    private ArrayList<GamePlayListener> _listeners =
+        new ArrayList<GamePlayListener>();
+
+    public MultiGamePlayProxy(MultiGamePlay multiGame, Board board, Rule rule)
     {
         this._multiGame = multiGame;
-        this._player = player;
-        this._opponents = opponents;
+
+        this._board = board;
+        board.setGamePlay(this);
+
+        this._rule = rule;
+        rule.addListener(this);
+    }
+
+    public void addListener(GamePlayListener listener)
+    {
+        this._listeners.add(listener);
     }
 
     public void newGame()
     {
-        synchronized (this._multiGame) { // Avoid both players to press pause
-                                         // at the same time.
-            this._player.newGame();
-
-            for(GamePlay opponent : this._opponents)
-                opponent.newGame();
-        }
+        this._multiGame.newGame();
     }
 
     public void pause()
     {
-        synchronized (this._multiGame) {
-            this._player.pause();
-
-            for(GamePlay opponent : this._opponents)
-                opponent.pause();
-        }
-    }
-
-    public void stop()
-    {
-        this._player.stop();
+        this._multiGame.pause();
     }
 
     public void reset()
     {
+        this._multiGame.reset();
+    }
+
+    public void stop()
+    {
+        this._multiGame.stop();
+    }
+
+    public void moveLeft()
+    {
         synchronized (this._multiGame) {
-            this._player.reset();
+            if (this._multiGame.getCurrentState() == GamePlay.GameState.RUNNING)
+                this._board.moveLeft();
+        }
+    }
+
+    public void moveRight()
+    {
+        synchronized (this._multiGame) {
+            if (this._multiGame.getCurrentState() == GamePlay.GameState.RUNNING)
+                this._board.moveRight();
+        }
+    }
+
+    /** Push the piece one line down. */
+    public void softDrop()
+    {
+        synchronized (this._multiGame) {
+            if (this._multiGame.getCurrentState() == GamePlay.GameState.RUNNING)
+                this._board.softDrop();
+        }
+    }
+
+    /** Push the piece down to the last free line. */
+    public void hardDrop()
+    {
+        synchronized (this._multiGame) {
+            if (this._multiGame.getCurrentState() == GamePlay.GameState.RUNNING)
+                this._board.hardDrop();
+        }
+    }
+
+    /** Tries to rotate the piece. */
+    public void rotate()
+    {
+        synchronized (this._multiGame) {
+            if (this._multiGame.getCurrentState() == GamePlay.GameState.RUNNING)
+                this._board.rotate();
+        }
+    }
+
+    /** Enable/disable the Artificial intelligence. Disabled by default. */
+    public void setAI(boolean enable)
+    {
+        synchronized (this._multiGame) {
+            if (this._ai == null)
+                this._ai = new ArtificialIntelligence(this);
+
+            this._ai.setActive(enable);
         }
     }
 
     public void clearLines(LinkedList<Integer> lines)
     {
-        synchronized (this._multiGame) {
-            this._player.clearLines(lines);
-        }
+        for (Integer i : lines)
+            this._board.removeLine(i.intValue());
+
+        this._rule.clearLines(lines.size());
     }
 
     public void gameOver()
     {
-        synchronized (this._multiGame) {
-            for(GamePlay opponent : this._opponents)
-                opponent.gameOver();
-        }
+        this._multiGame.gameOver();
     }
 
-    public void addListener(GamePlayListener listener)
+    public void scoreChange(int newScore) { }
+
+    public void levelChange(int newLevel) { }
+
+    public void clockDelayChange(int newClockDelay)
     {
-        this._player.addListener(listener);
+        this._timer.changeSpeed(newClockDelay);
     }
 
     public Board getBoard()
     {
-        return this._player.getBoard();
+        return this._board;
     }
 
-    public int getScore()
+    public Rule getRule()
     {
-        return this._player.getScore();
+        return this._rule;
     }
 
-    public int getLevel()
+    public GameTimer getTimer()
     {
-        return this._player.getLevel();
+        return this._timer;
     }
 
-    public int getSpeed()
+    public void setTimer(GameTimer timer)
     {
-        return this._player.getSpeed();
+        this._timer = timer;
     }
 
-    public void setSpeed(int newClockSpeed)
+    public GamePlay.GameState getCurrentState()
     {
-        synchronized (this._multiGame) {
-            this._player.setSpeed(newClockSpeed);
-        }
+        return this._multiGame.getCurrentState();
+    }
+
+    /** Is used by the MultiGamePlay to broadcast state change events to every
+     * sinfle player gameplay listeners. */
+    public void emitStateChanged(GamePlay.GameState newState)
+    {
+        for (GamePlayListener listener : this._listeners)
+            listener.stateChanged(newState);
+    }
+
+    /** Is used by the MultiGamePlay to broadcast time changed events to every
+     * sinfle player gameplay listeners. */
+    public void emitTimeChanged(long elapsedTime)
+    {
+        for (GamePlayListener listener : this._listeners)
+            listener.timeChanged(elapsedTime);
     }
 }

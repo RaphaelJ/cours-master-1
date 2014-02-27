@@ -8,14 +8,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
-import controller.LocalController;
-import gameplay.GamePlay;
-import gameplay.GamePlayFactory;
-import gameplay.NintendoGameBoy;
-import gameplay.NintendoGameBoyFactory;
-import gameplay.multi.MultiClassic;
-import gameplay.multi.MultiCooperative;
-import gameplay.multi.MultiGamePlay;
+import gameplay.*;
+import gameplay.rules.*;
+import gameplay.multi.*;
 
 import javax.swing.JButton;
 import javax.swing.JPanel;
@@ -31,6 +26,8 @@ public class WelcomeView extends javax.swing.JFrame {
     private JButton jButtonCoop;
     private JButton jButtonMultiClassic;
     private JButton jButtonMultiSimple;
+    private JButton jButtonJoinServer;
+    private JButton jButtonStartServer;
     private JButton jButtonOptions;
     private JButton jButtonSolo;
     private JButton jButtonExit;
@@ -56,6 +53,8 @@ public class WelcomeView extends javax.swing.JFrame {
         jButtonMultiSimple = new JButton();
         jButtonMultiClassic = new JButton();
         jButtonCoop = new JButton();
+        jButtonStartServer = new JButton();
+        jButtonJoinServer = new JButton();
         jButtonOptions = new JButton();
         jButtonExit = new JButton();
 
@@ -93,6 +92,22 @@ public class WelcomeView extends javax.swing.JFrame {
             }
         });
 
+        jButtonJoinServer.setText("Join a server");
+        jButtonJoinServer.setAlignmentX(CENTER_ALIGNMENT);
+        jButtonJoinServer.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                jButtonJoinServerActionPerformed(evt);
+            }
+        });
+
+        jButtonStartServer.setText("Start a server");
+        jButtonStartServer.setAlignmentX(CENTER_ALIGNMENT);
+        jButtonStartServer.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                jButtonStartServerActionPerformed(evt);
+            }
+        });
+
         jButtonOptions.setText("Options");
         jButtonOptions.setAlignmentX(CENTER_ALIGNMENT);
         jButtonOptions.addActionListener(new ActionListener() {
@@ -110,13 +125,15 @@ public class WelcomeView extends javax.swing.JFrame {
                         }
                 });
 
-        GridLayout layout = new GridLayout(6, 1);
+        GridLayout layout = new GridLayout(8, 1);
         layout.setVgap(10);
         jPanelButtons.setLayout(layout);
         jPanelButtons.add(jButtonSolo);
         jPanelButtons.add(jButtonMultiSimple);
         jPanelButtons.add(jButtonMultiClassic);
         jPanelButtons.add(jButtonCoop);
+        jPanelButtons.add(jButtonJoinServer);
+        jPanelButtons.add(jButtonStartServer);
         jPanelButtons.add(jButtonOptions);
         jPanelButtons.add(jButtonExit);
 
@@ -128,44 +145,37 @@ public class WelcomeView extends javax.swing.JFrame {
         pack();
     }
 
-    private void jButtonSoloActionPerformed(ActionEvent evt) {
+    private void jButtonSoloActionPerformed(ActionEvent evt)
+    {
         this.setVisible(false);
 
-        Board board = new Board(this._config.getBoardWidth(),
-                        this._config.getBoardHeight());
-        GamePlay game = new NintendoGameBoy(board);
+        Board board = new Board(
+            this._config.getBoardWidth(), this._config.getBoardHeight()
+        );
+        GamePlay game = new DefaultGamePlay(
+            board, new NintendoGameBoy()
+        );
 
-        board.setGamePlay(game);
-
-        SinglePlayerSwingView gui = new SinglePlayerSwingView(this, game,
-                        this._config);
-
-        gui.addController(new LocalController(game));
-
-        gui.run();
+        new SinglePlayerSwingView(this, game, this._config).run();
     }
 
-    private void jButtonMultiSimpleActionPerformed(ActionEvent evt) {
+    private void jButtonMultiSimpleActionPerformed(ActionEvent evt)
+    {
         ArrayList<Board> boards = new ArrayList<Board>();
+        LCGRandom seedGenerator = new LCGRandom();
 
         for(int i = 0; i < this._config.getNbPlayersMulti(); i++) {
-            boards.add(new Board(new LCGRandom(),
-                this._config.getBoardWidth(),
-                this._config.getBoardHeight())
+            boards.add(
+                new Board(
+                    new LCGRandom(seedGenerator.nextInt()),
+                    this._config.getBoardWidth(),this._config.getBoardHeight()
+                )
             );
-
-            // Sleep a little bit to avoid having the same seed for all boards.
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
         }
 
-        GamePlayFactory innerGameplay = new NintendoGameBoyFactory();
-        MultiGamePlay game = new MultiGamePlay(innerGameplay, boards);
-
-        startMultiPlayersGame(game);
+        startMultiPlayersGame(
+            new MultiGamePlay(boards, new NintendoGameBoyFactory())
+        );
     }
 
     private void jButtonMultiClassicActionPerformed(ActionEvent evt)
@@ -173,63 +183,54 @@ public class WelcomeView extends javax.swing.JFrame {
         ArrayList<Board> boards = new ArrayList<Board>();
         long commonSeed = new LCGRandom().getSeed();
 
-        for(int i = 0; i < this._config.getNbPlayersMulti(); i++)
-                boards.add(new Board(new LCGRandom(commonSeed),
-                                this._config.getBoardWidth(),
-                                this._config.getBoardHeight()));
-
-        GamePlayFactory innerGameplay = new NintendoGameBoyFactory();
-
-        int posHole = new LCGRandom().nextInt(boards.get(0).getWidth());
-        MultiGamePlay game = new MultiClassic(
-                        innerGameplay,
-                        boards,
-                        posHole);
-
-        startMultiPlayersGame(game);
-    }
-
-    private void jButtonCoopActionPerformed(ActionEvent evt) {
-        ArrayList<Board> boards = new ArrayList<Board>();
-
         for(int i = 0; i < this._config.getNbPlayersMulti(); i++) {
-                boards.add(new Board(this._config.getBoardWidth(),
-                                this._config.getBoardHeight()));
-
-                // Sleep a little bit to avoid having the same seed for all boards.
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+            boards.add(
+                new Board(
+                    new LCGRandom(commonSeed), this._config.getBoardWidth(),
+                    this._config.getBoardHeight()
+                )
+            );
         }
 
-        GamePlayFactory innerGameplay = new NintendoGameBoyFactory();
-        MultiCooperative game = new MultiCooperative(innerGameplay, boards);
+        int posHole = new LCGRandom().nextInt(this._config.getBoardWidth());
 
-        startMultiPlayersGame(game);
+        startMultiPlayersGame(
+            new MultiClassic(boards, new NintendoGameBoyFactory(), posHole)
+        );
+    }
+
+    private void jButtonCoopActionPerformed(ActionEvent evt)
+    {
+        ArrayList<Board> boards = new ArrayList<Board>();
+        LCGRandom seedGenerator = new LCGRandom();
+
+        for(int i = 0; i < this._config.getNbPlayersMulti(); i++) {
+            boards.add(
+                new Board(
+                    new LCGRandom(seedGenerator.nextInt()),
+                    this._config.getBoardWidth(),this._config.getBoardHeight()
+                )
+            );
+        }
+
+        startMultiPlayersGame(
+            new MultiCooperative(boards, new NintendoGameBoyFactory())
+        );
+    }
+
+    private void jButtonJoinServerActionPerformed(ActionEvent evt)
+    {
+    }
+
+    private void jButtonStartServerActionPerformed(ActionEvent evt)
+    {
     }
 
     private void startMultiPlayersGame(MultiGamePlay game)
     {
         this.setVisible(false);
 
-        ArrayList<GamePlay> games = new ArrayList<GamePlay>();
-
-        for(int i = 0; i < this._config.getNbPlayersMulti(); i++) {
-                GamePlay gameplay = game.getPlayerGamePlay(i);
-                games.add(gameplay);
-
-                gameplay.getBoard().setGamePlay(gameplay);
-        }
-
-        MultiPlayerSwingView gui = new MultiPlayerSwingView(this, games,
-                        this._config, true);
-
-        for(int i = 0; i < this._config.getNbPlayersMulti(); i++)
-                gui.addControllerPlayer(i, new LocalController(games.get(i)));
-
-        gui.run();
+        new MultiPlayerSwingView(this, game, this._config, true).run();
     }
 
     private void jButtonOptionsActionPerformed(ActionEvent evt)
