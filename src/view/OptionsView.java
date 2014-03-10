@@ -20,6 +20,8 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import model.config.LocalConfig;
+
 /** Main configuration menu. Used to set the number of players and the size of
  * the boards. */
 public class OptionsView extends JFrame
@@ -41,9 +43,9 @@ public class OptionsView extends JFrame
     private JButton _okButton;
 
     private JFrame _parent;
-    private Configuration _config;
+    private LocalConfig _config;
 
-    public OptionsView(JFrame parent, Configuration config)
+    public OptionsView(JFrame parent, LocalConfig config)
     {
         super("Options");
 
@@ -189,7 +191,7 @@ public class OptionsView extends JFrame
 
     public static void main(String[] argv)
     {
-        OptionsView ov = new OptionsView(null, new Configuration());
+        OptionsView ov = new OptionsView(null, new LocalConfig());
         ov.setVisible(true);
     }
 

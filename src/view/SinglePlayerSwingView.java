@@ -9,20 +9,20 @@ import java.util.*;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
+import model.config.LocalConfig;
 import gameplay.*;
-import model.*;
 
 public class SinglePlayerSwingView extends SwingView implements KeyListener {
 
     private GamePlay _game;
     private GamePanel _panel;
 
-    private Configuration _config;
+    private LocalConfig _config;
     private Set<Integer> _activeKeys;
     private KeyboardHandler _keyboardHandler;
 
     public SinglePlayerSwingView(JFrame parent, GamePlay game,
-                                 Configuration config)
+                                 LocalConfig config)
     {
         super(parent);
 

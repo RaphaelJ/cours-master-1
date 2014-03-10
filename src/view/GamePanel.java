@@ -22,6 +22,7 @@ import gameplay.rules.*;
 import model.Board;
 import model.BoardListener;
 import model.Row;
+import model.config.Config;
 import model.piece.Piece;
 import view.piece.PieceViewModel;
 
@@ -41,10 +42,10 @@ public class GamePanel extends JPanel
     private JCheckBox _autoPlayerCheckBox;
 
     private GamePlay _game;
-    private Configuration _config;
+    private Config _config;
     private KeyboardHandler _keyboardHandler;
 
-    public GamePanel(SwingView parent, GamePlay game, Configuration config)
+    public GamePanel(SwingView parent, GamePlay game, Config config)
     {
         this._parent = parent;
 

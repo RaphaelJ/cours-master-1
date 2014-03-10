@@ -17,7 +17,11 @@ import javax.swing.JPanel;
 import javax.swing.WindowConstants;
 
 import model.Board;
+import model.config.LocalConfig;
+import model.config.OnlineConfig;
 import util.random.LCGRandom;
+import view.online.JoinServerView;
+import view.online.ServerOptionsView;
 
 public class WelcomeView extends javax.swing.JFrame {
 
@@ -32,13 +36,13 @@ public class WelcomeView extends javax.swing.JFrame {
     private JButton jButtonSolo;
     private JButton jButtonExit;
 
-    private Configuration _config;
+    private LocalConfig _config;
 
     public WelcomeView()
     {
         super("Tetris MVC");
 
-        this._config = new Configuration();
+        this._config = new LocalConfig();
 
         initComponents();
     }
@@ -220,10 +224,17 @@ public class WelcomeView extends javax.swing.JFrame {
 
     private void jButtonJoinServerActionPerformed(ActionEvent evt)
     {
+    	JoinServerView jsv = new JoinServerView();
+    	this.setVisible(false);
+    	jsv.setVisible(true);
     }
 
     private void jButtonStartServerActionPerformed(ActionEvent evt)
     {
+    	OnlineConfig oc = new OnlineConfig(this._config);
+    	ServerOptionsView sov = new ServerOptionsView(oc);
+    	this.setVisible(false);
+    	sov.setVisible(true);
     }
 
     private void startMultiPlayersGame(MultiGamePlay game)

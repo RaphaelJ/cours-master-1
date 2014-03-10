@@ -11,6 +11,7 @@ import java.util.*;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
+import model.config.LocalConfig;
 import gameplay.multi.*;
 
 public class MultiPlayerSwingView extends SwingView implements KeyListener {
@@ -18,12 +19,12 @@ public class MultiPlayerSwingView extends SwingView implements KeyListener {
     private MultiGamePlay _multiGame;
     private ArrayList<GamePanel> _panels;
 
-    private Configuration _config;
+    private LocalConfig _config;
     private Set<Integer> _activeKeys;
     private ArrayList<KeyboardHandler> _keyboardHandlers;
 
     public MultiPlayerSwingView(JFrame parent, MultiGamePlay multiGame,
-                                Configuration config, boolean useImages)
+                                LocalConfig config, boolean useImages)
     {
         super(parent);
 
