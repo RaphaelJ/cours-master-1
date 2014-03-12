@@ -22,7 +22,7 @@ public interface GamePlay {
                       // GAMEOVER state.
     }
 
-    public void addListener(GamePlayListener listener);
+    public void addListener(GameListener listener);
 
     /*********************** User actions ***********************/
 
@@ -64,12 +64,11 @@ public interface GamePlay {
 
     /*********************** Getters ***********************/
 
-    public Board getBoard();
+    public Row[] getGrid();
 
-    public Rule getRule();
+    public int getScore();
 
-    /** Returns the timer which controls the game. */
-    public GameTimer getTimer();
+    public int getLevel();
 
     public GameState getCurrentState();
 }

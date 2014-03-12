@@ -9,7 +9,7 @@ import model.piece.Piece;
  * board changes. */
 public interface BoardListener extends EventListener {
     /** Event triggered when a some cells of the grid have been modified. */
-    public void gridChange(Rectangle bounds);
+    public void gridChange(BoardSection changes);
 
     /** When a new piece has been randomly chosen. */
     public void newPiece(Piece currentPiece, Piece nextPiece);

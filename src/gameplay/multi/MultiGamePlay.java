@@ -16,8 +16,8 @@ public class MultiGamePlay {
     // This timer is used to track the game's eslaped time.
     private GameTimer _timer;
 
-    private ArrayList<GamePlayListener> _listeners =
-        new ArrayList<GamePlayListener>();
+    private ArrayList<GameStateListener> _listeners =
+        new ArrayList<GameStateListener>();
 
     public MultiGamePlay(ArrayList<Board> boards, Rule.RuleFactory ruleFactory)
     {
@@ -27,7 +27,7 @@ public class MultiGamePlay {
         this.initTimers();
     }
 
-    public synchronized void addListener(GamePlayListener listener)
+    public synchronized void addListener(GameStateListener listener)
     {
         this._listeners.add(listener);
     }

@@ -26,8 +26,8 @@ import model.config.Config;
 import model.piece.Piece;
 import view.piece.PieceViewModel;
 
-public class GamePanel extends JPanel
-        implements BoardListener, GamePlayListener, RuleListener, ItemListener {
+public class GamePanel extends JPanel implements GamePlayListener
+                                               , ItemListener {
 
     private SwingView _parent;
 
@@ -51,8 +51,6 @@ public class GamePanel extends JPanel
 
         this._game = game;
         game.addListener(this);
-        game.getRule().addListener(this);
-        game.getBoard().addListener(this);
 
         this._config = config;
         this._keyboardHandler = null;
@@ -118,7 +116,7 @@ public class GamePanel extends JPanel
     public void gridChange(Rectangle bounds)
     {
         // Update the grid
-        Row[] grid = this._game.getBoard().getGrid();
+        Row[] grid = this._game.getGrid();
         Graphics g = this._playPanel.getGraphics();
 
         for (int i = bounds.y; i < bounds.y + bounds.height; i++) {
