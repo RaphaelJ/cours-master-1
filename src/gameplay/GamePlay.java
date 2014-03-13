@@ -60,6 +60,7 @@ public interface GamePlay {
      * Is needed to synchronise clear-lines events over multiplayer games. */
     public void clearLines(LinkedList<Integer> linesIndices);
 
+    /** Will be called by the board when asking to stop the game. */
     public void gameOver();
 
     /*********************** Getters ***********************/
