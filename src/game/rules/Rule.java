@@ -1,4 +1,4 @@
-package gameplay.rules;
+package game.rules;
 
 /** Manages how the score an the game's speed is determined, implementing set of
  * rules. */

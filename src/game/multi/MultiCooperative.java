@@ -1,14 +1,14 @@
-package gameplay.multi;
+package game.multi;
 
 import java.util.*;
 
-import gameplay.*;
-import gameplay.rules.*;
-import model.Board;
+import game.*;
+import game.rules.*;
+import model.*;
 
-/** Applies a gameplay rule to a two players game where lines are only removed
- * if the line is also complete on the opponent grid. */
-public class MultiCooperative extends MultiGamePlay {
+/** Applies a game rule to a multi players game where lines are only removed if
+ * the line is also complete on the opponent grid. */
+public class MultiCooperative extends MultiGame {
 
     public MultiCooperative(ArrayList<Board> boards,
                             Rule.RuleFactory ruleFactory)
@@ -19,10 +19,10 @@ public class MultiCooperative extends MultiGamePlay {
     /** Wraps the inner gameplay in a proxy so lines are removed only if they
      * are complete for all other players. */
     @Override
-    protected GamePlay getGamePlayProxy(Board board,
-                                        Rule.RuleFactory ruleFactory)
+    protected MultiGameProxy getGameProxy(Board board,
+                                          Rule.RuleFactory ruleFactory)
     {
-        return new MultiGamePlayProxy(this, board, ruleFactory.construct()) {
+        return new MultiGameProxy(this, board, ruleFactory.construct()) {
             @Override
             public void clearLines(LinkedList<Integer> lines)
             {
@@ -31,15 +31,14 @@ public class MultiCooperative extends MultiGamePlay {
 
                     linesFor:
                         for (Integer i : lines) {
-                            for (GamePlay opponent 
-                                 : this._multiGame.getGamePlays()) {
+                            for (MultiGameProxy opponent
+                                 : this._multiGame.getGames()) {
                                 if (opponent != this) {
-                                    Board board = opponent.getBoard();
-                                    boolean complete =
-                                        board.getGrid()[i.intValue()]
-                                                      .isComplete();
+                                    Row row = opponent.getBoard()
+                                                      .getRow(i.intValue());
 
-                                    if (!complete) // Doesn't remove this line.
+                                    if (!row.isComplete())
+                                        // Doesn't remove this line.
                                         continue linesFor;
                                 }
                             }
@@ -47,7 +46,7 @@ public class MultiCooperative extends MultiGamePlay {
                         }
 
                     if (toRemove.size() > 0) {
-                        for (GamePlay game : this._multiGame.getGamePlays()) {
+                        for (MultiGameProxy game : this._multiGame.getGames()) {
                             for (Integer i : toRemove)
                                 game.getBoard().removeLine(i.intValue());
 

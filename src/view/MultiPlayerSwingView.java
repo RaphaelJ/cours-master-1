@@ -1,7 +1,5 @@
 package view;
 
-import gameplay.*;
-
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowAdapter;
@@ -12,26 +10,29 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
 import model.config.LocalConfig;
-import gameplay.multi.*;
+import game.*;
+import game.multi.*;
+import view.keyboard.*;
+import view.panel.*;
 
 public class MultiPlayerSwingView extends SwingView implements KeyListener {
 
-    private MultiGamePlay _multiGame;
-    private ArrayList<GamePanel> _panels;
+    private MultiGame _multiGame;
+    private ArrayList<PlayerGamePanel> _panels;
 
     private LocalConfig _config;
     private Set<Integer> _activeKeys;
     private ArrayList<KeyboardHandler> _keyboardHandlers;
 
-    public MultiPlayerSwingView(JFrame parent, MultiGamePlay multiGame,
+    public MultiPlayerSwingView(JFrame parent, MultiGame multiGame,
                                 LocalConfig config, boolean useImages)
     {
-        super(parent);
+        super(parent, multiGame);
 
         this._multiGame = multiGame;
         multiGame.addListener(this);
 
-        this._panels = new ArrayList<GamePanel>();
+        this._panels = new ArrayList<PlayerGamePanel>();
 
         this._config = config;
         this._activeKeys = new HashSet<Integer>();
@@ -42,9 +43,20 @@ public class MultiPlayerSwingView extends SwingView implements KeyListener {
 
     private void initComponents()
     {
-        // Creates a game panel for each player.
-        for (GamePlay game : this._multiGame.getGamePlays()) {
-            GamePanel panel = new GamePanel(this, game, this._config);
+        // Creates a game panel for each player with an associed keyboard
+        // handler.
+        for (int i = 0; i < this._config.getNbPlayersMulti(); i++) {
+            GamePlayer game = this._multiGame.getPlayerGame(i);
+
+            KeyboardHandler handler = new KeyboardHandler(
+                this._activeKeys, this._config.getKeySet(i), game
+            );
+
+            this._keyboardHandlers.add(handler);
+
+            PlayerGamePanel panel = new PlayerGamePanel(
+                this, game, this._config, handler
+            );
             this._panels.add(panel);
             this.gamePanel.add(panel);
         }
@@ -57,17 +69,6 @@ public class MultiPlayerSwingView extends SwingView implements KeyListener {
         });
 
         this.pack();
-
-        // Attachs keyboard handlers to their respective player's game.
-        for (int i = 0; i < this._config.getNbPlayersMulti(); i++) {
-            KeyboardHandler handler = new KeyboardHandler(
-                this._activeKeys, this._config.getKeySet(i),
-                this._multiGame.getPlayerGamePlay(i)
-            );
-
-            this._keyboardHandlers.add(handler);
-            this._panels.get(i).setKeyboardHandler(handler);
-        }
     }
 
     @Override
@@ -81,7 +82,7 @@ public class MultiPlayerSwingView extends SwingView implements KeyListener {
     {
         _activeKeys.add(event.getKeyCode());
 
-        if(_activeKeys.contains(KeyEvent.VK_P))
+        if (_activeKeys.contains(KeyEvent.VK_P))
             this._multiGame.pause();
 
         for (KeyboardHandler handler : this._keyboardHandlers)
@@ -98,16 +99,16 @@ public class MultiPlayerSwingView extends SwingView implements KeyListener {
     public void keyTyped(KeyEvent e) { }
 
     @Override
-    public void stateChanged(GamePlay.GameState newState)
+    public void stateChanged(GameManager.GameState newState)
     {
-        if (newState == GamePlay.GameState.GAMEOVER) {
+        if (newState == GameManager.GameState.GAMEOVER) {
             // Seeks the player with the top score.
             int numWinner = 0;
             int scoreWinner = 0;
 
             int i = 0;
-            for (GamePlay game : this._multiGame.getGamePlays()) {
-                int score = game.getRule().getScore();
+            for (GamePlayer game : this._multiGame.getGames()) {
+                int score = game.getScore();
 
                 if (score > scoreWinner) {
                     numWinner = i;
@@ -119,7 +120,7 @@ public class MultiPlayerSwingView extends SwingView implements KeyListener {
 
             JOptionPane.showMessageDialog(
                 this,
-                "Player " + (numWinner+1) + " wins the game with " + scoreWinner 
+                "Player " + (numWinner+1) + " wins the game with " + scoreWinner
                 + " points !",
                 "Game Over",
                 JOptionPane.INFORMATION_MESSAGE

@@ -1,14 +1,10 @@
 package network;
 
 /** This class will listen to game events and will transmit these to its client
- * counterpart. */
-public class GameProxyServer extends GamePlayListener {
-    private TCPSocket _sock;
+ * counterpart using a network socket. */
+public class GameProxyServer {
 
-    public GameProxyServer(TCPSocket sock, GamePlay game)
+    public GameProxyServer()
     {
-        this._sock = sock;
-
-        game.addListener(this);
     }
 }

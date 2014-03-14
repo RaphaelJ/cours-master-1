@@ -2,38 +2,36 @@ package view;
 
 import java.awt.Rectangle;
 
-import gameplay.*;
-import model.Board;
-import model.BoardListener;
-import model.Row;
+import game.*;
+import model.*;
 import model.piece.Piece;
 
 /** Provides a view which prints the grid to the standard output. */
-public class CLIView implements BoardListener, GamePlayListener {
-    private GamePlay _game;
+public class CLIView implements GameListener {
+    private GameObserver _game;
 
-    public CLIView(GamePlay game)
+    public CLIView(GameObserver game)
     {
         this._game = game;
         game.addListener(this);
-        game.getBoard().addListener(this);
 
         this.printBoard();
     }
 
     private void printBoard()
     {
-        Row[] grid = this._game.getBoard().getGrid();
-        int width = this._game.getBoard().getWidth();
+        FullBoardSection grid = this._game.getGrid();
+        int width  = this._game.getGridWidth()
+          , height = this._game.getGridHeight();
 
         for (int i = 0; i < width + 1; i++)
             System.out.print("~~");
         System.out.println();
 
-        for (Row row : grid) {
+        for (int i = 0; i < height; i++) {
             System.out.print("!");
-            for (Piece piece : row.getPieces()) {
-                if (piece != null)
+            for (int j = 0; j < width; j++) {
+                if (grid.get(i, j) != null)
                     System.out.print(" #");
                 else
                     System.out.print("  ");
@@ -48,7 +46,7 @@ public class CLIView implements BoardListener, GamePlayListener {
         System.out.println();
     }
 
-    public void stateChanged(GamePlay.GameState newState)
+    public void stateChanged(GameManager.GameState newState)
     {
         switch (newState) {
         case INITIALIZED:
@@ -63,12 +61,27 @@ public class CLIView implements BoardListener, GamePlayListener {
 
     public void timeChanged(long elapsed) { }
 
-    public void gridChange(Rectangle bounds)
+    public void gridChange(BoardSection bounds)
     {
         this.printBoard();
     }
 
     public void newPiece(Piece current, Piece next)
+    {
+    }
+
+    public void scoreChange(int newScore)
+    {
+    }
+
+    public void levelChange(int newLevel)
+    {
+        System.out.println(
+            "Next level : " + newLevel + " - Score : " + this._game.getScore()
+        );
+    }
+
+    public void clockDelayChange(int newClockDelay)
     {
     }
 }

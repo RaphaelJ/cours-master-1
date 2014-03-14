@@ -1,4 +1,4 @@
-package view;
+package view.panel;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -16,20 +16,19 @@ import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import ai.*;
-import gameplay.*;
-import gameplay.rules.*;
-import model.Board;
-import model.BoardListener;
-import model.Row;
+import game.*;
+import game.rules.*;
+import model.*;
 import model.config.Config;
 import model.piece.Piece;
+import view.*;
 import view.piece.PieceViewModel;
 
-public class GamePanel extends JPanel implements GamePlayListener
-                                               , ItemListener {
+/** Provides a base-class to display a player's game in the interface.
+ * Is extended by PlayerGamePanel (for games on which the user has control). */
+public class ObserverGamePanel extends JPanel implements GameListener {
 
-    private SwingView _parent;
+    protected SwingView _parent;
 
     private JPanel _playPanel;
 
@@ -37,15 +36,10 @@ public class GamePanel extends JPanel implements GamePlayListener
     private JLabel _level;
     private JPanel _nextPiecePanel;
 
-    private JPanel _autoPlayerPanel;
-    private JLabel _autoPlayerLabel;
-    private JCheckBox _autoPlayerCheckBox;
-
-    private GamePlay _game;
+    private GameObserver _game;
     private Config _config;
-    private KeyboardHandler _keyboardHandler;
 
-    public GamePanel(SwingView parent, GamePlay game, Config config)
+    public ObserverGamePanel(SwingView parent, GameObserver game, Config config)
     {
         this._parent = parent;
 
@@ -53,7 +47,6 @@ public class GamePanel extends JPanel implements GamePlayListener
         game.addListener(this);
 
         this._config = config;
-        this._keyboardHandler = null;
 
         initComponents();
     }
@@ -63,25 +56,19 @@ public class GamePanel extends JPanel implements GamePlayListener
         this._playPanel = new JPanel();
         JPanel rightPanel = new JPanel();
 
-        Rule rule = this._game.getRule();
         JLabel scoreTitle = new JLabel("Score :");
-        this._score = new JLabel(Integer.toString(rule.getScore()));
+        this._score = new JLabel(Integer.toString(this._game.getScore()));
 
         JLabel levelTitle = new JLabel("Level :");
-        this._level = new JLabel(Integer.toString(rule.getLevel()));
+        this._level = new JLabel(Integer.toString(this._game.getLevel()));
 
         this._nextPiecePanel = new JPanel();
-
-        this._autoPlayerPanel = new JPanel();
-        this._autoPlayerLabel = new JLabel("Let the computer play :");
-        this._autoPlayerCheckBox = new JCheckBox();
-        this._autoPlayerCheckBox.addItemListener(this);
 
         this._playPanel.setBackground(new java.awt.Color(255, 255, 255));
         this._playPanel.setPreferredSize(
             new Dimension(
-                this._game.getBoard().getWidth() * PieceViewModel.TILES_SIZE,
-                this._game.getBoard().getHeight() * PieceViewModel.TILES_SIZE
+                this._game.getGridWidth()  * PieceViewModel.TILES_SIZE,
+                this._game.getGridHeight() * PieceViewModel.TILES_SIZE
             )
         );
 
@@ -103,26 +90,21 @@ public class GamePanel extends JPanel implements GamePlayListener
         rightPanel.add(this._level);
         rightPanel.add(this._nextPiecePanel);
 
-        this._autoPlayerPanel.setLayout(new FlowLayout());
-        this._autoPlayerPanel.add(this._autoPlayerLabel);
-        this._autoPlayerPanel.add(this._autoPlayerCheckBox);
-
         this.setLayout(new BorderLayout());
         this.add(this._playPanel, BorderLayout.CENTER);
         this.add(rightPanel, BorderLayout.EAST);
-        this.add(this._autoPlayerPanel, BorderLayout.SOUTH);
     }
 
-    public void gridChange(Rectangle bounds)
+    public void gridChange(BoardSection section)
     {
-        // Update the grid
-        Row[] grid = this._game.getGrid();
         Graphics g = this._playPanel.getGraphics();
 
-        for (int i = bounds.y; i < bounds.y + bounds.height; i++) {
-            Row row = grid[i];
-            for (int j = bounds.x; j < bounds.x + bounds.width; j++) {
-                Piece piece = row.getPiece(j);
+        for (int i = 0; i < section.getHeight(); i++) {
+            int y = i + section.getY();
+
+            for (int j = 0; j < section.getWidth(); j++) {
+                Piece piece = section.get(i, j);
+                int x = j + section.getX();
 
                 if (piece != null) {
                     try {
@@ -130,18 +112,17 @@ public class GamePanel extends JPanel implements GamePlayListener
                             piece, this._config.isUseImages()
                         );
                         pvm.drawTexture(
-                            g, j * PieceViewModel.TILES_SIZE,
-                            i * PieceViewModel.TILES_SIZE, this
+                            g, x * PieceViewModel.TILES_SIZE,
+                            y * PieceViewModel.TILES_SIZE, this
                         );
                     } catch (Exception e) { // Unable to load the tile.
                     }
                 } else {
                     g.setColor(Color.WHITE);
                     g.fillRect(
-                        j * PieceViewModel.TILES_SIZE,
-                        i * PieceViewModel.TILES_SIZE,
-                        PieceViewModel.TILES_SIZE,
-                        PieceViewModel.TILES_SIZE
+                        x * PieceViewModel.TILES_SIZE,
+                        y * PieceViewModel.TILES_SIZE,
+                        PieceViewModel.TILES_SIZE, PieceViewModel.TILES_SIZE
                     );
                 }
             }
@@ -150,7 +131,7 @@ public class GamePanel extends JPanel implements GamePlayListener
         g.finalize();
     }
 
-    public void stateChanged(GamePlay.GameState newState)
+    public void stateChanged(GameManager.GameState newState)
     {
         switch (newState) {
         case INITIALIZED:
@@ -158,11 +139,10 @@ public class GamePanel extends JPanel implements GamePlayListener
             break;
         case RUNNING:
             // Redraws the entire grid.
-            Board board = this._game.getBoard();
-            this.gridChange(
-                new Rectangle(0, 0, board.getWidth(), board.getHeight())
+            this.gridChange(this._game.getGrid());
+            this.newPiece(
+                this._game.getCurrentPiece(), this._game.getNextPiece()
             );
-            this.newPiece(board.getCurrentPiece(), board.getNextPiece());
             break;
         case PAUSED:
             this.cleanBoards();
@@ -178,8 +158,9 @@ public class GamePanel extends JPanel implements GamePlayListener
     public void newPiece(Piece piece, Piece newPiece)
     {
         Graphics g = this._nextPiecePanel.getGraphics();
-        PieceViewModel pvm = new PieceViewModel(newPiece,
-        		this._config.isUseImages());
+        PieceViewModel pvm = new PieceViewModel(
+            newPiece, this._config.isUseImages()
+        );
 
         int dimension = newPiece.getFactory().getExtent();
         boolean[][] state = newPiece.getCurrentState();
@@ -193,8 +174,8 @@ public class GamePanel extends JPanel implements GamePlayListener
         // Draws the next piece at the center of the panel.
         int offset = (PieceViewModel.TILES_SIZE * 4 - PieceViewModel.TILES_SIZE
                                                 * dimension) / 2;
-        for (int i = 0; i < dimension; i++)
-            for (int j = 0; j < dimension; j++)
+        for (int i = 0; i < dimension; i++) {
+            for (int j = 0; j < dimension; j++) {
                 if (state[i][j])
                     try {
                         pvm.drawTexture(
@@ -204,6 +185,8 @@ public class GamePanel extends JPanel implements GamePlayListener
                     } catch (Exception e) { // Unable to load the tile.
                         System.err.println(e.getMessage());
                     }
+            }
+        }
 
         g.finalize();
     }
@@ -229,8 +212,8 @@ public class GamePanel extends JPanel implements GamePlayListener
         Graphics g = this._playPanel.getGraphics();
         g.setColor(Color.WHITE);
         g.fillRect(
-            0, 0, this._game.getBoard().getWidth() * PieceViewModel.TILES_SIZE,
-            this._game.getBoard().getHeight() * PieceViewModel.TILES_SIZE
+            0, 0, this._game.getGridWidth() * PieceViewModel.TILES_SIZE,
+            this._game.getGridHeight() * PieceViewModel.TILES_SIZE
         );
 
         // Hides the next piece panel.
@@ -254,58 +237,12 @@ public class GamePanel extends JPanel implements GamePlayListener
 
         g.drawString(
             text,
-            (this._game.getBoard().getWidth()
+            (this._game.getGridWidth()
              * PieceViewModel.TILES_SIZE - width) / 2,
-            (this._game.getBoard().getHeight() 
+            (this._game.getGridHeight() 
              * PieceViewModel.TILES_SIZE - height) / 2
         );
 
         g.finalize();
-    }
-
-    @Override
-    public void itemStateChanged(ItemEvent e)
-    {
-        Object source = e.getItemSelectable();
-
-        if(source == this._autoPlayerCheckBox) {
-            // Start the AI
-            if(e.getStateChange() == ItemEvent.SELECTED)
-                this.startAutoPlayer();
-
-            // Stop the AI
-            else if(e.getStateChange() == ItemEvent.DESELECTED)
-                this.stopAutoPlayer();
-
-            /* Request focus to the frame so it can still receive the key
-             * events.
-             */
-            this._parent.requestFocus();
-        }
-    }
-
-    private void startAutoPlayer()
-    {
-        /* Disable the KeyboardHandler so it's not possible to control the game
-         * while the AI is playing.
-         */
-        if(this._keyboardHandler != null)
-            this._keyboardHandler.setEnabled(false);
-
-        this._game.setAI(true);
-    }
-
-    private void stopAutoPlayer()
-    {
-        // Enable the KeyboardHandler to give the hand back to the human player.
-        if(this._keyboardHandler != null)
-            this._keyboardHandler.setEnabled(true);
-
-        this._game.setAI(false);
-    }
-
-    public void setKeyboardHandler(KeyboardHandler handler)
-    {
-        this._keyboardHandler = handler;
     }
 }

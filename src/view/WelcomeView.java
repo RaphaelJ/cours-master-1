@@ -8,14 +8,13 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
-import gameplay.*;
-import gameplay.rules.*;
-import gameplay.multi.*;
-
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.WindowConstants;
 
+import game.*;
+import game.rules.*;
+import game.multi.*;
 import model.Board;
 import model.config.LocalConfig;
 import model.config.OnlineConfig;
@@ -156,9 +155,7 @@ public class WelcomeView extends javax.swing.JFrame {
         Board board = new Board(
             this._config.getBoardWidth(), this._config.getBoardHeight()
         );
-        GamePlay game = new DefaultGamePlay(
-            board, new NintendoGameBoy()
-        );
+        Game game = new Game(board, new NintendoGameBoy());
 
         new SinglePlayerSwingView(this, game, this._config).run();
     }
@@ -178,7 +175,7 @@ public class WelcomeView extends javax.swing.JFrame {
         }
 
         startMultiPlayersGame(
-            new MultiGamePlay(boards, new NintendoGameBoyFactory())
+            new MultiGame(boards, new NintendoGameBoyFactory())
         );
     }
 
@@ -224,20 +221,20 @@ public class WelcomeView extends javax.swing.JFrame {
 
     private void jButtonJoinServerActionPerformed(ActionEvent evt)
     {
-    	JoinServerView jsv = new JoinServerView();
-    	this.setVisible(false);
-    	jsv.setVisible(true);
+        JoinServerView jsv = new JoinServerView();
+        this.setVisible(false);
+        jsv.setVisible(true);
     }
 
     private void jButtonStartServerActionPerformed(ActionEvent evt)
     {
-    	OnlineConfig oc = new OnlineConfig(this._config);
-    	ServerOptionsView sov = new ServerOptionsView(oc);
-    	this.setVisible(false);
-    	sov.setVisible(true);
+        OnlineConfig oc = new OnlineConfig(this._config);
+        ServerOptionsView sov = new ServerOptionsView(oc);
+        this.setVisible(false);
+        sov.setVisible(true);
     }
 
-    private void startMultiPlayersGame(MultiGamePlay game)
+    private void startMultiPlayersGame(MultiGame game)
     {
         this.setVisible(false);
 

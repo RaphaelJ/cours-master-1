@@ -1,9 +1,9 @@
-package view;
+package view.keyboard;
 
 import java.util.ArrayList;
 import java.util.Set;
 
-import gameplay.GamePlay;
+import game.*;
 
 /** Given a KeySet, calls the corresponding methods of the controllers for each
  * pressed key. */
@@ -11,11 +11,11 @@ public class KeyboardHandler {
 
     private Set<Integer> _activeKeys;
     private KeySet _keySet;
-    private GamePlay _game;
+    private GamePlayer _game;
     private boolean _enabled;
 
     public KeyboardHandler(Set<Integer> activeKeys, KeySet keySet,
-                           GamePlay game)
+                           GamePlayer game)
     {
         this._activeKeys = activeKeys;
         this._keySet = keySet;

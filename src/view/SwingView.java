@@ -5,7 +5,7 @@ import java.awt.event.WindowAdapter;
 
 import javax.swing.*;
 
-import gameplay.*;
+import game.*;
 import model.*;
 import model.piece.*;
 import util.*;
@@ -13,7 +13,7 @@ import util.*;
 /** Serves as a baseclass for the game's windows.
  * Provides an empty JPanel (this.gamePanel) which will be used by subclasses
  * to implement the game's board user interface(s). */
-public abstract class SwingView extends JFrame implements GamePlayListener {
+public abstract class SwingView extends JFrame implements GameStateListener {
 
     protected JFrame parent;
 
@@ -23,9 +23,11 @@ public abstract class SwingView extends JFrame implements GamePlayListener {
     private JLabel time;
     private JLabel timeTitle;
 
-    public SwingView(JFrame parent)
+    public SwingView(JFrame parent, GameManager game)
     {
         super("Tetris MVC");
+
+        game.addListener(this);
 
         this.parent = parent;
 
@@ -100,7 +102,7 @@ public abstract class SwingView extends JFrame implements GamePlayListener {
 
     protected abstract void newGame();
 
-    public abstract void stateChanged(GamePlay.GameState newState);
+    public abstract void stateChanged(GameManager.GameState newState);
 
     public void timeChanged(long elapsedTime)
     {

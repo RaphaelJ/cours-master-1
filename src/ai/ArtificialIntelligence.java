@@ -1,7 +1,7 @@
 package ai;
 
 import java.awt.Rectangle;
-import gameplay.*;
+import game.*;
 import model.*;
 import model.piece.*;
 
@@ -20,7 +20,7 @@ public class ArtificialIntelligence implements BoardListener {
         }
     }
 
-    private final GamePlay _game;
+    private final Board _board;
 
     private boolean _active = false;
 
@@ -29,19 +29,19 @@ public class ArtificialIntelligence implements BoardListener {
     private final double _γ;
 
     /** Creates a new artificial intelligence with default α, β and γ values. */
-    public ArtificialIntelligence(GamePlay game)
+    public ArtificialIntelligence(Board board)
     {
-        this(game, 1, 1, 4);
+        this(board, 1, 1, 4);
     }
 
-    public ArtificialIntelligence(GamePlay game, double α, double β,
-                                  double γ) {
-        this._game = game;
+    public ArtificialIntelligence(Board board, double α, double β, double γ) {
+        this._board = board;
+
         this._α = α;
         this._β = β;
         this._γ = γ;
 
-        game.getBoard().addListener(this);
+        board.addListener(this);
     }
 
     public boolean getActive()
@@ -53,17 +53,18 @@ public class ArtificialIntelligence implements BoardListener {
     {
         this._active = active;
 
-        if (active) {
-            Board board = this._game.getBoard();
-            synchronized (board) {
-                Piece current = board.getCurrentPiece();
+        if (active) {;
+            synchronized (this._board) {
+                Piece current = this._board.getCurrentPiece();
                 if (current != null)
-                    this.newPiece(current, board.getNextPiece());
+                    this.newPiece(current, this._board.getNextPiece());
             }
         }
     }
 
-    public void gridChange(Rectangle bounds) { }
+    public void gridChange(BoardSection section)
+    {
+    }
 
     /** When a new piece is chosen, compares every possible column and rotation
      * to select the best one. */
@@ -72,8 +73,7 @@ public class ArtificialIntelligence implements BoardListener {
         if (!this._active)
             return;
 
-        Board board = this._game.getBoard();
-        synchronized (board) {
+        synchronized (this._board) {
             // Warning : loops which will follow are terrible as hell.
             // This is because loops are NOT as expressive as recursive
             // functions, and thus the over-usage of additional break & continue
@@ -90,7 +90,7 @@ public class ArtificialIntelligence implements BoardListener {
             PieceMove bestMove = null;
             Piece rotated = current;
             for (int rot = 0; rot < current.getStates().length; rot++) {
-                if (board.pieceCollide(rotated, current))
+                if (this._board.pieceCollide(rotated, current))
                     continue;
                 bestMove = tryMove(rotated, bestMove);
 
@@ -99,7 +99,7 @@ public class ArtificialIntelligence implements BoardListener {
                 // Move left
                 for (int dx = -1; ; dx--) {
                     Piece translated = rotated.translate(dx, 0);
-                    if (board.pieceCollide(translated, current))
+                    if (this._board.pieceCollide(translated, current))
                         break;
                     bestMove = tryMove(translated, bestMove);
                 }
@@ -107,7 +107,7 @@ public class ArtificialIntelligence implements BoardListener {
                 // Move right
                 for (int dx = 1; ; dx++) {
                     Piece translated = rotated.translate(dx, 0);
-                    if (board.pieceCollide(translated, current))
+                    if (this._board.pieceCollide(translated, current))
                         break;
                     bestMove = tryMove(translated, bestMove);
                 }
@@ -116,10 +116,10 @@ public class ArtificialIntelligence implements BoardListener {
             }
 
             if (bestMove != null) {
-                board.removePiece(current);
-                board.setCurrentPiece(bestMove.piece);
-                board.placePiece(bestMove.piece);
-                board.hardDrop();
+                this._board.removePiece(current);
+                this._board.setCurrentPiece(bestMove.piece);
+                this._board.placePiece(bestMove.piece);
+                this._board.hardDrop();
             }
         }
     }
@@ -134,13 +134,12 @@ public class ArtificialIntelligence implements BoardListener {
         Piece finalPiece = piece;
         Piece movedPiece = piece;
 
-        Board board = this._game.getBoard();
-        synchronized (board) {
-            Piece current = board.getCurrentPiece();
+        synchronized (this._board) {
+            Piece current = this._board.getCurrentPiece();
             do {
                 finalPiece = movedPiece;
                 movedPiece = movedPiece.translate(0, 1);
-            } while (!board.pieceCollide(movedPiece, current));
+            } while (!this._board.pieceCollide(movedPiece, current));
         }
 
         if (finalPiece.isFullyIntroduced()) {
@@ -156,8 +155,7 @@ public class ArtificialIntelligence implements BoardListener {
     /** Returns the "penality" of a move. */
     private double movePenality(Piece piece)
     {
-        Board board = this._game.getBoard();
-        synchronized (board) {
+        synchronized (this._board) {
             return this._α * this.bockedCells(piece)
                  - this._β * this.completedRows(piece)
                  + this._γ / Math.sqrt(this.topIndex(piece) + 1);
@@ -175,23 +173,24 @@ public class ArtificialIntelligence implements BoardListener {
 
         boolean[][] state = piece.getCurrentState();
 
-        Board board = this._game.getBoard();
-        synchronized (board) {
-            Row[] grid = board.getGrid();
-            Piece current = board.getCurrentPiece();
+        synchronized (this._board) {
+            FullBoardSection grid = this._board.getGrid();
+            Piece current = this._board.getCurrentPiece();
 
             // Counts empty cells which are directly below the piece.
 
             // Only checks columns of the piece's state inside the grid.
+            int width  = this._board.getWidth()
+              , height = this._board.getHeight();
             int minX = topX < 0 ? -topX : 0
-              , maxX = Math.min(board.getWidth(), topX + state.length) - topX;
+              , maxX = Math.min(width, topX + state.length) - topX;
 
             for (int j = minX; j < maxX; j++) {
                 for (int i = state.length - 1; i >= 0; i--) {
                     if (state[i][j]) {
                         // Adds the number of empty cells of this column.
-                        for (int k = i + topY + 1; k < grid.length; k++) {
-                            Piece other = grid[k].getPiece(j + topX);
+                        for (int k = i + topY + 1; k < height; k++) {
+                            Piece other = grid.get(k, j + topX);
                             if (other == null || other == current)
                                 count++;
                             else
@@ -233,21 +232,20 @@ public class ArtificialIntelligence implements BoardListener {
 
         boolean[][] state = piece.getCurrentState();
 
-        Board board = this._game.getBoard();
-        synchronized (board) {
-            Row[] grid = board.getGrid();
-
+        synchronized (this._board) {
+            int width  = this._board.getWidth()
+              , height = this._board.getHeight();
             int minX = topX < 0 ? -topX : 0
-              , maxX = Math.min(board.getWidth(), topX + state.length) - topX
+              , maxX = Math.min(width, topX + state.length) - topX
               , minY = topY < 0 ? -topY : 0
-              , maxY = Math.min(board.getHeight(), topY + state.length) - topY;
+              , maxY = Math.min(height, topY + state.length) - topY;
             for (int i = minY; i < maxY; i++) {
                 boolean[] line = state[i];
 
                 // Checks every line where the piece occupies at least a cell.
                 for (int j = minX; j < maxX; j++) {
                     if (line[j]) {
-                        if (grid[i + topY].isComplete())
+                        if (this._board.getRow(i + topY).isComplete())
                             count++;
 
                         break;

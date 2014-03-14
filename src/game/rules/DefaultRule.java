@@ -1,4 +1,4 @@
-package gameplay.rules;
+package game.rules;
 
 import java.util.*;
 

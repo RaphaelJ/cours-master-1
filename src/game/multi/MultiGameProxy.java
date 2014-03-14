@@ -1,18 +1,19 @@
-package gameplay.multi;
+package game.multi;
 
 import java.util.*;
 
 import ai.ArtificialIntelligence;
-import gameplay.*;
-import gameplay.rules.*;
-import model.Board;
+import game.*;
+import game.rules.*;
+import model.*;
+import model.piece.*;
 import util.*;
 
-/** GamePlay which is a proxy for a multiplayer gameplay : actions from this
- * object are forwarded to the associated MultiGamePlay. */
-public class MultiGamePlayProxy implements GamePlay, RuleListener {
+/** GamePlayer which is a single player proxy for a multiplayer game : actions
+ * from this object are forwarded to the associated MultiGame */
+public class MultiGameProxy implements GamePlayer, RuleListener {
 
-    protected MultiGamePlay _multiGame;
+    protected MultiGame _multiGame;
     protected Board _board;
     protected Rule _rule;
 
@@ -22,24 +23,34 @@ public class MultiGamePlayProxy implements GamePlay, RuleListener {
 
     private ArtificialIntelligence _ai = null;
 
-    private ArrayList<GamePlayListener> _listeners =
-        new ArrayList<GamePlayListener>();
+    private ArrayList<GameStateListener> _listeners
+        = new ArrayList<GameStateListener>();
 
-    public MultiGamePlayProxy(MultiGamePlay multiGame, Board board, Rule rule)
+    public MultiGameProxy(MultiGame multiGame, Board board, Rule rule)
     {
         this._multiGame = multiGame;
 
         this._board = board;
-        board.setGamePlay(this);
+        board.setGamePlayer(this);
 
         this._rule = rule;
         rule.addListener(this);
     }
 
-    public void addListener(GamePlayListener listener)
+    public void addListener(GameListener listener)
+    {
+        this._board.addListener(listener);
+        this._rule.addListener(listener);
+
+        this._listeners.add(listener);
+    }
+
+    public void addListener(GameStateListener listener)
     {
         this._listeners.add(listener);
     }
+
+    /*********************** User actions ***********************/
 
     public void newGame()
     {
@@ -64,7 +75,8 @@ public class MultiGamePlayProxy implements GamePlay, RuleListener {
     public void moveLeft()
     {
         synchronized (this._multiGame) {
-            if (this._multiGame.getCurrentState() == GamePlay.GameState.RUNNING)
+            if (this._multiGame.getCurrentState()
+                == GameObserver.GameState.RUNNING)
                 this._board.moveLeft();
         }
     }
@@ -72,7 +84,8 @@ public class MultiGamePlayProxy implements GamePlay, RuleListener {
     public void moveRight()
     {
         synchronized (this._multiGame) {
-            if (this._multiGame.getCurrentState() == GamePlay.GameState.RUNNING)
+            if (this._multiGame.getCurrentState()
+                == GameObserver.GameState.RUNNING)
                 this._board.moveRight();
         }
     }
@@ -81,7 +94,8 @@ public class MultiGamePlayProxy implements GamePlay, RuleListener {
     public void softDrop()
     {
         synchronized (this._multiGame) {
-            if (this._multiGame.getCurrentState() == GamePlay.GameState.RUNNING)
+            if (this._multiGame.getCurrentState()
+                == GameObserver.GameState.RUNNING)
                 this._board.softDrop();
         }
     }
@@ -90,7 +104,8 @@ public class MultiGamePlayProxy implements GamePlay, RuleListener {
     public void hardDrop()
     {
         synchronized (this._multiGame) {
-            if (this._multiGame.getCurrentState() == GamePlay.GameState.RUNNING)
+            if (this._multiGame.getCurrentState()
+                == GameObserver.GameState.RUNNING)
                 this._board.hardDrop();
         }
     }
@@ -99,7 +114,8 @@ public class MultiGamePlayProxy implements GamePlay, RuleListener {
     public void rotate()
     {
         synchronized (this._multiGame) {
-            if (this._multiGame.getCurrentState() == GamePlay.GameState.RUNNING)
+            if (this._multiGame.getCurrentState()
+                == GameObserver.GameState.RUNNING)
                 this._board.rotate();
         }
     }
@@ -109,11 +125,13 @@ public class MultiGamePlayProxy implements GamePlay, RuleListener {
     {
         synchronized (this._multiGame) {
             if (this._ai == null)
-                this._ai = new ArtificialIntelligence(this);
+                this._ai = new ArtificialIntelligence(this._board);
 
             this._ai.setActive(enable);
         }
     }
+
+    /*********************** Board events ***********************/
 
     public void clearLines(LinkedList<Integer> lines)
     {
@@ -128,6 +146,8 @@ public class MultiGamePlayProxy implements GamePlay, RuleListener {
         this._multiGame.gameOver();
     }
 
+    /*********************** Internals ***********************/
+
     public void scoreChange(int newScore) { }
 
     public void levelChange(int newLevel) { }
@@ -135,6 +155,43 @@ public class MultiGamePlayProxy implements GamePlay, RuleListener {
     public void clockDelayChange(int newClockDelay)
     {
         this._timer.changeSpeed(newClockDelay);
+    }
+
+    /*********************** Getters ***********************/
+
+    public FullBoardSection getGrid()
+    {
+        return this._board.getGrid();
+    }
+
+    public int getGridWidth()
+    {
+        return this._board.getWidth();
+    }
+
+    public int getGridHeight()
+    {
+        return this._board.getHeight();
+    }
+
+    public int getScore()
+    {
+        return this._rule.getScore();
+    }
+
+    public int getLevel()
+    {
+        return this._rule.getLevel();
+    }
+
+    public Piece getCurrentPiece()
+    {
+        return this._board.getCurrentPiece();
+    }
+
+    public Piece getNextPiece()
+    {
+        return this._board.getNextPiece();
     }
 
     public Board getBoard()
@@ -157,24 +214,24 @@ public class MultiGamePlayProxy implements GamePlay, RuleListener {
         this._timer = timer;
     }
 
-    public GamePlay.GameState getCurrentState()
+    public GameManager.GameState getCurrentState()
     {
         return this._multiGame.getCurrentState();
     }
 
     /** Is used by the MultiGamePlay to broadcast state change events to every
-     * sinfle player gameplay listeners. */
-    public void emitStateChanged(GamePlay.GameState newState)
+     * single player game listeners. */
+    public void emitStateChanged(GameManager.GameState newState)
     {
-        for (GamePlayListener listener : this._listeners)
+        for (GameStateListener listener : this._listeners)
             listener.stateChanged(newState);
     }
 
-    /** Is used by the MultiGamePlay to broadcast time changed events to every
-     * sinfle player gameplay listeners. */
+    /** Is used by the MultiGame to broadcast time changed events to every
+     * single player game listeners. */
     public void emitTimeChanged(long elapsedTime)
     {
-        for (GamePlayListener listener : this._listeners)
+        for (GameStateListener listener : this._listeners)
             listener.timeChanged(elapsedTime);
     }
 }

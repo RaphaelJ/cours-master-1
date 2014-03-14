@@ -1,17 +1,19 @@
-package gameplay.multi;
+package game.multi;
 
 import java.util.*;
 
-import gameplay.*;
-import gameplay.rules.*;
+import game.*;
+import game.rules.*;
 import model.Board;
 import util.*;
 
-/** Applies a rule to a multiplayer game. */
-public class MultiGamePlay {
-    protected ArrayList<GamePlay> _games = new ArrayList<GamePlay>();
+/** Applies a rule and manages a multiplayer game. */
+public class MultiGame implements GameManager {
+    protected ArrayList<MultiGameProxy> _games
+        = new ArrayList<MultiGameProxy>();
 
-    private GamePlay.GameState _currentState = GamePlay.GameState.INITIALIZED;
+    private GameManager.GameState _currentState
+        = GameObserver.GameState.INITIALIZED;
 
     // This timer is used to track the game's eslaped time.
     private GameTimer _timer;
@@ -19,10 +21,10 @@ public class MultiGamePlay {
     private ArrayList<GameStateListener> _listeners =
         new ArrayList<GameStateListener>();
 
-    public MultiGamePlay(ArrayList<Board> boards, Rule.RuleFactory ruleFactory)
+    public MultiGame(ArrayList<Board> boards, Rule.RuleFactory ruleFactory)
     {
         for (Board board : boards)
-            this._games.add(this.getGamePlayProxy(board, ruleFactory));
+            this._games.add(this.getGameProxy(board, ruleFactory));
 
         this.initTimers();
     }
@@ -38,10 +40,10 @@ public class MultiGamePlay {
      * Resets the game if needed. */
     public synchronized void newGame()
     {
-        if (this._currentState != GamePlay.GameState.INITIALIZED)
+        if (this._currentState != GameObserver.GameState.INITIALIZED)
             this.reset();
 
-        this.setCurrentState(GamePlay.GameState.RUNNING);
+        this.setCurrentState(GameObserver.GameState.RUNNING);
         this.startTimers();
     }
 
@@ -52,50 +54,50 @@ public class MultiGamePlay {
         switch (this._currentState) {
         case RUNNING:
             this.stopTimers();
-            this.setCurrentState(GamePlay.GameState.PAUSED);
+            this.setCurrentState(GameObserver.GameState.PAUSED);
             break;
         case PAUSED:
-            this.setCurrentState(GamePlay.GameState.RUNNING);
+            this.setCurrentState(GameObserver.GameState.RUNNING);
             this.startTimers();
             break;
         default:
         }
     }
 
-    public synchronized void reset()
+    public synchronized void stop()
     {
-        if (this._currentState == GamePlay.GameState.RUNNING
-            || this._currentState == GamePlay.GameState.PAUSED)
+        if (this._currentState == GameObserver.GameState.RUNNING
+            || this._currentState == GameObserver.GameState.PAUSED)
             this.stopTimers();
 
-        for (GamePlay game : this._games) {
+        this.setCurrentState(GameObserver.GameState.STOPPED);
+    }
+
+    public synchronized void reset()
+    {
+        if (this._currentState == GameObserver.GameState.RUNNING
+            || this._currentState == GameObserver.GameState.PAUSED)
+            this.stopTimers();
+
+        for (MultiGameProxy game : this._games) {
             game.getBoard().reset();
             game.getRule().reset();
         }
 
         this.initTimers();
 
-        this.setCurrentState(GamePlay.GameState.INITIALIZED);
-    }
-
-    public synchronized void stop()
-    {
-        if (this._currentState == GamePlay.GameState.RUNNING
-            || this._currentState == GamePlay.GameState.PAUSED)
-            this.stopTimers();
-
-        this.setCurrentState(GamePlay.GameState.STOPPED);
+        this.setCurrentState(GameObserver.GameState.INITIALIZED);
     }
 
     /*********************** Boards events ***********************/
 
     public synchronized void gameOver()
     {
-        if (this._currentState == GamePlay.GameState.RUNNING
-            || this._currentState == GamePlay.GameState.PAUSED)
+        if (this._currentState == GameObserver.GameState.RUNNING
+            || this._currentState == GameObserver.GameState.PAUSED)
             this.stopTimers();
 
-        this.setCurrentState(GamePlay.GameState.GAMEOVER);
+        this.setCurrentState(GameObserver.GameState.GAMEOVER);
     }
 
     /*********************** Internals ***********************/
@@ -108,23 +110,23 @@ public class MultiGamePlay {
                 public void run()
                 {
                     long elapsed = _timer.getElapsedTime();
-                    for (GamePlayListener listener : _listeners)
+                    for (GameStateListener listener : _listeners)
                         listener.timeChanged(elapsed);
 
-                    for (GamePlay game : _games)
-                        ((MultiGamePlayProxy) game).emitTimeChanged(elapsed);
+                    for (MultiGameProxy game : _games)
+                        game.emitTimeChanged(elapsed);
                 }
             }, 1000
         );
 
-        for (final GamePlay game : this._games) {
-            ((MultiGamePlayProxy) game).setTimer(
+        for (final MultiGameProxy game : this._games) {
+            game.setTimer(
                 new GameTimer(
                     new Runnable() {
                         @Override
                         public void run()
                         {
-                            if (_currentState == GamePlay.GameState.RUNNING)
+                            if (_currentState == GameObserver.GameState.RUNNING)
                                 game.getBoard().gameTick();
                         }
                     }, game.getRule().getClockDelay()
@@ -137,54 +139,54 @@ public class MultiGamePlay {
     {
         this._timer.start();
 
-        for (GamePlay game : this._games)
+        for (MultiGameProxy game : this._games)
             game.getTimer().start();
     }
 
     public synchronized void stopTimers()
     {
-        for (GamePlay game : this._games)
+        for (MultiGameProxy game : this._games)
             game.getTimer().stop();
     }
 
     /*********************** Getters ***********************/
 
     /** Returns the instances which manage the game for every player. */
-    public ArrayList<GamePlay> getGamePlays()
+    public ArrayList<MultiGameProxy> getGames()
     {
         return this._games;
     }
 
-    /** Returns tkstenehe GamePlay instance which can be used to control a given
+    /** Returns the Game instance which can be used to control a given
      * player's game. */
-    public GamePlay getPlayerGamePlay(int player)
+    public MultiGameProxy getPlayerGame(int player)
     {
         return this._games.get(player);
     }
 
     /** Given a board instance and a rule, constructs a transformed gameplay for
      * the player which applies the multiplayer rules in a synchronized way. */
-    protected GamePlay getGamePlayProxy(Board board,
-                                        Rule.RuleFactory ruleFactory)
+    protected MultiGameProxy getGameProxy(Board board,
+                                          Rule.RuleFactory ruleFactory)
     {
-        return new MultiGamePlayProxy(this, board, ruleFactory.construct());
+        return new MultiGameProxy(this, board, ruleFactory.construct());
     }
 
-    public GamePlay.GameState getCurrentState()
+    public GameManager.GameState getCurrentState()
     {
         return this._currentState;
     }
 
-    private void setCurrentState(GamePlay.GameState newState)
+    private void setCurrentState(GameManager.GameState newState)
     {
         if (newState != this._currentState) {
             this._currentState = newState;
 
-            for (GamePlayListener listener : this._listeners)
+            for (GameStateListener listener : this._listeners)
                 listener.stateChanged(newState);
 
-            for (GamePlay game : this._games)
-                ((MultiGamePlayProxy) game).emitStateChanged(newState);
+            for (MultiGameProxy game : this._games)
+                game.emitStateChanged(newState);
         }
     }
 }

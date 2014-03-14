@@ -1,4 +1,4 @@
-package view;
+package view.keyboard;
 
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;

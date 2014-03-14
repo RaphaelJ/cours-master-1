@@ -1,21 +1,23 @@
 package model;
 
-/** This class is used by board's events to signal cells which have been
- * modified. */
-class BoardSection {
-    public final int x;
-    public final int y;
-    public final int width;
-    public final int height;
+import model.piece.*;
 
-    public final Piece[][] grid;
+/** This interface is used to access to section of the board.
+ * Defines a rectangle in witch every modified cell resides and gives a getter
+ * method to get the content of one of these cells.
+ * This is defined as an interface as some implementations will use a delayed
+ * representation (get() is just an intermediate call to the real board) whereas
+ * others will copy the board's content (for network instances). This avoid
+ * useless copy of the grid content in the case of local views. */
+public interface BoardSection {
 
-    public BoardSection(int x, int y, int width, int height, Piece[][] grid)
-    {
-        
-    }
+    public int getX();
+    public int getY();
 
-    public BoardSection(int x, int y, int width, int height, Board board)
-    {
-    }
+    public int getWidth();
+    public int getHeight();
+
+    /** Returns the piece at the given index in the rectangle (not in the
+     * board). */
+    public Piece get(int y, int x);
 }

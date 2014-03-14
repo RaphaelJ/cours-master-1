@@ -2,23 +2,24 @@ package model.config;
 
 import java.util.ArrayList;
 
-import view.KeySet;
+import view.keyboard.KeySet;
 
 public class LocalConfig extends Config {
 
-	private int _nbPlayersMulti;
+    private int _nbPlayersMulti;
     private ArrayList<KeySet> _keySets;
 
-    public LocalConfig() {
-    	super();
-    	
-    	this._nbPlayersMulti = 2;
+    public LocalConfig()
+    {
+        super();
+
+        this._nbPlayersMulti = 2;
         this._keySets = new ArrayList<KeySet>();
 
         for(int i = 0; i < this._nbPlayersMulti; i++)
             this._keySets.add(KeySet.getKeySet(i));
     }
-    
+
     public int getNbPlayersMulti()
     {
         return this._nbPlayersMulti;

@@ -10,26 +10,25 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
 import model.config.LocalConfig;
-import gameplay.*;
+import game.*;
+import view.keyboard.*;
+import view.panel.*;
 
 public class SinglePlayerSwingView extends SwingView implements KeyListener {
 
-    private GamePlay _game;
-    private GamePanel _panel;
+    private GamePlayer _game;
+    private PlayerGamePanel _panel;
 
     private LocalConfig _config;
     private Set<Integer> _activeKeys;
     private KeyboardHandler _keyboardHandler;
 
-    public SinglePlayerSwingView(JFrame parent, GamePlay game,
+    public SinglePlayerSwingView(JFrame parent, GamePlayer game,
                                  LocalConfig config)
     {
-        super(parent);
+        super(parent, game);
 
         this._game = game;
-        game.addListener(this);
-
-        this._panel = new GamePanel(this, game, config);
 
         this._config = config;
         this._activeKeys = new HashSet<Integer>();
@@ -37,7 +36,9 @@ public class SinglePlayerSwingView extends SwingView implements KeyListener {
             this._activeKeys, this._config.getKeySet(0), game
         );
 
-        this._panel.setKeyboardHandler(this._keyboardHandler);
+        this._panel = new PlayerGamePanel(
+            this, game, config, this._keyboardHandler
+        );
 
         initComponents();
     }
@@ -81,9 +82,9 @@ public class SinglePlayerSwingView extends SwingView implements KeyListener {
     public void keyTyped(KeyEvent e) { }
 
     @Override
-    public void stateChanged(GamePlay.GameState newState)
+    public void stateChanged(GamePlayer.GameState newState)
     {
-        if (newState == GamePlay.GameState.GAMEOVER) {
+        if (newState == GamePlayer.GameState.GAMEOVER) {
             int choice = JOptionPane.showConfirmDialog(
                 this, "Would you like to retry ?", "Game Over",
                 JOptionPane.YES_NO_OPTION

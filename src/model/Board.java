@@ -3,7 +3,7 @@ package model;
 import java.awt.Rectangle;
 import java.util.*;
 
-import gameplay.*;
+import game.*;
 import model.piece.*;
 import util.random.LCGRandom;
 import util.random.Random;
@@ -32,7 +32,7 @@ public class Board {
     private Piece _current = null;
     private Piece _next = null;
 
-    private GamePlay _game = null;
+    private GamePlayer _game = null;
 
     private ArrayList<BoardListener> _listeners
         = new ArrayList<BoardListener>();
@@ -79,7 +79,7 @@ public class Board {
     {
         this.initBoard();
 
-        this.emitGridChange(new Rectangle(0, 0, this._width, this._height));
+        this.emitGridChange(0, 0, this._width, this._height);
     }
 
     /** Runs one step of the game: moves the current piece.
@@ -233,11 +233,7 @@ public class Board {
             }
         }
 
-        this.emitGridChange(
-            new Rectangle(
-                topX + minX, topY + minY, maxX, maxY
-            )
-        );
+        this.emitGridChange(topX + minX, topY + minY, maxX, maxY);
     }
 
     /** Removes a piece from the grid. */
@@ -262,11 +258,7 @@ public class Board {
             }
         }
 
-        this.emitGridChange(
-            new Rectangle(
-                topX + minX, topY + minY, maxX, maxY
-            )
-        );
+        this.emitGridChange(topX + minX, topY + minY, maxX, maxY);
     }
 
     /** Adds a new line at the bottom of the grid with a hole at posHole.
@@ -301,7 +293,7 @@ public class Board {
         if (this._current != null)
             this.placePiece(this._current);
 
-        this.emitGridChange(new Rectangle(0, 0, this._width, this._height));
+        this.emitGridChange(0, 0, this._width, this._height);
     }
 
     /** Adds a new line at the bottom of the grid with a hole at a random
@@ -322,7 +314,7 @@ public class Board {
             this._grid[i] = this._grid[i-1];
         this._grid[0] = new Row(this._width);
 
-        this.emitGridChange(new Rectangle(0, 0, this._width, index + 1));
+        this.emitGridChange(0, 0, this._width, index + 1);
     }
 
     /*********************** Internals ***********************/
@@ -422,10 +414,39 @@ public class Board {
 
     /*********************** Events ***********************/
 
-    private void emitGridChange(Rectangle bounds)
+    private void emitGridChange(final int x, final int y, final int width,
+                                final int height)
     {
+        // Creates a delayed (no copy) representation of the board's section.
+        BoardSection section = new BoardSection() {
+            public int getX()
+            {
+                return x;
+            }
+
+            public int getY()
+            {
+                return y;
+            }
+
+            public int getWidth()
+            {
+                return width;
+            }
+
+            public int getHeight()
+            {
+                return height;
+            }
+
+            public Piece get(int secY, int secX)
+            {
+                return _grid[y + secY].getPiece(x + secX);
+            }
+        };
+
         for (BoardListener listener : this._listeners)
-            listener.gridChange(bounds);
+            listener.gridChange(section);
     }
 
     private void emitNewPiece(Piece piece, Piece nextPiece)
@@ -446,9 +467,21 @@ public class Board {
         return this._height;
     }
 
-    public Row[] getGrid()
+    /** Returns a delayed (no-copy), read-only representation of the grid. */
+    public FullBoardSection getGrid()
     {
-        return this._grid;
+        return new FullBoardSection(this._width, this._height) {
+            public Piece get(int y, int x)
+            {
+                return _grid[y].getPiece(x);
+            }
+        };
+    }
+
+    /** The first row is the top-most row of the grid. */
+    public Row getRow(int y)
+    {
+        return this._grid[y];
     }
 
     public Piece getCurrentPiece()
@@ -466,8 +499,8 @@ public class Board {
         return this._next;
     }
 
-    /** Sets the GamePlay instance which controls the game. */
-    public void setGamePlay(GamePlay game)
+    /** Sets the GamePlayer instance which controls the game. */
+    public void setGamePlayer(GamePlayer game)
     {
         this._game = game;
     }
