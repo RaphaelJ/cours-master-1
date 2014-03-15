@@ -1,6 +1,6 @@
 package model;
 
-public class Coordinates {
+public class Coordinates implements Serializable {
     private final int _x;
     private final int _y;
 

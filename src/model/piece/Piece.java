@@ -7,7 +7,7 @@ import model.Coordinates;
  * returns a new Piece object without updating the current one.
  * This is useful to check if a piece can be rotated or moved before applying
  * the transformation. */
-public abstract class Piece {
+public abstract class Piece implements Serializable {
     public static final Piece.PieceFactory[] AVAILABLE_PIECES = {
         PieceI.factory, PieceJ.factory, PieceL.factory, PieceO.factory,
         PieceS.factory, PieceT.factory, PieceZ.factory
