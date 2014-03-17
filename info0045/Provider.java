@@ -17,9 +17,45 @@ import javax.crypto.*;
 import javax.crypto.spec.*;
 import javax.crypto.interfaces.*;
 
+public class Provider {
 
-public class Provider
-{
+    /** 
+     * Used to store a pair of keys derived from another one.
+     */
+    private class DerivedKeys {
+        public final SecretKey cipher;
+        public final SecretKey hmac;
+
+        /**
+         * Uses the given key to generate a cipher key and a HMAC key.
+         */
+        public DerivedKeys(SecretKey key)
+        {
+            this(key.getEncoded);
+        }
+
+        /**
+         * Uses the given string to generate a cipher key and a HMAC key.
+         */
+        public DerivedKeys(String seed)
+        {
+            this(seed.getBytes("US-ASCII"));
+        }
+
+        /**
+         * Uses the given byte string to generate a cipher key and a HMAC key.
+         */
+        public DerivedKeys(byte[] seed)
+        {
+            // Uses the key as a seed for the random key generator.
+            KeyGenerator gen = KeyGenerator.getInstance("AES");
+            gen.init(new SecureRandom(key.getEncoded());
+
+            this.cipher = gen.generateKey();
+            this.hmac   = gen.generateKey();
+        }
+    }
+
     /**
      *  Password shared with the server.
      */
@@ -78,45 +114,39 @@ public class Provider
      */
     public void run()
     {
-        // Read the data file
-        String plaintext = "";
+        this.encryptDataFile(this.data_file, this.encrypted_data_file);
+    }
+
+    public void encryptDataFile(String sourcePath, String destPath)
+    {
         try {
-            FileReader fr = new FileReader(data_file);
-            BufferedReader in = new BufferedReader(fr);
+            // Derives the keys from the master password.
+            DerivedKeys ders_pwd = new DerivedKeys(this.master_pwd);
 
-            StringBuilder builder = new StringBuilder();
-            String temp = in.readLine();
+            // Generates the key used to encrypt the file and its derivatives.
+            SecretKey k_rand = KeyGenerator.getInstance("AES").generateKey();
+            DerivedKeys ders_rand = new DerivedKeys(k_rand);
 
-            while (temp != null) {
-                builder.append(temp + "\n");
-                temp = in.readLine();
+            // Encrypt the file content.
+            Cipher text_cipher = Ciper.getInstance("AES/None/NoPadding");
+            cipher.init(Cipher.ENCRYPT_MODE, ders_pwd.cipher);
+            FileReader input_file = new FileReader(this.data_file);
+            BufferedReader ciphertext = new BufferedReader(
+                new CipherInputStream(file, cipher)
+            );
+
+            // Copy the content of the ciphertext stream to the output file.
+            FileWriter output_file = new FileWriter(this.encrypted_data_file);
+            BufferedWriter output = new BufferedWriter(output_file);
+
+            String line;
+            while ((line == encrypted.readLine()) != null) {
+                output.write(line);
+                output.newLine();
             }
 
-            plaintext = builder.toString();
-
-            in.close();
-            fr.close();
-        } catch(IOException iox) {
-            System.out.println(iox.getMessage());
-            iox.printStackTrace();
-        }
-
-        
-        //
-        // Most of your code can go here, right now we are just copying the
-        // plaintext content to the output file. Your code should generate
-        // and write protected content and the protected password file.
-        //
-
-        String ciphertext = plaintext;
-        // Write the protected content file
-        try {
-            FileWriter fw = new FileWriter(encrypted_data_file);
-            PrintWriter out = new PrintWriter(new BufferedWriter(fw));
-            out.print(ciphertext);
-
-            out.close();
-            fw.close();
+            input_file.close();
+            output_file.close();
         } catch(IOException iox) {
             System.out.println(iox.getMessage());
             iox.printStackTrace();
