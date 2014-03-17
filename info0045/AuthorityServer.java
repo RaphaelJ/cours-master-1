@@ -101,7 +101,40 @@ public class AuthorityServer
      */
     private String lookupPassword(String username)
     {
-        
+    	// variables definition
+    	String plaintext = "";
+    	int index = 0;
+    	String ch = ":";
+    	int beginIndex = 0;
+    	int endIndex = 0;
+        try {
+            FileReader fr = new FileReader(enc_pwd_file);
+            BufferedReader in = new BufferedReader(fr);
+
+            StringBuilder builder = new StringBuilder();
+            String temp = in.readLine();
+            String fileUserName = "";
+
+            while (temp != null) {
+            	
+            	endIndex = indexOf(String ch);	// find the index of the first occrurence of the charater ':'
+            	fileUserName = temp.substring(beginIndex, endIndex - 1); // gives the user name before the character ':'
+            	if (fileUserName.equals(username)) 
+            	{
+            		String pwd = temp.substring(endIndex+1,temp.length());
+            		return pwd; // return the password corresponding to the user 
+            	}
+                temp = in.readLine();
+            }
+
+            plaintext = builder.toString();
+
+            in.close();
+            fr.close();
+        } catch(IOException iox) {
+            System.out.println(iox.getMessage());
+            iox.printStackTrace();
+        }
     }
 
     protected void finalize()
