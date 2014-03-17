@@ -39,7 +39,7 @@ public class Provider
      *  Name of the file where to write the encrypted data.
      */
     private String encrypted_data_file;
-    
+
     /**
      *  Name of the file where to write the encrypted pairs.
      */
@@ -48,7 +48,6 @@ public class Provider
     /**
      *  Your variable declarations (if any) can go here:
      */
-
 
     /**
      *  Constructor.
@@ -80,18 +79,20 @@ public class Provider
     public void run()
     {
         // Read the data file
-        String plaintext = null;
+        String plaintext = "";
         try {
             FileReader fr = new FileReader(data_file);
             BufferedReader in = new BufferedReader(fr);
 
-            plaintext = new String();
+            StringBuilder builder = new StringBuilder();
             String temp = in.readLine();
 
             while (temp != null) {
-                plaintext += temp + "\n";
+                builder.append(temp + "\n");
                 temp = in.readLine();
             }
+
+            plaintext = builder.toString();
 
             in.close();
             fr.close();
@@ -100,6 +101,7 @@ public class Provider
             iox.printStackTrace();
         }
 
+        
         //
         // Most of your code can go here, right now we are just copying the
         // plaintext content to the output file. Your code should generate

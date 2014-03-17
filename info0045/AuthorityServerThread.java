@@ -64,9 +64,9 @@ public class AuthorityServerThread extends Thread
     {
         // Set up communication streams
         try {
-            to_client = new printwriter(client_socket.getoutputstream(), true);
-            from_client = new bufferedreader(new inputstreamreader(
-                client_socket.getinputstream())
+            to_client = new PrintWriter(client_socket.getOutputStream(), true);
+            from_client = new BufferedReader(new InputStreamReader(
+                client_socket.getInputStream())
             );
         } catch(IOException iox) {
             System.out.println(iox.getMessage());	    

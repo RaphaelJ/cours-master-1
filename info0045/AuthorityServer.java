@@ -95,6 +95,15 @@ public class AuthorityServer
         }
     }
 
+    /**
+     * Searches for the corresponding password of the given user in the
+     * encrypted password database. Returns null if the user doesn't exist.
+     */
+    private String lookupPassword(String username)
+    {
+        
+    }
+
     protected void finalize()
     {
         // Close the socket
