@@ -23,7 +23,7 @@ public class AuthorityServerThread extends Thread
 {
 
     /**
-     *  Master password
+     *  Master password raph
      */
     private String master_pwd = null;
 
