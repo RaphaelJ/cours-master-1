@@ -1,21 +1,27 @@
 package view;
 
-import java.awt.*;
+import game.GameManager;
+import game.GameStateListener;
+
+import java.awt.BorderLayout;
 import java.awt.event.WindowAdapter;
 
-import javax.swing.*;
-
-import game.*;
-import model.*;
-import model.piece.*;
-import util.*;
+import javax.swing.BoxLayout;
+import javax.swing.GroupLayout;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.LayoutStyle;
+import javax.swing.WindowConstants;
 
 /** Serves as a baseclass for the game's windows.
  * Provides an empty JPanel (this.gamePanel) which will be used by subclasses
  * to implement the game's board user interface(s). */
 public abstract class SwingView extends JFrame implements GameStateListener {
 
-    protected JFrame parent;
+	private static final long serialVersionUID = -3670338522409376447L;
+
+	protected JFrame parent;
 
     protected JPanel gamePanel;
 

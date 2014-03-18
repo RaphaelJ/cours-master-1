@@ -15,6 +15,8 @@ import javax.swing.JTextField;
 
 public class JoinServerView extends JFrame {
 
+	private static final long serialVersionUID = 6559007186972592467L;
+
 	private JPanel _formPanel;
 	
 	private JLabel _ipLabel;

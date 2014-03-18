@@ -1,7 +1,12 @@
 package model;
 
+import java.io.Serializable;
+
 public class Coordinates implements Serializable {
-    private final int _x;
+
+	private static final long serialVersionUID = -2199910363902540248L;
+
+	private final int _x;
     private final int _y;
 
     public Coordinates(int x, int y)

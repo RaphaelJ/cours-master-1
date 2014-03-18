@@ -1,6 +1,6 @@
 package model;
 
-import model.piece.*;
+import model.piece.Piece;
 
 /** This interface is used to access to section of the board.
  * Defines a rectangle in witch every modified cell resides and gives a getter

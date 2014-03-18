@@ -1,13 +1,21 @@
 package game.multi;
 
-import java.util.*;
+import game.GameListener;
+import game.GameManager;
+import game.GameObserver;
+import game.GamePlayer;
+import game.GameStateListener;
+import game.rules.Rule;
+import game.rules.RuleListener;
 
+import java.util.ArrayList;
+import java.util.LinkedList;
+
+import model.Board;
+import model.FullBoardSection;
+import model.piece.Piece;
+import util.GameTimer;
 import ai.ArtificialIntelligence;
-import game.*;
-import game.rules.*;
-import model.*;
-import model.piece.*;
-import util.*;
 
 /** GamePlayer which is a single player proxy for a multiplayer game : actions
  * from this object are forwarded to the associated MultiGame */

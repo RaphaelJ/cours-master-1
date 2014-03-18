@@ -1,8 +1,15 @@
 package network;
 
-import game.*;
-import model.*;
-import model.piece.*;
+import game.GameListener;
+import game.GameManager;
+import game.GameObserver;
+import game.GameStateListener;
+
+import java.util.ArrayList;
+
+import model.BoardSection;
+import model.FullBoardSection;
+import model.piece.Piece;
 
 /** A GameObserver proxy which will transmit events it receives from the
  * GameClient to the views. It doesn't transmit anything to the network, only
@@ -16,11 +23,11 @@ public class GameObserverProxy implements GameObserver {
     private Piece _currentPiece = null;
     private Piece _nextPiece = null;
 
-    private int score = 0;
-    private int level = 0;
+    private int _score = 0;
+    private int _level = 0;
 
-    private ArrayList<GameStateListener> _listeners
-        = new ArrayList<GameStateListener>();
+    private ArrayList<GameListener> _listeners
+        = new ArrayList<GameListener>();
 
     public GameObserverProxy(int width, int height)
     {
@@ -42,7 +49,7 @@ public class GameObserverProxy implements GameObserver {
             {
                 return _grid[y][x];
             }
-        }
+        };
     }
 
     public int getGridWidth()
@@ -78,7 +85,7 @@ public class GameObserverProxy implements GameObserver {
     public void emitBoardChange(BoardSection section)
     {
         for (GameListener listener : this._listeners)
-            listener.boardChange(section)
+            listener.gridChange(section);
     }
 
     public void emitNewPiece(Piece currentPiece, Piece nextPiece)
@@ -110,4 +117,40 @@ public class GameObserverProxy implements GameObserver {
     {
         // TODO
     }
+
+	@Override
+	public void newGame() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void pause() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void stop() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void reset() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void addListener(GameStateListener listener) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public GameState getCurrentState() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

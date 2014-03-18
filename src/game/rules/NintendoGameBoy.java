@@ -1,6 +1,5 @@
 package game.rules;
 
-import java.util.*;
 
 /** Implements the traditional Marathon mode from the Game Boy tetris.
  * Read http://tetris.wikia.com/wiki/Tetris_(Game_Boy) for a complete

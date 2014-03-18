@@ -1,5 +1,7 @@
 package model.piece;
 
+import java.io.Serializable;
+
 import model.Coordinates;
 
 /** Contains the position and the state (orientation) of a piece.
@@ -8,7 +10,10 @@ import model.Coordinates;
  * This is useful to check if a piece can be rotated or moved before applying
  * the transformation. */
 public abstract class Piece implements Serializable {
-    public static final Piece.PieceFactory[] AVAILABLE_PIECES = {
+
+	private static final long serialVersionUID = -122878574570202345L;
+
+	public static final Piece.PieceFactory[] AVAILABLE_PIECES = {
         PieceI.factory, PieceJ.factory, PieceL.factory, PieceO.factory,
         PieceS.factory, PieceT.factory, PieceZ.factory
     };

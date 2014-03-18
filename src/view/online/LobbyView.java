@@ -9,6 +9,8 @@ import javax.swing.JList;
 
 public class LobbyView extends JFrame {
 
+	private static final long serialVersionUID = -1638636849246414537L;
+	
 	private JList _playerList;
 	private JButton _launchButton;
 	

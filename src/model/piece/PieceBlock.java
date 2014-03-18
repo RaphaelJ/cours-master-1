@@ -5,7 +5,10 @@ import model.Coordinates;
 /** A piece which only use a single block. This is used to create new lines
  * which are added in multiplayer games by the opponent. */
 public class PieceBlock extends Piece {
-    public static final boolean[][][] states = { {
+
+	private static final long serialVersionUID = 1886246992388013253L;
+
+	public static final boolean[][][] states = { {
             { true }
         }
     };

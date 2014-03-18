@@ -1,8 +1,5 @@
 package game;
 
-import java.util.*;
-
-import model.piece.*;
 
 /** Provides a way to listen to game's state change.
  * This interface distinguish itself from GameListener by only listening to

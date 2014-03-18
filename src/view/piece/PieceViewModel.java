@@ -9,7 +9,15 @@ import java.util.concurrent.Callable;
 
 import javax.imageio.ImageIO;
 
-import model.piece.*;
+import model.piece.Piece;
+import model.piece.PieceBlock;
+import model.piece.PieceI;
+import model.piece.PieceJ;
+import model.piece.PieceL;
+import model.piece.PieceO;
+import model.piece.PieceS;
+import model.piece.PieceT;
+import model.piece.PieceZ;
 import util.Lazy;
 
 /** Proxy which provides drawing capabilities for each piece. */

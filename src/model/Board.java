@@ -1,14 +1,14 @@
 package model;
 
-import java.awt.Rectangle;
-import java.util.*;
+import game.GamePlayer;
 
-import game.*;
-import model.piece.*;
+import java.util.ArrayList;
+import java.util.LinkedList;
+
+import model.piece.Piece;
+import model.piece.PieceBlock;
 import util.random.LCGRandom;
 import util.random.Random;
-
-import ai.*;
 
 /** Saves the current status of the board and communicates with views to share
  * changes and game events with the user. */

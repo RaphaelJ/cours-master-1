@@ -1,10 +1,12 @@
 package game.multi;
 
-import java.util.*;
+import game.rules.Rule;
 
-import game.*;
-import game.rules.*;
-import model.*;
+import java.util.ArrayList;
+import java.util.LinkedList;
+
+import model.Board;
+import model.Row;
 
 /** Applies a game rule to a multi players game where lines are only removed if
  * the line is also complete on the opponent grid. */

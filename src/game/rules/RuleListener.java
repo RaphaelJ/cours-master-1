@@ -1,6 +1,6 @@
 package game.rules;
 
-import java.util.*;
+import java.util.EventListener;
 
 /** Provides a way to listen to game play events. */
 public interface RuleListener extends EventListener {

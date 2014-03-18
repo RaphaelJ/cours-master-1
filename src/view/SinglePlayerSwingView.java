@@ -1,22 +1,26 @@
 package view;
 
+import game.GamePlayer;
+
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
 import model.config.LocalConfig;
-import game.*;
-import view.keyboard.*;
-import view.panel.*;
+import view.keyboard.KeyboardHandler;
+import view.panel.PlayerGamePanel;
 
 public class SinglePlayerSwingView extends SwingView implements KeyListener {
 
-    private GamePlayer _game;
+	private static final long serialVersionUID = 5896452179129921463L;
+
+	private GamePlayer _game;
     private PlayerGamePanel _panel;
 
     private LocalConfig _config;

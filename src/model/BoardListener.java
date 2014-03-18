@@ -1,7 +1,6 @@
 package model;
 
-import java.awt.Rectangle;
-import java.util.*;
+import java.util.EventListener;
 
 import model.piece.Piece;
 

@@ -1,19 +1,27 @@
 package view.panel;
 
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
+import game.GamePlayer;
 
-import game.*;
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+
+import javax.swing.JCheckBox;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+
 import model.config.Config;
-import view.*;
-import view.keyboard.*;
+import view.SwingView;
+import view.keyboard.KeyboardHandler;
 
 /** Displays a game and listen to key events from the user to change the game's
  * state. */
 public class PlayerGamePanel extends ObserverGamePanel implements ItemListener {
 
-    private KeyboardHandler _keyboardHandler;
+	private static final long serialVersionUID = 4213895928311919154L;
+
+	private KeyboardHandler _keyboardHandler;
 
     private JPanel _autoPlayerPanel;
     private JLabel _autoPlayerLabel;

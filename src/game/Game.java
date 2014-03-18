@@ -1,12 +1,16 @@
 package game;
 
-import java.util.*;
+import game.rules.Rule;
+import game.rules.RuleListener;
 
+import java.util.ArrayList;
+import java.util.LinkedList;
+
+import model.Board;
+import model.FullBoardSection;
+import model.piece.Piece;
+import util.GameTimer;
 import ai.ArtificialIntelligence;
-import game.rules.*;
-import model.*;
-import model.piece.*;
-import util.*;
 
 /** Provides a base class for single player games which use a timer to control
  * the game behavior. */

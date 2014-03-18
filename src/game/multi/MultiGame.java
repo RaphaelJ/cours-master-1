@@ -1,11 +1,14 @@
 package game.multi;
 
-import java.util.*;
+import game.GameManager;
+import game.GameObserver;
+import game.GameStateListener;
+import game.rules.Rule;
 
-import game.*;
-import game.rules.*;
+import java.util.ArrayList;
+
 import model.Board;
-import util.*;
+import util.GameTimer;
 
 /** Applies a rule and manages a multiplayer game. */
 public class MultiGame implements GameManager {

@@ -1,4 +1,4 @@
-import view.*;
+import view.WelcomeView;
 
 public class Main {
 

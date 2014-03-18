@@ -3,7 +3,10 @@ package model.piece;
 import model.Coordinates;
 
 public class PieceO extends Piece {
-    public static final boolean[][][] states = { {
+
+	private static final long serialVersionUID = -1791835391013541337L;
+
+	public static final boolean[][][] states = { {
             { true, true },
             { true, true }
         }

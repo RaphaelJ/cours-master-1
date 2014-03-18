@@ -1,9 +1,8 @@
 package view.keyboard;
 
-import java.util.ArrayList;
-import java.util.Set;
+import game.GamePlayer;
 
-import game.*;
+import java.util.Set;
 
 /** Given a KeySet, calls the corresponding methods of the controllers for each
  * pressed key. */

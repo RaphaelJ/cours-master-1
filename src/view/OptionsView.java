@@ -20,14 +20,17 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import model.config.LocalConfig;
-import view.keyboard.*;
+import view.keyboard.KeySet;
+import view.keyboard.KeySetDialog;
 
 /** Main configuration menu. Used to set the number of players and the size of
  * the boards. */
 public class OptionsView extends JFrame
         implements ChangeListener, ActionListener {
 
-    private JPanel _formPanel;
+	private static final long serialVersionUID = -6424921114001256349L;
+
+	private JPanel _formPanel;
     private JPanel _playersPanel;
     private JPanel _buttonsPanel;
 

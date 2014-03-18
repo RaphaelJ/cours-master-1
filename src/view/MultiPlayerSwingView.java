@@ -1,23 +1,29 @@
 package view;
 
+import game.GameManager;
+import game.GamePlayer;
+import game.multi.MultiGame;
+
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
 import model.config.LocalConfig;
-import game.*;
-import game.multi.*;
-import view.keyboard.*;
-import view.panel.*;
+import view.keyboard.KeyboardHandler;
+import view.panel.PlayerGamePanel;
 
 public class MultiPlayerSwingView extends SwingView implements KeyListener {
 
-    private MultiGame _multiGame;
+	private static final long serialVersionUID = -4872922659546948308L;
+
+	private MultiGame _multiGame;
     private ArrayList<PlayerGamePanel> _panels;
 
     private LocalConfig _config;

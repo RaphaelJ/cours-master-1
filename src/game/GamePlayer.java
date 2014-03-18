@@ -1,10 +1,6 @@
 package game;
 
-import java.util.*;
-
-import game.rules.*;
-import model.Board;
-import util.*;
+import java.util.LinkedList;
 
 /** Provides an interface to survey and manage a game.
  * Extends GameObserver by providing actions.

@@ -1,34 +1,33 @@
 package view.panel;
 
+import game.GameListener;
+import game.GameManager;
+import game.GameObserver;
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
-import java.awt.Rectangle;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
-import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import game.*;
-import game.rules.*;
-import model.*;
+import model.BoardSection;
 import model.config.Config;
 import model.piece.Piece;
-import view.*;
+import view.SwingView;
 import view.piece.PieceViewModel;
 
 /** Provides a base-class to display a player's game in the interface.
  * Is extended by PlayerGamePanel (for games on which the user has control). */
 public class ObserverGamePanel extends JPanel implements GameListener {
 
-    protected SwingView _parent;
+	private static final long serialVersionUID = -8912831479539837009L;
+
+	protected SwingView _parent;
 
     private JPanel _playPanel;
 

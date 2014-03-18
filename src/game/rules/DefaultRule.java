@@ -1,6 +1,6 @@
 package game.rules;
 
-import java.util.*;
+import java.util.ArrayList;
 
 /** Provides a default abstract rule which manages events. */
 public abstract class DefaultRule implements Rule {

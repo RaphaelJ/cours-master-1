@@ -1,9 +1,8 @@
 package network;
 
-import game.*;
-import model.*;
-import model.piece.*;
-import network.protocol.actions.*;
+import game.GamePlayer;
+
+import java.util.LinkedList;
 
 /** A GamePlayer proxy which will transmit events it receives from the
  * GameClient to the views and will transmit user actions to the network. */

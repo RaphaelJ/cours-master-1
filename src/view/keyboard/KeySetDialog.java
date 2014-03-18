@@ -23,7 +23,9 @@ import javax.swing.JTextField;
 public class KeySetDialog extends JDialog
             implements FocusListener, KeyListener {
 
-    private KeySet _keySet;
+	private static final long serialVersionUID = -2833066388866306594L;
+
+	private KeySet _keySet;
 
     private JPanel _formPanel;
     private JPanel _buttonsPanel;

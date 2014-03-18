@@ -1,6 +1,8 @@
 package util;
 
-import java.util.*;
+import java.util.Date;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /** Provides a timer which controll the game. */
 public class GameTimer {

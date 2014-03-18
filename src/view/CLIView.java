@@ -1,9 +1,10 @@
 package view;
 
-import java.awt.Rectangle;
-
-import game.*;
-import model.*;
+import game.GameListener;
+import game.GameManager;
+import game.GameObserver;
+import model.BoardSection;
+import model.FullBoardSection;
 import model.piece.Piece;
 
 /** Provides a view which prints the grid to the standard output. */

@@ -1,5 +1,12 @@
 package view;
 
+import game.Game;
+import game.multi.MultiClassic;
+import game.multi.MultiCooperative;
+import game.multi.MultiGame;
+import game.rules.NintendoGameBoy;
+import game.rules.NintendoGameBoyFactory;
+
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
@@ -12,9 +19,6 @@ import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.WindowConstants;
 
-import game.*;
-import game.rules.*;
-import game.multi.*;
 import model.Board;
 import model.config.LocalConfig;
 import model.config.OnlineConfig;
@@ -24,7 +28,9 @@ import view.online.ServerOptionsView;
 
 public class WelcomeView extends javax.swing.JFrame {
 
-    private JPanel jPanelButtons;
+	private static final long serialVersionUID = -2260957186452467297L;
+
+	private JPanel jPanelButtons;
 
     private JButton jButtonCoop;
     private JButton jButtonMultiClassic;

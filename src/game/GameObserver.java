@@ -1,7 +1,7 @@
 package game;
 
-import model.*;
-import model.piece.*;
+import model.FullBoardSection;
+import model.piece.Piece;
 
 /** Provides an interface to survey a player's game behaviour.
  * This interface is used as is in GUI which doesn't provide a way to interact

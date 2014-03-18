@@ -1,9 +1,24 @@
 package network;
 
-import java.util;
+import game.GameManager;
+import game.GameObserver;
+import game.GamePlayer;
+import game.GameStateListener;
 
-import game.*;
-import network.protocol.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.net.Socket;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+
+import network.protocol.Message;
+import network.protocol.ServerConfigMessage;
+import network.protocol.actions.NewGameAction;
+import network.protocol.events.ManagerEvent;
+import network.protocol.events.ObserverEvent;
 
 /** This class will listen to a network socket and will transmit events from and
  * to the views by implementing the GameManager, GameObserver and GamePlayer
@@ -26,13 +41,18 @@ public class GameClient implements GameManager {
     // index in this array.
     // The first observer (index = 0) is the player (who extends GamePlayer).
     private ArrayList<GameObserverProxy> _players
-        = new ArrayList<GameObserver>();
+        = new ArrayList<GameObserverProxy>();
 
     /** Negociates the connexion with the server. Returns when the game has
-     * been started. Spawns a new thread to receive events. */
-    public GameClient(String host, int port)
+     * been started. Spawns a new thread to receive events. 
+     * @throws IOException 
+     * @throws UnknownHostException */
+    public GameClient(String host, int port) 
+    		throws UnknownHostException, IOException
     {
-        // TODO
+        Socket sock = new Socket(host, port);
+		this._in = new ObjectInputStream(sock.getInputStream());
+        this._out = new ObjectOutputStream(sock.getOutputStream());
     }
 
     public GameClient(InputStream in, OutputStream out)
@@ -63,10 +83,10 @@ public class GameClient implements GameManager {
     /** This is the main loop in which the thread is trapped, listening for
      * every event message from the server, dispatching every message to
      * the corresponding observer, if needed. */
-    private eventLoop()
+    private void eventLoop()
     {
         for (;;) {
-            EventMessage msg = recvMessage();
+            Message msg = recvMessage();
 
             if (msg instanceof ManagerEvent) {
                 // TODO : trouver le bon type d'event (stateChanged
@@ -75,7 +95,7 @@ public class GameClient implements GameManager {
             }
             else if (msg instanceof ObserverEvent) {
                 // Events for a given player's board.
-                int playerId = (ObserverEvent msg).getPlayerId();
+                int playerId = ((ObserverEvent) msg).getPlayerId();
                 GameObserver observer = this._players.get(playerId);
 
                 // TODO : Trouver le bon type d'event et appeller la bonne
@@ -90,23 +110,37 @@ public class GameClient implements GameManager {
     public void sendMessage(Message msg)
     {
         synchronized (this._out) {
-            this._out.writeObject(msg);
-            this._out.flush();
+            try {
+				this._out.writeObject(msg);
+				this._out.flush();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
         }
     }
 
     /** Waits for a message to the server. */
     public Message recvMessage()
     {
+    	Message msg = null;
+    	
         synchronized (this._in) {
-            return (Message) this._in.readObject();
+            try {
+				msg = (Message) this._in.readObject();
+			} catch (ClassNotFoundException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
         }
+        
+        return msg;
     }
 
     /****************** Getters ******************/
 
     /** Returns the interface with control the player game. */
-    public GamePlayer getPlayer();
+    public GamePlayer getPlayer()
     {
         return this._players.get(0);
     }

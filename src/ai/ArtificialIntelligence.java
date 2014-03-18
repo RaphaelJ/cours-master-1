@@ -1,9 +1,10 @@
 package ai;
 
-import java.awt.Rectangle;
-import game.*;
-import model.*;
-import model.piece.*;
+import model.Board;
+import model.BoardListener;
+import model.BoardSection;
+import model.FullBoardSection;
+import model.piece.Piece;
 
 /** Creates an artificial intelligence which controls the game in place of the
  * user. The AI is configured with three variables. */

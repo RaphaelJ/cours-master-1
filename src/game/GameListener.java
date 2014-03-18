@@ -1,9 +1,7 @@
 package game;
 
-import java.util.*;
-
-import game.rules.*;
-import model.*;
+import game.rules.RuleListener;
+import model.BoardListener;
 
 /** Combines three interfaces for a full awareness of the game progress.
  * This interface distinguish itself from GameStateListener because it listens

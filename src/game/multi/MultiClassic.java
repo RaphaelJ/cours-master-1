@@ -1,9 +1,10 @@
 package game.multi;
 
-import java.util.*;
+import game.rules.Rule;
 
-import game.*;
-import game.rules.*;
+import java.util.ArrayList;
+import java.util.LinkedList;
+
 import model.Board;
 
 /** Applies a gameplay rule to a two players game where (n-1) lines are sent to

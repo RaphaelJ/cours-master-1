@@ -1,6 +1,6 @@
 package model;
 
-import model.piece.*;
+import model.piece.Piece;
 
 /** Implements a board section for the entire grid (x = 0, y = 0,
  * width = board's width and height = board's height). */

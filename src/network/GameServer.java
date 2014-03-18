@@ -1,5 +1,8 @@
 package network;
 
+import game.GameManager.GameState;
+import game.GameStateListener;
+
 /** This class will listen to game events and will transmit these to its client
  * counterpart using a network socket. */
 public class GameServer implements GameStateListener {
@@ -27,4 +30,16 @@ public class GameServer implements GameStateListener {
         // il va capturer tous les événements des jeux et les transmettre par
         // le réseau au(x) GameClient(s) correspondants.
     }
+
+	@Override
+	public void stateChanged(GameState newState) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void timeChanged(long elapsedTime) {
+		// TODO Auto-generated method stub
+		
+	}
 }
