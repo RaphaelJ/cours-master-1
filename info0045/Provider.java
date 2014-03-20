@@ -19,6 +19,51 @@ import javax.crypto.interfaces.*;
 
 public class Provider {
 
+    /** 
+     * Used to store a pair of keys derived from another one.
+     */
+    private class DerivedKeys {
+        public final SecretKey cipher;
+        public final SecretKey hmac;
+
+        /**
+         * Uses the given key to generate a cipher key and a HMAC key.
+         */
+        public DerivedKeys(SecretKey key)
+        {
+<<<<<<< HEAD
+            this(key.getEncoded());
+=======
+            this(key.getEncoded);
+>>>>>>> 37c50015909707199c15b5b85637312985fdc5ef
+        }
+
+        /**
+         * Uses the given string to generate a cipher key and a HMAC key.
+         */
+        public DerivedKeys(String seed)
+        {
+            this(seed.getBytes("US-ASCII"));
+        }
+
+        /**
+         * Uses the given byte string to generate a cipher key and a HMAC key.
+         */
+        public DerivedKeys(byte[] seed)
+        {
+            // Uses the key as a seed for the random key generator.
+            KeyGenerator gen = KeyGenerator.getInstance("AES");
+<<<<<<< HEAD
+            gen.init(new SecureRandom(seed));
+=======
+            gen.init(new SecureRandom(key.getEncoded());
+>>>>>>> 37c50015909707199c15b5b85637312985fdc5ef
+
+            this.cipher = gen.generateKey();
+            this.hmac   = gen.generateKey();
+        }
+    }
+
     /**
      *  Password shared with the server.
      */
@@ -91,13 +136,31 @@ public class Provider {
             DerivedKeys ders_rand = new DerivedKeys(k_rand);
 
             // Encrypt the file content.
+<<<<<<< HEAD
+            Cipher text_cipher = Cipher.getInstance("AES/None/NoPadding");
+            text_cipher.init(Cipher.ENCRYPT_MODE, k_rand);
             FileReader input_file = new FileReader(this.data_file);
+            BufferedReader cipherText = new BufferedReader(input_file);
+                //new CipherInputStream(data_file, text_cipher);
+=======
+            Cipher text_cipher = Ciper.getInstance("AES/None/NoPadding");
+            cipher.init(Cipher.ENCRYPT_MODE, ders_pwd.cipher);
+            FileReader input_file = new FileReader(this.data_file);
+            BufferedReader ciphertext = new BufferedReader(
+                new CipherInputStream(file, cipher)
+            );
+>>>>>>> 37c50015909707199c15b5b85637312985fdc5ef
 
             // Copy the content of the ciphertext stream to the output file.
             FileWriter output_file = new FileWriter(this.encrypted_data_file);
             BufferedWriter output = new BufferedWriter(output_file);
-            
+
+            String line;
+<<<<<<< HEAD
+            while ((line = cipherText.readLine()) != null) {
+=======
             while ((line == encrypted.readLine()) != null) {
+>>>>>>> 37c50015909707199c15b5b85637312985fdc5ef
                 output.write(line);
                 output.newLine();
             }

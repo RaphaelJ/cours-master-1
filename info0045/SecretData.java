@@ -15,7 +15,7 @@ public class SecretData {
     private SecretData(InputStream cipherText)
     {
     }
-
+    // Encrypt
     public static SecretData fromPlaintext(
         DerivedKeys keys, InputStream plaintext
     )
@@ -28,7 +28,7 @@ public class SecretData {
         mac.init(keys.hmac);
         mac.;
     }
-
+    // Decrypt
     public static SecretData fromCiphertext(
         DerivedKeys keys, InputStream plaintext
     ) throws InvalidHmacException

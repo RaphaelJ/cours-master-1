@@ -105,7 +105,6 @@ public class AuthorityServer
     {
     	// variables definition
     	String plaintext = "";
-    	int index = 0;
     	String ch = ":";
     	int beginIndex = 0;
     	int endIndex = 0;
@@ -120,7 +119,7 @@ public class AuthorityServer
             while (temp != null) 
             {
             	endIndex = temp.indexOf (ch);	// find the index of the first occrurence of the character ':'
-            	fileUserName = temp.substring (beginIndex, endIndex - 1); // gives the user name before the character ':'
+            	fileUserName = temp.substring (beginIndex, endIndex); // gives the user name before the character ':'
             	if (fileUserName.equals(username)) 
             	{
             		String pwd = temp.substring(endIndex+1,temp.length());
