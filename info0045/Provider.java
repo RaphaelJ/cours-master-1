@@ -19,43 +19,6 @@ import javax.crypto.interfaces.*;
 
 public class Provider {
 
-    /** 
-     * Used to store a pair of keys derived from another one.
-     */
-    private class DerivedKeys {
-        public final SecretKey cipher;
-        public final SecretKey hmac;
-
-        /**
-         * Uses the given key to generate a cipher key and a HMAC key.
-         */
-        public DerivedKeys(SecretKey key)
-        {
-            this(key.getEncoded);
-        }
-
-        /**
-         * Uses the given string to generate a cipher key and a HMAC key.
-         */
-        public DerivedKeys(String seed)
-        {
-            this(seed.getBytes("US-ASCII"));
-        }
-
-        /**
-         * Uses the given byte string to generate a cipher key and a HMAC key.
-         */
-        public DerivedKeys(byte[] seed)
-        {
-            // Uses the key as a seed for the random key generator.
-            KeyGenerator gen = KeyGenerator.getInstance("AES");
-            gen.init(new SecureRandom(key.getEncoded());
-
-            this.cipher = gen.generateKey();
-            this.hmac   = gen.generateKey();
-        }
-    }
-
     /**
      *  Password shared with the server.
      */
@@ -128,7 +91,7 @@ public class Provider {
             DerivedKeys ders_rand = new DerivedKeys(k_rand);
 
             // Encrypt the file content.
-            Cipher text_cipher = Ciper.getInstance("AES/None/NoPadding");
+            Cipher text_cipher = Ciper.getInstance("AES//NoPadding");
             cipher.init(Cipher.ENCRYPT_MODE, ders_pwd.cipher);
             FileReader input_file = new FileReader(this.data_file);
             BufferedReader ciphertext = new BufferedReader(
