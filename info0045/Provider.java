@@ -91,18 +91,12 @@ public class Provider {
             DerivedKeys ders_rand = new DerivedKeys(k_rand);
 
             // Encrypt the file content.
-            Cipher text_cipher = Ciper.getInstance("AES//NoPadding");
-            cipher.init(Cipher.ENCRYPT_MODE, ders_pwd.cipher);
             FileReader input_file = new FileReader(this.data_file);
-            BufferedReader ciphertext = new BufferedReader(
-                new CipherInputStream(file, cipher)
-            );
 
             // Copy the content of the ciphertext stream to the output file.
             FileWriter output_file = new FileWriter(this.encrypted_data_file);
             BufferedWriter output = new BufferedWriter(output_file);
-
-            String line;
+            
             while ((line == encrypted.readLine()) != null) {
                 output.write(line);
                 output.newLine();

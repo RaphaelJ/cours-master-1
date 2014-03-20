@@ -11,6 +11,8 @@ import java.util.*;
 import java.net.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.lang.String;
+
 
 import java.security.*;
 import java.security.spec.*;
@@ -115,10 +117,10 @@ public class AuthorityServer
             String temp = in.readLine();
             String fileUserName = "";
 
-            while (temp != null) {
-            	
-            	endIndex = indexOf(String ch);	// find the index of the first occrurence of the charater ':'
-            	fileUserName = temp.substring(beginIndex, endIndex - 1); // gives the user name before the character ':'
+            while (temp != null) 
+            {
+            	endIndex = temp.indexOf (ch);	// find the index of the first occrurence of the character ':'
+            	fileUserName = temp.substring (beginIndex, endIndex - 1); // gives the user name before the character ':'
             	if (fileUserName.equals(username)) 
             	{
             		String pwd = temp.substring(endIndex+1,temp.length());
@@ -127,7 +129,7 @@ public class AuthorityServer
                 temp = in.readLine();
             }
 
-            plaintext = builder.toString();
+            plaintext = builder.toString ();
 
             in.close();
             fr.close();
@@ -135,6 +137,7 @@ public class AuthorityServer
             System.out.println(iox.getMessage());
             iox.printStackTrace();
         }
+        return null;
     }
 
     protected void finalize()
