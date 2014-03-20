@@ -1,9 +1,14 @@
 package info0045;
 
+import java.io.*;
+import java.security.*;
+import javax.crypto.*;
+
 /**
  * Used to store a pair of keys, potentially derived from another one.
  */
 public class DerivedKeys {
+
     public final SecretKey cipher;
     public final SecretKey hmac;
 
@@ -17,14 +22,16 @@ public class DerivedKeys {
      * Uses the given key to generate a cipher and an HMAC key.
      */
     public DerivedKeys(SecretKey key)
+        throws NoSuchAlgorithmException
     {
-        this(key.getEncoded);
+        this(key.getEncoded());
     }
 
     /**
      * Uses the given string to generate a cipher and an HMAC key.
      */
     public DerivedKeys(String seed)
+        throws NoSuchAlgorithmException, UnsupportedEncodingException
     {
         this(seed.getBytes("US-ASCII"));
     }
@@ -33,11 +40,13 @@ public class DerivedKeys {
      * Uses the given byte string to generate a key and an HMAC key.
      */
     public DerivedKeys(byte[] seed)
+        throws NoSuchAlgorithmException
     {
         // Uses the key as a seed for the random key generator.
         KeyGenerator gen = KeyGenerator.getInstance("AES");
-        gen.init(new SecureRandom(key.getEncoded());
+        gen.init(new SecureRandom(seed));
 
-        this(gen.generateKey(), gen.generateKey());
+        this.cipher = gen.generateKey();
+        this.hmac   = gen.generateKey();
     }
 }

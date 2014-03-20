@@ -19,51 +19,6 @@ import javax.crypto.interfaces.*;
 
 public class Provider {
 
-    /** 
-     * Used to store a pair of keys derived from another one.
-     */
-    private class DerivedKeys {
-        public final SecretKey cipher;
-        public final SecretKey hmac;
-
-        /**
-         * Uses the given key to generate a cipher key and a HMAC key.
-         */
-        public DerivedKeys(SecretKey key)
-        {
-<<<<<<< HEAD
-            this(key.getEncoded());
-=======
-            this(key.getEncoded);
->>>>>>> 37c50015909707199c15b5b85637312985fdc5ef
-        }
-
-        /**
-         * Uses the given string to generate a cipher key and a HMAC key.
-         */
-        public DerivedKeys(String seed)
-        {
-            this(seed.getBytes("US-ASCII"));
-        }
-
-        /**
-         * Uses the given byte string to generate a cipher key and a HMAC key.
-         */
-        public DerivedKeys(byte[] seed)
-        {
-            // Uses the key as a seed for the random key generator.
-            KeyGenerator gen = KeyGenerator.getInstance("AES");
-<<<<<<< HEAD
-            gen.init(new SecureRandom(seed));
-=======
-            gen.init(new SecureRandom(key.getEncoded());
->>>>>>> 37c50015909707199c15b5b85637312985fdc5ef
-
-            this.cipher = gen.generateKey();
-            this.hmac   = gen.generateKey();
-        }
-    }
-
     /**
      *  Password shared with the server.
      */
@@ -121,56 +76,68 @@ public class Provider {
      * This function must be modified.
      */
     public void run()
+        throws InvalidKeyException, IOException, NoSuchAlgorithmException,
+               NoSuchPaddingException
     {
-        this.encryptDataFile(this.data_file, this.encrypted_data_file);
+        // Derives the keys from the master password.
+        DerivedKeys master_keys = new DerivedKeys(this.master_pwd);
+
+        this.encryptDataFile(master_keys);
+        this.encryptPassFile(master_keys);
     }
 
-    public void encryptDataFile(String sourcePath, String destPath)
+    /**
+     * Creates a new random key, uses it to encrypt the source file.
+     * Writes the random key (encrypted using the master password) and the
+     * cipher text to the destination file.
+     */
+    public void encryptDataFile(DerivedKeys master_keys)
+        throws InvalidKeyException, IOException, NoSuchAlgorithmException,
+               NoSuchPaddingException
     {
-        try {
-            // Derives the keys from the master password.
-            DerivedKeys ders_pwd = new DerivedKeys(this.master_pwd);
+        // Generates the key used to encrypt the file. Creates a derived key
+        // pair.
+        SecretKey k_rand = KeyGenerator.getInstance("AES").generateKey();
+        DerivedKeys ders_rand = new DerivedKeys(k_rand);
 
-            // Generates the key used to encrypt the file and its derivatives.
-            SecretKey k_rand = KeyGenerator.getInstance("AES").generateKey();
-            DerivedKeys ders_rand = new DerivedKeys(k_rand);
+        FileOutputStream output_file = new FileOutputStream(
+            this.encrypted_data_file
+        );
+        ObjectOutputStream output = new ObjectOutputStream(output_file);
 
-            // Encrypt the file content.
-<<<<<<< HEAD
-            Cipher text_cipher = Cipher.getInstance("AES/None/NoPadding");
-            text_cipher.init(Cipher.ENCRYPT_MODE, k_rand);
-            FileReader input_file = new FileReader(this.data_file);
-            BufferedReader cipherText = new BufferedReader(input_file);
-                //new CipherInputStream(data_file, text_cipher);
-=======
-            Cipher text_cipher = Ciper.getInstance("AES/None/NoPadding");
-            cipher.init(Cipher.ENCRYPT_MODE, ders_pwd.cipher);
-            FileReader input_file = new FileReader(this.data_file);
-            BufferedReader ciphertext = new BufferedReader(
-                new CipherInputStream(file, cipher)
-            );
->>>>>>> 37c50015909707199c15b5b85637312985fdc5ef
+        // Writes the encrypted random key to the output file.
+        output.writeObject(new SecretData(master_keys, k_rand.getEncoded()));
 
-            // Copy the content of the ciphertext stream to the output file.
-            FileWriter output_file = new FileWriter(this.encrypted_data_file);
-            BufferedWriter output = new BufferedWriter(output_file);
+        // Write the encrypted content to the output file.
+        FileInputStream input_file = new FileInputStream(this.data_file);
+        output.writeObject(new SecretData(ders_rand, input_file));
 
-            String line;
-<<<<<<< HEAD
-            while ((line = cipherText.readLine()) != null) {
-=======
-            while ((line == encrypted.readLine()) != null) {
->>>>>>> 37c50015909707199c15b5b85637312985fdc5ef
-                output.write(line);
-                output.newLine();
-            }
+        input_file.close();
 
-            input_file.close();
-            output_file.close();
-        } catch(IOException iox) {
-            System.out.println(iox.getMessage());
-            iox.printStackTrace();
-        }
+        output.flush();
+        output_file.close();
+    }
+
+    /**
+     * Encrypt the password file using the keys derived from the master
+     * password.
+     */
+    public void encryptPassFile(DerivedKeys master_keys)
+        throws InvalidKeyException, IOException, NoSuchAlgorithmException,
+               NoSuchPaddingException
+    {
+        // Write the encrypted content to the output file.
+        FileInputStream input_file = new FileInputStream(this.users_file);
+        FileOutputStream output_file = new FileOutputStream(
+            this.encrypted_users_file
+        );
+
+        ObjectOutputStream output = new ObjectOutputStream(output_file);
+        output.writeObject(new SecretData(master_keys, input_file));
+
+        input_file.close();
+        output.flush();
+        output_file.close(); 
     }
 
     /**
@@ -191,6 +158,8 @@ public class Provider {
     }
 
     public static void main(String[] args)
+        throws InvalidKeyException, IOException, NoSuchAlgorithmException,
+               NoSuchPaddingException
     {
         // Check the number of arguments.
         if (args.length != 10) {

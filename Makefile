@@ -13,7 +13,6 @@ JAVAC           = javac
 RM              = rm
 CP              = cp
 
-
 JAVASRCS        = \
 				info0045/Provider.java \
 				info0045/AuthorityServer.java \
