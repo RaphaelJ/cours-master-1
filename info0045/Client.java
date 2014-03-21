@@ -7,10 +7,10 @@
 package info0045;
 
 import java.io.*;
-import java.util.*;
+
 import java.net.*;
-import java.awt.*;
-import java.awt.event.*;
+
+import java.util.*;
 
 import java.security.*;
 import java.security.spec.*;
@@ -26,98 +26,114 @@ public class Client
      *  Sockets for network connection
      */
     private Socket client_socket = null;
-    private PrintWriter to_server = null;
-    private BufferedReader from_server = null;
 
     /**
      *  Client's password and username.
      */
-    String pwd, username;
+    private String client_pwd, client_username;
 
     /**
      *  Path to the file containg the encrypted data.
      */
-    String enc_data_file;
+    private String encrypted_data_file;
 
-    //
-    // Your variable declarations (if any) can go here:
-    //
-
-    public Client(String pwd, String username, int port_nb,
-                  String server_host, String enc_data_file)
+    public Client(
+        String client_pwd, String client_username, int port_nb,
+        String server_host, String encrypted_data_file
+    ) throws IOException, UnknownHostException
     {
-        this.pwd = pwd;
-        this.username = username;
-        this.enc_data_file = enc_data_file;
+        this.client_pwd = client_pwd;
+        this.client_username = client_username;
+        this.encrypted_data_file = encrypted_data_file;
 
-        // Create a socket.
-        try {
-            client_socket = new Socket(server_host, port_nb);
-        } catch(UnknownHostException uhx) {
-            System.out.println(uhx.getMessage());
-            uhx.printStackTrace();
-        } catch(IOException iox) {
-            System.out.println(iox.getMessage());
-            iox.printStackTrace();
-        }
-
-        //
-        // Your initialization code (if any) can go here:
-        //
-
+        this.client_socket = new Socket(server_host, port_nb);
     }
 
     /**
      * Handle submit button event.
-     */  
+     */
     public void run()
+        throws ClassNotFoundException, InvalidAlgorithmParameterException,
+               InvalidKeyException, InvalidKeySpecException, IOException,
+               NoSuchAlgorithmException, NoSuchPaddingException,
+               SignatureException
     {
-        // Connect to the server
-        try {
-            to_server = new PrintWriter(client_socket.getOutputStream(), true);
-            from_server = new BufferedReader(
-                new InputStreamReader(client_socket.getInputStream())
-            );
-        } catch(IOException iox) {
-            System.out.println(iox.getMessage());
-            iox.printStackTrace();
-        }
+        //
+        // Reads the encrypted file content, along with its encrypted password.
+        //
+
+        FileInputStream encrypted_file   = new FileInputStream(
+            this.encrypted_data_file
+        );
+        ObjectInputStream encrypted_data = new ObjectInputStream(
+            encrypted_file
+        );
+
+        SecretData<String> encrypted_pass    =
+            (SecretData<String>) encrypted_data.readObject();
+        SecretData<String> encrypted_content =
+            (SecretData<String>) encrypted_data.readObject();
+        encrypted_file.close();
 
         //
-        // Most of your code can go here, right now we send the username
-        // to the server in the clear and display the reply. Your code should
-        // authenticate to the server, obtain the key, and finally decrypt 
-        // and display the protected content.
-        // 
+        // Starts a transaction with the server to get the deciphered encryption
+        // key.
+        //
 
-        String status = null;
-        String content = "Don't know yet!\n";
+        ObjectOutputStream to_server   = new ObjectOutputStream(
+            this.client_socket.getOutputStream()
+        );
+        ObjectInputStream  from_server = new ObjectInputStream(
+            this.client_socket.getInputStream()
+        );
 
-        // Send a message to the server
-        to_server.println(username);
+//         // First, we receive a random 64-bits nounce from the server
+//         long nounce = ((Long) from_server.readObject()).longValue();
 
-        // Receive a message from the server and display it
-        String reply = null;
-        try {
-            reply = from_server.readLine();
-            System.out.println("Server says: " + reply + "\n");
-        } catch(IOException iox) {
-            System.out.println(iox.getMessage());
-            iox.printStackTrace();
-        }
+        // Then we send the encrypted content password ...
+        to_server.writeObject(encrypted_pass);
+        // .. and our user name.
+        to_server.writeObject(this.client_username);
 
-        // Close the connection 
-        try {
-            to_server.close();
-            from_server.close();
-            client_socket.close();
-        } catch(IOException iox) {
-            System.out.println(iox.getMessage());
-            iox.printStackTrace();
-        }
+        to_server.flush();
 
-        // Display the result        
-        System.out.println("The content is: \n" + content);
+        // We receive the content password, encrypted with our password.
+        encrypted_pass = (SecretData<String>) from_server.readObject();
+
+        this.client_socket.close();
+
+        // Displays the deciphered content.
+        System.out.println("The content is :");
+        System.out.println(
+            this.decipherContent(encrypted_content, encrypted_pass)
+        );
+    }
+
+    /**
+     * Uses the given, password encoded, content password to decipher the given
+     * encrypted content.
+     * Checks the signature of both input.
+     */
+    private <T extends Serializable> T decipherContent(
+        SecretData<T> encrypted_content, SecretData<String> encrypted_pass
+    ) throws ClassNotFoundException, InvalidAlgorithmParameterException,
+             InvalidKeyException, InvalidKeySpecException, IOException,
+             NoSuchAlgorithmException, NoSuchPaddingException,
+             SignatureException
+    {
+        // Derives the keys from the client password with the username as salt.
+        DerivedKeys client_keys = new DerivedKeys(
+            this.client_pwd, this.client_username
+        );
+
+        // Checks the integrity of the key and deciphers it using the client
+        // keys.
+        DerivedKeys keys = new DerivedKeys(
+            encrypted_pass.getPlaintext(client_keys)
+        );
+
+        // Uses the deciphered key to check and deciphers the content.
+        return encrypted_content.getPlaintext(keys);
     }
 
     /**
@@ -137,6 +153,10 @@ public class Client
     }
 
     public static void main(String[] args)
+        throws ClassNotFoundException, InvalidAlgorithmParameterException,
+               InvalidKeyException, InvalidKeySpecException, IOException,
+               NoSuchAlgorithmException, NoSuchPaddingException,
+               SignatureException, UnknownHostException
     {
         // Check the number of arguments.
         if (args.length != 10)
@@ -146,7 +166,7 @@ public class Client
         }
 
         // File containing the encrypted data.
-        String enc_data_file = null;
+        String encrypted_data_file = null;
 
         // Host the server is running on.
         String server_host = null;
@@ -158,20 +178,20 @@ public class Client
         String username = null;
 
         // Password.
-        String client_pwd = null;
+        String pwd = null;
 
         // Get the arguments.
         for (int i = 0; i < args.length; i+=2) {
-            if ((args[i].equals("-c")) && (client_pwd == null))
-                client_pwd = args[i + 1];
+            if ((args[i].equals("-c")) && (pwd == null))
+                pwd = args[i + 1];
             else if ((args[i].equals("-u")) && (username == null))
                 username = args[i + 1];
             else if ((args[i].equals("-p")) && (port_nb == null))
                 port_nb = args[i + 1];
             else if ((args[i].equals("-h")) && (server_host == null))
                 server_host = args[i + 1];
-            else if ((args[i].equals("-f")) && (enc_data_file == null))
-                enc_data_file = args[i + 1];
+            else if ((args[i].equals("-f")) && (encrypted_data_file == null))
+                encrypted_data_file = args[i + 1];
             else {
                 printUsage();
                 System.exit(-1);
@@ -179,16 +199,9 @@ public class Client
         }
 
         // Create the client, and run it.
-        Client client = null;
-        try {
-            client = new Client(client_pwd, username,
-                                Integer.parseInt(port_nb),
-                                server_host,enc_data_file);
-        } catch(NumberFormatException nfx) {
-            System.out.println(nfx.getMessage());
-            nfx.printStackTrace();
-        }
-
-        client.run();
+        new Client(
+            pwd, username, Integer.parseInt(port_nb), server_host,
+            encrypted_data_file
+        ).run();
     }
 }

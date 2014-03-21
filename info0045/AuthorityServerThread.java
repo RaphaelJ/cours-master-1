@@ -21,40 +21,36 @@ import javax.crypto.interfaces.*;
 
 public class AuthorityServerThread extends Thread
 {
+    /**
+     *  Socket to the client.
+     */
+    private final Socket client_socket;
 
     /**
-     *  Master password
+     * The master keys used to decipher the user received keys.
      */
-    private String master_pwd = null;
+    private final DerivedKeys master_keys;
 
     /**
-     *  Encrypted password file
+     * Map containing the keys for every user.
      */
-    String enc_passwd_file = null;
-
-    /**
-     *  Sockets for network connection
-     */
-    private Socket client_socket = null;
-    private PrintWriter to_client = null;
-    private BufferedReader from_client = null;
-
-    /**
-     *  Your variable declarations (if any) can go here:
-     */
+    private final Map<String, DerivedKeys> user_keys;
 
     /**
      *  Constructor.
      *
-     *  @param c_sock The client socket.
-     *  @param pwd The master password.
-     *  @param enc_f The name of the encrypted password file.
+     *  @param client_socket client socket.
+     *  @param master_keys Keys needed to check and deciphers encryption keys.
+     *  @param user_keys A map containing the keys for every user.
      */
-    public AuthorityServerThread(Socket c_sock, String pwd, String enc_f)
+    public AuthorityServerThread(
+        Socket client_socket, DerivedKeys master_keys,
+        Map<String, DerivedKeys> user_keys
+    )
     {
-        client_socket = c_sock;
-        master_pwd = pwd;
-        enc_passwd_file = enc_f;
+        this.client_socket = client_socket;
+        this.master_keys   = master_keys;
+        this.user_keys     = user_keys;
     }
 
     /**
@@ -62,43 +58,56 @@ public class AuthorityServerThread extends Thread
      */
     public void run()
     {
-        // Set up communication streams
         try {
-            to_client = new PrintWriter(client_socket.getOutputStream(), true);
-            from_client = new BufferedReader(new InputStreamReader(
-                client_socket.getInputStream())
+            //
+            // Starts a transaction with the client to provide the deciphered
+            // encryption key.
+            //
+
+            ObjectOutputStream to_client   = new ObjectOutputStream(
+                this.client_socket.getOutputStream()
             );
-        } catch(IOException iox) {
-            System.out.println(iox.getMessage());	    
-            iox.printStackTrace();
-        }
+            ObjectInputStream  from_client = new ObjectInputStream(
+                this.client_socket.getInputStream()
+            );
 
-        //
-        // Most of your code can go here, right now we just receive a message
-        // from the client and echo if back. Your code should authenticate the 
-        // client and provide him with the key for the protected content.        
-        // 
+            // Reads the encrypted content password.
+            SecretData<String> encrypted_pass
+                = (SecretData<String>) from_client.readObject();
 
-        // Receive a message from the client.
-        String message = null;
-        try {
-            message = from_client.readLine();
-        } catch(IOException iox) {
-            System.out.println(iox.getMessage());
-            iox.printStackTrace();
-        }
+            // Reads the plain text user name.
+            String username = (String) from_client.readObject();
 
-        // Send a message to the client.
-        to_client.println("Client says: " + message);
+            // Checks and deciphers the received key using the master password
+            // key, then ciphers it back using the user keys and send the
+            // encrypted content to the client.
+            DerivedKeys client_keys = this.user_keys.get(username);
+            if (client_keys == null) {
+                throw new AccessControlException(
+                    "User " + username + " is not allowed on this server."
+                );
+            }
 
-        // Close the connection 
-        try {
-            to_client.close();
-            from_client.close();
-            client_socket.close();
-        } catch(IOException iox) {
-            System.out.println(iox.getMessage());
-            iox.printStackTrace();
+            to_client.writeObject(
+                new SecretData<String>(
+                    client_keys, encrypted_pass.getPlaintext(this.master_keys)
+                )
+            );
+            to_client.flush();
+        } catch (Exception e) {
+            System.err.println(
+                "Transaction with " +
+                this.client_socket.getInetAddress().toString() +
+                " failed."
+            );
+            System.err.println(e.getMessage());
+            e.printStackTrace();
+        } finally {
+            try {
+                this.client_socket.close();
+            } catch (IOException e) {
+                // Nested exception handler block : Because ♥♥♥ Java ♥♥♥
+            }
         }
     }
 }

@@ -7,6 +7,7 @@
 package info0045;
 
 import java.io.*;
+import java.math.*;
 import java.util.*;
 
 import java.security.*;
@@ -16,6 +17,7 @@ import java.security.interfaces.*;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 import javax.crypto.interfaces.*;
+
 
 public class Provider {
 
@@ -65,10 +67,6 @@ public class Provider {
         this.users_file = users_file;
         this.encrypted_data_file = encrypted_data_file;
         this.encrypted_users_file = encrypted_users_file;
-
-            //
-            // Your initialization code (if any) can go here:
-            //    
     }
 
     /**
@@ -76,11 +74,14 @@ public class Provider {
      * This function must be modified.
      */
     public void run()
-        throws InvalidKeyException, IOException, NoSuchAlgorithmException,
-               NoSuchPaddingException
+        throws InvalidKeyException, InvalidKeySpecException, IOException,
+               NoSuchAlgorithmException, NoSuchPaddingException
     {
         // Derives the keys from the master password.
         DerivedKeys master_keys = new DerivedKeys(this.master_pwd);
+
+//         System.out.println(Arrays.toString(master_keys.cipher.getEncoded()));
+//         System.out.println(Arrays.toString(master_keys.hmac.getEncoded()));
 
         this.encryptDataFile(master_keys);
         this.encryptPassFile(master_keys);
@@ -92,52 +93,126 @@ public class Provider {
      * cipher text to the destination file.
      */
     public void encryptDataFile(DerivedKeys master_keys)
-        throws InvalidKeyException, IOException, NoSuchAlgorithmException,
-               NoSuchPaddingException
+        throws InvalidKeyException, InvalidKeySpecException, IOException,
+               NoSuchAlgorithmException, NoSuchPaddingException
     {
         // Generates the key used to encrypt the file. Creates a derived key
         // pair.
-        SecretKey k_rand = KeyGenerator.getInstance("AES").generateKey();
-        DerivedKeys ders_rand = new DerivedKeys(k_rand);
+        String rand = genRandomString(DerivedKeys.KEYS_LEN);
+        DerivedKeys ders_rand = new DerivedKeys(rand);
 
         FileOutputStream output_file = new FileOutputStream(
             this.encrypted_data_file
         );
         ObjectOutputStream output = new ObjectOutputStream(output_file);
 
-        // Writes the encrypted random key to the output file.
-        output.writeObject(new SecretData(master_keys, k_rand.getEncoded()));
+        // Writes the encrypted random password to the output file.
+        output.writeObject(new SecretData<String>(master_keys, rand));
 
         // Write the encrypted content to the output file.
-        FileInputStream input_file = new FileInputStream(this.data_file);
-        output.writeObject(new SecretData(ders_rand, input_file));
-
-        input_file.close();
+        output.writeObject(
+            new SecretData<String>(ders_rand, readFileContent(this.data_file))
+        );
 
         output.flush();
         output_file.close();
     }
 
     /**
-     * Encrypt the password file using the keys derived from the master
+     * Encrypts the password file using the keys derived from the master
      * password.
+     * Passwords are separated from the user in the text file by the ':'
+     * character (one user per line).
+     * For each user/password pair in the input file, we generate a pair of key.
+     * We stores the two derived keys from the user's password instead of
+     * storing the password so a breach in the AuthorityServer will never be
+     * able to leak any password but only the derived keys from which the
+     * password cannot be easily guessed (key from password derivation use
+     * hashing).
+     * Moreover, we use the user's name as a salt for the key derivation so
+     * precomputed hash table attacks will not be efficient for guessing the
+     * password from the keys.
      */
     public void encryptPassFile(DerivedKeys master_keys)
-        throws InvalidKeyException, IOException, NoSuchAlgorithmException,
-               NoSuchPaddingException
+        throws InvalidKeyException, InvalidKeySpecException, IOException,
+               NoSuchAlgorithmException, NoSuchPaddingException
     {
-        // Write the encrypted content to the output file.
-        FileInputStream input_file = new FileInputStream(this.users_file);
+        //
+        // Reads the users file and generates a Map<Username, DerivedKeys>.
+        //
+
+        final String ch = ":"; // user/password separator.
+
+        TreeMap<String, DerivedKeys> user_keys
+            = new TreeMap<String, DerivedKeys>();
+
+        FileReader     input  = new FileReader(this.users_file);
+        BufferedReader reader = new BufferedReader(input);
+
+        StringBuilder builder = new StringBuilder();
+
+        // Reads one user per line.
+        String line;
+        while((line = reader.readLine()) != null ) {
+            // finds the index of the first occrurence of the character ':'
+            int endIndex = line.indexOf(ch);
+
+            String      user_name   = line.substring(0, endIndex);
+            String      user_pwd  = line.substring(endIndex+1, line.length());
+
+            // Uses the password and the user name to generate the derived keys.
+            user_keys.put(user_name, new DerivedKeys(user_pwd, user_name));
+        }
+
+        input.close();
+
+        //
+        // Encrypts and writes the keys Map into the output file.
+        //
+
         FileOutputStream output_file = new FileOutputStream(
             this.encrypted_users_file
         );
 
         ObjectOutputStream output = new ObjectOutputStream(output_file);
-        output.writeObject(new SecretData(master_keys, input_file));
+        output.writeObject(
+            new SecretData<TreeMap<String, DerivedKeys>>(master_keys, user_keys)
+        );
 
-        input_file.close();
         output.flush();
-        output_file.close(); 
+        output_file.close();
+    }
+
+    /**
+     * Reads the entire content of the file in a String.
+     */
+    private static String readFileContent(String path) throws IOException
+    {
+        FileReader     file   = new FileReader(path);
+        BufferedReader reader = new BufferedReader(file);
+
+        StringBuilder builder = new StringBuilder();
+
+        String line;
+        while((line = reader.readLine()) != null ) {
+            builder.append(line);
+            builder.append('\n');
+        }
+
+        file.close();
+
+        return builder.toString();
+    }
+
+    /**
+     * Uses a secure random generator to generate a string of the given bit
+     * length.
+     */
+    private static String genRandomString(int bits)
+    {
+        return new BigInteger(
+            bits, new SecureRandom()
+        ).toString(Character.MAX_RADIX);
     }
 
     /**
@@ -158,8 +233,8 @@ public class Provider {
     }
 
     public static void main(String[] args)
-        throws InvalidKeyException, IOException, NoSuchAlgorithmException,
-               NoSuchPaddingException
+        throws InvalidKeyException, InvalidKeySpecException, IOException,
+               NoSuchAlgorithmException, NoSuchPaddingException
     {
         // Check the number of arguments.
         if (args.length != 10) {

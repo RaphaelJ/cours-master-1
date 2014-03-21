@@ -17,7 +17,9 @@ JAVASRCS        = \
 				info0045/Provider.java \
 				info0045/AuthorityServer.java \
 				info0045/AuthorityServerThread.java \
-                info0045/Client.java \
+				info0045/SecretData.java \
+				info0045/DerivedKeys.java \
+				info0045/Client.java \
 
 JAVAOBJS        = $(JAVASRCS:.java=.class)
 

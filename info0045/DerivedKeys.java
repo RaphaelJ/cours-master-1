@@ -2,12 +2,25 @@ package info0045;
 
 import java.io.*;
 import java.security.*;
+import java.security.spec.*;
 import javax.crypto.*;
+import javax.crypto.spec.*;
+
+import java.util.*;
 
 /**
- * Used to store a pair of keys, potentially derived from another one.
+ * Generates and store a pair of keys Keys are derived using a Password Based
+ * Key Derivation Function (PBKDF).
  */
-public class DerivedKeys {
+public class DerivedKeys implements Serializable {
+
+    public static final int    KEYS_LEN    = 256;
+
+    // The PBKDF algorithm needs a salt to generate keys.
+    // Running the algorithm with a given password and a given salt is
+    // deterministic.
+    public static final String CIPHER_SALT = "CIPHER";
+    public static final String HMAC_SALT   = "HMAC";
 
     public final SecretKey cipher;
     public final SecretKey hmac;
@@ -19,34 +32,55 @@ public class DerivedKeys {
     }
 
     /**
-     * Uses the given key to generate a cipher and an HMAC key.
+     * Uses the given password to generate a cipher and an HMAC key.
      */
-    public DerivedKeys(SecretKey key)
-        throws NoSuchAlgorithmException
+    public DerivedKeys(String pwd)
+        throws InvalidKeySpecException, NoSuchAlgorithmException,
+               UnsupportedEncodingException
     {
-        this(key.getEncoded());
+        this(pwd, "");
     }
 
     /**
-     * Uses the given string to generate a cipher and an HMAC key.
+     * Uses the given password and the additional salt to generate a cipher and
+     * an HMAC key.
      */
-    public DerivedKeys(String seed)
-        throws NoSuchAlgorithmException, UnsupportedEncodingException
+    public DerivedKeys(String pwd, String salt)
+        throws InvalidKeySpecException, NoSuchAlgorithmException,
+               UnsupportedEncodingException
     {
-        this(seed.getBytes("US-ASCII"));
+        this.cipher = derviveFromPassword(pwd, getBytes(CIPHER_SALT + salt));
+        this.hmac   = derviveFromPassword(pwd, getBytes(HMAC_SALT   + salt));
     }
 
     /**
-     * Uses the given byte string to generate a key and an HMAC key.
+     * Uses the Password Based Key Derivation Function (PBKDF) algorithm to
+     * generate keys from passwords.
      */
-    public DerivedKeys(byte[] seed)
-        throws NoSuchAlgorithmException
+    public static SecretKey derviveFromPassword(String pwd, byte[] salt)
+        throws InvalidKeySpecException, NoSuchAlgorithmException,
+               UnsupportedEncodingException
     {
-        // Uses the key as a seed for the random key generator.
-        KeyGenerator gen = KeyGenerator.getInstance("AES");
-        gen.init(new SecureRandom(seed));
+        // We tried the algorithm with SHA-256 but it doesn't seem to be
+        // supported on about every platform.
+        final String KEY_GENERATOR = "PBKDF2WithHmacSHA1";
+        char[] chars = pwd.toCharArray();
 
-        this.cipher = gen.generateKey();
-        this.hmac   = gen.generateKey();
+        SecretKeyFactory key_fact = SecretKeyFactory.getInstance(KEY_GENERATOR);
+        SecretKey pbe_key = key_fact.generateSecret(
+            new PBEKeySpec(chars, salt, 1, KEYS_LEN)
+        );
+
+        // Converts the password based key into an AES one.
+        return new SecretKeySpec(pbe_key.getEncoded(), "AES");
+    }
+
+    /**
+     * Returns the ASCII string encoded in a byte array.
+     */
+    private static byte[] getBytes(String str)
+        throws UnsupportedEncodingException
+    {
+        return str.getBytes("US-ASCII");
     }
 }

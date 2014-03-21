@@ -1,0 +1,11 @@
+Pour lancer le Provider et générer les fichiers cryptés :
+
+java info0045.Provider -p pass1 -d data/plaintext -u data/plainpass -v data/ciphertext -w data/cipherpass
+
+Pour lancer le serveur :
+
+java info0045.AuthorityServer -m pass1 -p 4000 -f data/cipherpass 
+
+Pour lancer le client :
+
+java info0045.Client -u raphael -c kikou -p 4000 -h localhost -f data/ciphertext
