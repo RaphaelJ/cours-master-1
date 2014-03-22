@@ -94,24 +94,38 @@ public class GameObserverProxy implements GameObserver {
 
     public void emitBoardChange(BoardSection section)
     {
+        for (int i = 0; i < section.getHeight(); i++) {
+            int y = section.getY() + i;
+            for (int j = 0; j < section.getWidth(); j++) {
+                this._grid[y][section.getX() + j] = section.get(i, j);
+            }
+        }
+
         for (GameListener listener : this._listeners)
             listener.gridChange(section);
     }
 
     public void emitNewPiece(Piece currentPiece, Piece nextPiece)
     {
+        this._currentPiece = currentPiece;
+        this._nextPiece = nextPiece;
+
         for (GameListener listener : this._listeners)
             listener.newPiece(currentPiece, nextPiece);
     }
 
     public void emitScoreChange(int newScore)
     {
+        this._score = newScore;
+
         for (GameListener listener : this._listeners)
             listener.scoreChange(newScore);
     }
 
     public void emitLevelChange(int newLevel)
     {
+        this._level = newLevel;
+
         for (GameListener listener : this._listeners)
             listener.levelChange(newLevel);
     }

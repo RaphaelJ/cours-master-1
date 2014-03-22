@@ -103,9 +103,10 @@ public class GameClient implements GameManager {
             if (msg instanceof ManagerEvent) {
                 // Manager events need to be broadcasted to every observer.
 
-                if (msg instanceof StateChangedEvent) {
-                } else if (msg instanceof TimeChangedEvent) {
-                }
+                if (msg instanceof StateChangedEvent)
+                    this.emitStateChanged(((StateChangedEvent) msg).newState);
+                else if (msg instanceof TimeChangedEvent)
+                    this.emitStateChanged(((TimeChangedEvent) msg).elapsedTime);
             } else if (msg instanceof ObserverEvent) {
                 // Events for a given player's board.
 
@@ -113,12 +114,19 @@ public class GameClient implements GameManager {
                 GameObserverProxy observer = this._players.get(playerId);
 
                 if (msg instanceof BoardChangeEvent)
-                else if (msg instanceof NewPieceEvent)
-                else if (msg instanceof ScoreChangeEvent)
+                    observer.emitBoardChange(((BoardChangeEvent) msg).section);
+                else if (msg instanceof NewPieceEvent) {
+                    NewPieceEvent event = (NewPieceEvent) msg;
+                    observer.emitNewPiece(event.currentPiece, event.nextPiece);
+                } else if (msg instanceof ScoreChangeEvent)
+                    observer.emitScoreChange(((ScoreChangeEvent) msg).newScore);
                 else if (msg instanceof LevelChangeEvent)
-                else if (msg instanceof ClockDelayChangeEvent)
-                else if (msg instanceof StateChangedEvent)
-                else if (msg instanceof TimeChangedEvent)
+                    observer.emitLevelChange(((LevelChangeEvent) msg).newLevel);
+                else if (msg instanceof ClockDelayChangeEvent) {
+                    observer.emitClockDelayChange(
+                        ((ClockDelayChange) msg).newClockDelay
+                    );
+                }
             } else
                 throw new ProtocolException("Invalid message received.");
         }
@@ -194,46 +202,24 @@ public class GameClient implements GameManager {
         return this._currentState;
     }
 
-    /****************** Observer event triggers ******************/
-
-    private void emitBoardChange(BoardSection section)
-    {
-        for (GameObserverProxy player : this._players)
-            player.emitGridChange(section);
-    }
-
-    private void emitNewPiece(Piece currentPiece, Piece nextPiece)
-    {
-        for (GameObserverProxy player : this._players)
-            player.emitNewPiece(currentPiece, nextPiece);
-    }
-
-    private void emitScoreChange(int newScore)
-    {
-        for (GameObserverProxy player : this._players)
-            player.emitScoreChange(newScore);
-    }
-
-    private void emitLevelChange(int newLevel)
-    {
-        for (GameObserverProxy player : this._players)
-            player.emitLevelChange(newLevel);
-    }
-
-    private void emitClockDelayChange(int newClockDelay)
-    {
-        for (GameObserverProxy player : this._players)
-            player.emitClockDelayChange(newClockDelay);
-    }
+    /****************** Manager event triggers ******************/
 
     private void emitStateChanged(GameManager.GameState newState)
     {
+        this._currentState = newState;
+
+        for (GameStateListener listener : this._listeners)
+            listener.stateChanged(newState);
+
         for (GameObserverProxy player : this._players)
             player.emitStateChanged(newState);
     }
 
     private void emitTimeChanged(long elapsedTime)
     {
+        for (GameStateListener listener : this._listeners)
+            listener.timeChanged(elapsedTime);
+
         for (GameObserverProxy player : this._players)
             player.emitTimeChanged(elapsedTime);
     }
