@@ -17,9 +17,6 @@ public class GamePlayerProxy extends GameObserverProxy implements GamePlayer {
         this._client = client;
     }
 
-    // TODO : creer les classes MoveLeftAction, MoveRightAction, SoftDropAction
-    // , ... Elles sont identiques à NewGameAction.
-
     public void moveLeft()
     {
         this._client.sendMessage(new MoveLeftAction());

@@ -6,7 +6,7 @@ import model.piece.Piece;
 /** Provides an interface to survey a player's game behaviour.
  * This interface is used as is in GUI which doesn't provide a way to interact
  * with the game (remote player games in a network game). */
-public interface GameObserver extends GameManager {
+public interface GameObserver {
 
     public void addListener(GameListener listener);
 
@@ -34,4 +34,6 @@ public interface GameObserver extends GameManager {
     public int getScore();
 
     public int getLevel();
+
+    public GameManager.GameState getCurrentState();
 }

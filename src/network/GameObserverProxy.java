@@ -16,6 +16,8 @@ import model.piece.Piece;
  * listenning. */
 public class GameObserverProxy implements GameObserver {
 
+    private GameClient client;
+
     private int _width;
     private int _height;
     private Piece[][] _grid;
@@ -29,8 +31,9 @@ public class GameObserverProxy implements GameObserver {
     private ArrayList<GameListener> _listeners
         = new ArrayList<GameListener>();
 
-    public GameObserverProxy(int width, int height)
+    public GameObserverProxy(GameClient client, int width, int height)
     {
+        this._client = client;
         this._width  = width;
         this._height = height;
 
@@ -82,6 +85,13 @@ public class GameObserverProxy implements GameObserver {
         return this._level;
     }
 
+    public GameManager.GameState getCurrentState()
+    {
+        return this._client.getCurrentState();
+    }
+
+    // Methods used by the GameClient to trigger events :
+
     public void emitBoardChange(BoardSection section)
     {
         for (GameListener listener : this._listeners)
@@ -90,67 +100,37 @@ public class GameObserverProxy implements GameObserver {
 
     public void emitNewPiece(Piece currentPiece, Piece nextPiece)
     {
-        // TODO
+        for (GameListener listener : this._listeners)
+            listener.newPiece(currentPiece, nextPiece);
     }
 
     public void emitScoreChange(int newScore)
     {
-        // TODO
+        for (GameListener listener : this._listeners)
+            listener.scoreChange(newScore);
     }
 
     public void emitLevelChange(int newLevel)
     {
-        // TODO
+        for (GameListener listener : this._listeners)
+            listener.levelChange(newLevel);
     }
 
     public void emitClockDelayChange(int newClockDelay)
     {
-        // TODO
+        for (GameListener listener : this._listeners)
+            listener.clockDelayChange(newClockDelay);
     }
 
     public void emitStateChanged(GameManager.GameState newState)
     {
-        // TODO
+        for (GameListener listener : this._listeners)
+            listener.stateChanged(newState);
     }
 
     public void emitTimeChanged(long elapsedTime)
     {
-        // TODO
+        for (GameListener listener : this._listeners)
+            listener.timeChanged(elapsedTime);
     }
-
-	@Override
-	public void newGame() {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void pause() {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void stop() {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void reset() {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void addListener(GameStateListener listener) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public GameState getCurrentState() {
-		// TODO Auto-generated method stub
-		return null;
-	}
 }
