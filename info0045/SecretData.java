@@ -19,6 +19,8 @@ public class SecretData<T extends Serializable> implements Serializable {
     // Bouncy Castle doesn't seem to support any padding method when using CTR.
     public static final String CIPHER_ALGORITHM = "AES/CTR/NoPadding";
 
+    public static final String HMAC_ALGORITHM   = "HmacSHA256";
+
     public final byte[] iv; // Initialization Vector
     public final byte[] ciphertext;
     public final byte[] signature;
@@ -38,7 +40,7 @@ public class SecretData<T extends Serializable> implements Serializable {
             new CipherInputStream(toInputStream(plaintext), cipher)
         );
 
-        this.signature = SignedData.genSignature(this.ciphertext, keys.hmac);
+        this.signature = genSignature(this.ciphertext, keys.hmac);
     }
 
     /**
@@ -49,7 +51,7 @@ public class SecretData<T extends Serializable> implements Serializable {
         throws InvalidKeyException, NoSuchAlgorithmException
     {
         return Arrays.equals(
-            this.signature, SignedData.genSignature(this.ciphertext, hmacKey)
+            this.signature, genSignature(this.ciphertext, hmacKey)
         );
     }
 
@@ -76,6 +78,17 @@ public class SecretData<T extends Serializable> implements Serializable {
         );
 
         return (T) (new ObjectInputStream(plaintextStream)).readObject();
+    }
+
+    /**
+     * Uses the given key to generate an SHA-256 HMAC of the given data.
+     */
+    public static byte[] genSignature(byte[] data, SecretKey key)
+        throws InvalidKeyException, NoSuchAlgorithmException
+    {
+        Mac mac = Mac.getInstance(HMAC_ALGORITHM);
+        mac.init(key);
+        return mac.doFinal(data);
     }
 
     /**
