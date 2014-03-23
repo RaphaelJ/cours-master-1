@@ -33,10 +33,10 @@ public class Game implements GameManager, GamePlayer, RuleListener {
     private ArrayList<GameStateListener> _listeners
         = new ArrayList<GameStateListener>();
 
-    public Game(Board board, Rule rule)
+    public Game(int width, int height, Rule rule)
     {
-        this._board = board;
-        board.setGamePlayer(this);
+        this._board = new Board(width, height);
+        this._board.setGamePlayer(this);
 
         this._rule = rule;
         rule.addListener(this);

@@ -4,9 +4,7 @@ import model.Coordinates;
 
 public class PieceZ extends Piece {
 
-	private static final long serialVersionUID = -4504181434220476284L;
-
-	public static final boolean[][][] states = { {
+    public static final boolean[][][] states = { {
             { false, false, false },
             { true,  true,  false },
             { false, true,  true  }

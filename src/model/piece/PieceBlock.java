@@ -6,9 +6,7 @@ import model.Coordinates;
  * which are added in multiplayer games by the opponent. */
 public class PieceBlock extends Piece {
 
-	private static final long serialVersionUID = 1886246992388013253L;
-
-	public static final boolean[][][] states = { {
+    public static final boolean[][][] states = { {
             { true }
         }
     };

@@ -9,6 +9,7 @@ import java.util.ArrayList;
 
 import model.Board;
 import util.GameTimer;
+import util.random.LCGRandom;
 
 /** Applies a rule and manages a multiplayer game. */
 public class MultiGame implements GameManager {
@@ -16,7 +17,7 @@ public class MultiGame implements GameManager {
         = new ArrayList<MultiGameProxy>();
 
     private GameManager.GameState _currentState
-        = GameObserver.GameState.INITIALIZED;
+        = GameManager.GameState.INITIALIZED;
 
     // This timer is used to track the game's eslaped time.
     private GameTimer _timer;
@@ -24,12 +25,39 @@ public class MultiGame implements GameManager {
     private ArrayList<GameStateListener> _listeners =
         new ArrayList<GameStateListener>();
 
-    public MultiGame(ArrayList<Board> boards, Rule.RuleFactory ruleFactory)
+    public MultiGame(
+        int width, int height, int nPlayers, Rule.RuleFactory ruleFactory
+    )
     {
-        for (Board board : boards)
+        for (Board board : this.getBoards(width, height, nPlayers))
             this._games.add(this.getGameProxy(board, ruleFactory));
 
         this.initTimers();
+    }
+
+    /** Creates a board for each player. Use a different random generator for
+     * each board.
+     * Will be overrided by other game modes. */
+    protected ArrayList<Board> getBoards(int width, int height, int nPlayers)
+    {
+        LCGRandom seedGenerator = new LCGRandom();
+        ArrayList<Board> boards = new ArrayList<Board>(nPlayers);
+
+        for (int i = 0; i < nPlayers; i++) {
+            boards.add(
+                new Board(new LCGRandom(seedGenerator.nextInt()), width, height)
+            );
+        }
+        return boards;
+    }
+
+    /** Given a board instance and a rule, constructs a transformed gameplay for
+     * the player which applies the multiplayer rules in a synchronized way.
+     * Will be overrided by other game modes. */
+    protected MultiGameProxy getGameProxy(Board board,
+                                          Rule.RuleFactory ruleFactory)
+    {
+        return new MultiGameProxy(this, board, ruleFactory.construct());
     }
 
     public synchronized void addListener(GameStateListener listener)
@@ -43,10 +71,10 @@ public class MultiGame implements GameManager {
      * Resets the game if needed. */
     public synchronized void newGame()
     {
-        if (this._currentState != GameObserver.GameState.INITIALIZED)
+        if (this._currentState != GameManager.GameState.INITIALIZED)
             this.reset();
 
-        this.setCurrentState(GameObserver.GameState.RUNNING);
+        this.setCurrentState(GameManager.GameState.RUNNING);
         this.startTimers();
     }
 
@@ -57,10 +85,10 @@ public class MultiGame implements GameManager {
         switch (this._currentState) {
         case RUNNING:
             this.stopTimers();
-            this.setCurrentState(GameObserver.GameState.PAUSED);
+            this.setCurrentState(GameManager.GameState.PAUSED);
             break;
         case PAUSED:
-            this.setCurrentState(GameObserver.GameState.RUNNING);
+            this.setCurrentState(GameManager.GameState.RUNNING);
             this.startTimers();
             break;
         default:
@@ -69,17 +97,17 @@ public class MultiGame implements GameManager {
 
     public synchronized void stop()
     {
-        if (this._currentState == GameObserver.GameState.RUNNING
-            || this._currentState == GameObserver.GameState.PAUSED)
+        if (this._currentState == GameManager.GameState.RUNNING
+            || this._currentState == GameManager.GameState.PAUSED)
             this.stopTimers();
 
-        this.setCurrentState(GameObserver.GameState.STOPPED);
+        this.setCurrentState(GameManager.GameState.STOPPED);
     }
 
     public synchronized void reset()
     {
-        if (this._currentState == GameObserver.GameState.RUNNING
-            || this._currentState == GameObserver.GameState.PAUSED)
+        if (this._currentState == GameManager.GameState.RUNNING
+            || this._currentState == GameManager.GameState.PAUSED)
             this.stopTimers();
 
         for (MultiGameProxy game : this._games) {
@@ -89,18 +117,18 @@ public class MultiGame implements GameManager {
 
         this.initTimers();
 
-        this.setCurrentState(GameObserver.GameState.INITIALIZED);
+        this.setCurrentState(GameManager.GameState.INITIALIZED);
     }
 
     /*********************** Boards events ***********************/
 
     public synchronized void gameOver()
     {
-        if (this._currentState == GameObserver.GameState.RUNNING
-            || this._currentState == GameObserver.GameState.PAUSED)
+        if (this._currentState == GameManager.GameState.RUNNING
+            || this._currentState == GameManager.GameState.PAUSED)
             this.stopTimers();
 
-        this.setCurrentState(GameObserver.GameState.GAMEOVER);
+        this.setCurrentState(GameManager.GameState.GAMEOVER);
     }
 
     /*********************** Internals ***********************/
@@ -129,7 +157,7 @@ public class MultiGame implements GameManager {
                         @Override
                         public void run()
                         {
-                            if (_currentState == GameObserver.GameState.RUNNING)
+                            if (_currentState == GameManager.GameState.RUNNING)
                                 game.getBoard().gameTick();
                         }
                     }, game.getRule().getClockDelay()
@@ -165,14 +193,6 @@ public class MultiGame implements GameManager {
     public MultiGameProxy getPlayerGame(int player)
     {
         return this._games.get(player);
-    }
-
-    /** Given a board instance and a rule, constructs a transformed gameplay for
-     * the player which applies the multiplayer rules in a synchronized way. */
-    protected MultiGameProxy getGameProxy(Board board,
-                                          Rule.RuleFactory ruleFactory)
-    {
-        return new MultiGameProxy(this, board, ruleFactory.construct());
     }
 
     public GameManager.GameState getCurrentState()

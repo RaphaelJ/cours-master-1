@@ -12,10 +12,11 @@ import model.Row;
  * the line is also complete on the opponent grid. */
 public class MultiCooperative extends MultiGame {
 
-    public MultiCooperative(ArrayList<Board> boards,
-                            Rule.RuleFactory ruleFactory)
+    public MultiCooperative(
+        int width, int height, int nPlayers, Rule.RuleFactory ruleFactory
+    )
     {
-        super(boards, ruleFactory);
+        super(width, height, nPlayers, ruleFactory);
     }
 
     /** Wraps the inner gameplay in a proxy so lines are removed only if they

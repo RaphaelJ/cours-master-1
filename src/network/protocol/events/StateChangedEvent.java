@@ -1,5 +1,7 @@
 package network.protocol.events;
 
+import game.GameManager;
+
 public class StateChangedEvent implements ManagerEvent {
     public final GameManager.GameState newState;
 

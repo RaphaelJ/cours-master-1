@@ -1,10 +1,10 @@
 package model.config;
 
 public abstract class Config {
-	
+
     private int _boardWidth;
     private int _boardHeight;
-    
+
     private boolean _useImages;
 
     public Config()
@@ -23,7 +23,7 @@ public abstract class Config {
     {
         return this._boardHeight;
     }
-    
+
     public boolean isUseImages()
     {
         return this._useImages;
@@ -38,7 +38,7 @@ public abstract class Config {
     {
         this._boardHeight = boardHeight;
     }
-    
+
     public void setUseImages(boolean useImages)
     {
         this._useImages = useImages;

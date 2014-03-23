@@ -24,9 +24,10 @@ public class LocalConfig extends Config {
     {
         return this._nbPlayersMulti;
     }
-    
-    public KeySet getKeySet(int i) {
-    	return this._keySets.get(i);
+
+    public KeySet getKeySet(int i)
+    {
+        return this._keySets.get(i);
     }
 
     public void increaseNbPlayersMulti()

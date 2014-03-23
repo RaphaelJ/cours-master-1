@@ -28,9 +28,7 @@ import view.online.ServerOptionsView;
 
 public class WelcomeView extends javax.swing.JFrame {
 
-	private static final long serialVersionUID = -2260957186452467297L;
-
-	private JPanel jPanelButtons;
+    private JPanel jPanelButtons;
 
     private JButton jButtonCoop;
     private JButton jButtonMultiClassic;
@@ -158,70 +156,44 @@ public class WelcomeView extends javax.swing.JFrame {
     {
         this.setVisible(false);
 
-        Board board = new Board(
-            this._config.getBoardWidth(), this._config.getBoardHeight()
-        );
-        Game game = new Game(board, new NintendoGameBoy());
-
-        new SinglePlayerSwingView(this, game, this._config).run();
+        new SinglePlayerSwingView(
+            this, new Game(
+                this._config.getBoardWidth(), this._config.getBoardHeight(),
+                new NintendoGameBoy()
+            ), this._config
+        ).run();
     }
 
     private void jButtonMultiSimpleActionPerformed(ActionEvent evt)
     {
-        ArrayList<Board> boards = new ArrayList<Board>();
-        LCGRandom seedGenerator = new LCGRandom();
-
-        for(int i = 0; i < this._config.getNbPlayersMulti(); i++) {
-            boards.add(
-                new Board(
-                    new LCGRandom(seedGenerator.nextInt()),
-                    this._config.getBoardWidth(),this._config.getBoardHeight()
-                )
-            );
-        }
-
         startMultiPlayersGame(
-            new MultiGame(boards, new NintendoGameBoyFactory())
+            new MultiGame(
+                this._config.getBoardWidth(), this._config.getBoardHeight(),
+                this._config.getNbPlayersMulti(), new NintendoGameBoyFactory()
+            )
         );
     }
 
     private void jButtonMultiClassicActionPerformed(ActionEvent evt)
     {
-        ArrayList<Board> boards = new ArrayList<Board>();
-        long commonSeed = new LCGRandom().getSeed();
-
-        for(int i = 0; i < this._config.getNbPlayersMulti(); i++) {
-            boards.add(
-                new Board(
-                    new LCGRandom(commonSeed), this._config.getBoardWidth(),
-                    this._config.getBoardHeight()
-                )
-            );
-        }
-
         int posHole = new LCGRandom().nextInt(this._config.getBoardWidth());
 
         startMultiPlayersGame(
-            new MultiClassic(boards, new NintendoGameBoyFactory(), posHole)
+            new MultiClassic(
+                this._config.getBoardWidth(), this._config.getBoardHeight(),
+                this._config.getNbPlayersMulti(), new NintendoGameBoyFactory(),
+                posHole
+            )
         );
     }
 
     private void jButtonCoopActionPerformed(ActionEvent evt)
     {
-        ArrayList<Board> boards = new ArrayList<Board>();
-        LCGRandom seedGenerator = new LCGRandom();
-
-        for(int i = 0; i < this._config.getNbPlayersMulti(); i++) {
-            boards.add(
-                new Board(
-                    new LCGRandom(seedGenerator.nextInt()),
-                    this._config.getBoardWidth(),this._config.getBoardHeight()
-                )
-            );
-        }
-
         startMultiPlayersGame(
-            new MultiCooperative(boards, new NintendoGameBoyFactory())
+            new MultiCooperative(
+                this._config.getBoardWidth(), this._config.getBoardHeight(),
+                this._config.getNbPlayersMulti(), new NintendoGameBoyFactory()
+            )
         );
     }
 

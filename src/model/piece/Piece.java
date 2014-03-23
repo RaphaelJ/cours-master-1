@@ -11,9 +11,7 @@ import model.Coordinates;
  * the transformation. */
 public abstract class Piece implements Serializable {
 
-	private static final long serialVersionUID = -122878574570202345L;
-
-	public static final Piece.PieceFactory[] AVAILABLE_PIECES = {
+    public static final Piece.PieceFactory[] AVAILABLE_PIECES = {
         PieceI.factory, PieceJ.factory, PieceL.factory, PieceO.factory,
         PieceS.factory, PieceT.factory, PieceZ.factory
     };

@@ -19,9 +19,7 @@ import javax.swing.WindowConstants;
  * to implement the game's board user interface(s). */
 public abstract class SwingView extends JFrame implements GameStateListener {
 
-	private static final long serialVersionUID = -3670338522409376447L;
-
-	protected JFrame parent;
+    protected JFrame parent;
 
     protected JPanel gamePanel;
 

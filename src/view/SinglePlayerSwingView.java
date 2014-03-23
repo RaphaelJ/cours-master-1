@@ -1,7 +1,5 @@
 package view;
 
-import game.GamePlayer;
-
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowAdapter;
@@ -12,22 +10,21 @@ import java.util.Set;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
+import game.*;
 import model.config.LocalConfig;
 import view.keyboard.KeyboardHandler;
 import view.panel.PlayerGamePanel;
 
 public class SinglePlayerSwingView extends SwingView implements KeyListener {
 
-	private static final long serialVersionUID = 5896452179129921463L;
-
-	private GamePlayer _game;
+    private Game _game;
     private PlayerGamePanel _panel;
 
     private LocalConfig _config;
     private Set<Integer> _activeKeys;
     private KeyboardHandler _keyboardHandler;
 
-    public SinglePlayerSwingView(JFrame parent, GamePlayer game,
+    public SinglePlayerSwingView(JFrame parent, Game game,
                                  LocalConfig config)
     {
         super(parent, game);
@@ -86,9 +83,9 @@ public class SinglePlayerSwingView extends SwingView implements KeyListener {
     public void keyTyped(KeyEvent e) { }
 
     @Override
-    public void stateChanged(GamePlayer.GameState newState)
+    public void stateChanged(GameManager.GameState newState)
     {
-        if (newState == GamePlayer.GameState.GAMEOVER) {
+        if (newState == GameManager.GameState.GAMEOVER) {
             int choice = JOptionPane.showConfirmDialog(
                 this, "Would you like to retry ?", "Game Over",
                 JOptionPane.YES_NO_OPTION

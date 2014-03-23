@@ -1,20 +1,17 @@
 package network;
 
-import game.GamePlayer;
+import java.util.*;
 
-import java.util.LinkedList;
+import game.GamePlayer;
+import network.protocol.actions.*;
 
 /** A GamePlayer proxy which will transmit events it receives from the
  * GameClient to the views and will transmit user actions to the network. */
 public class GamePlayerProxy extends GameObserverProxy implements GamePlayer {
 
-    private GameClient _client;
-
     public GamePlayerProxy(GameClient client, int width, int height)
     {
-        super (width, height);
-
-        this._client = client;
+        super (client, width, height);
     }
 
     public void moveLeft()

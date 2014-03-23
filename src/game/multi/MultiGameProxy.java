@@ -84,7 +84,7 @@ public class MultiGameProxy implements GamePlayer, RuleListener {
     {
         synchronized (this._multiGame) {
             if (this._multiGame.getCurrentState()
-                == GameObserver.GameState.RUNNING)
+                == GameManager.GameState.RUNNING)
                 this._board.moveLeft();
         }
     }
@@ -93,7 +93,7 @@ public class MultiGameProxy implements GamePlayer, RuleListener {
     {
         synchronized (this._multiGame) {
             if (this._multiGame.getCurrentState()
-                == GameObserver.GameState.RUNNING)
+                == GameManager.GameState.RUNNING)
                 this._board.moveRight();
         }
     }
@@ -103,7 +103,7 @@ public class MultiGameProxy implements GamePlayer, RuleListener {
     {
         synchronized (this._multiGame) {
             if (this._multiGame.getCurrentState()
-                == GameObserver.GameState.RUNNING)
+                == GameManager.GameState.RUNNING)
                 this._board.softDrop();
         }
     }
@@ -113,7 +113,7 @@ public class MultiGameProxy implements GamePlayer, RuleListener {
     {
         synchronized (this._multiGame) {
             if (this._multiGame.getCurrentState()
-                == GameObserver.GameState.RUNNING)
+                == GameManager.GameState.RUNNING)
                 this._board.hardDrop();
         }
     }
@@ -123,7 +123,7 @@ public class MultiGameProxy implements GamePlayer, RuleListener {
     {
         synchronized (this._multiGame) {
             if (this._multiGame.getCurrentState()
-                == GameObserver.GameState.RUNNING)
+                == GameManager.GameState.RUNNING)
                 this._board.rotate();
         }
     }

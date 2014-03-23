@@ -16,7 +16,7 @@ import model.piece.Piece;
  * listenning. */
 public class GameObserverProxy implements GameObserver {
 
-    private GameClient client;
+    protected GameClient _client;
 
     private int _width;
     private int _height;
@@ -92,7 +92,7 @@ public class GameObserverProxy implements GameObserver {
 
     // Methods used by the GameClient to trigger events :
 
-    public void emitBoardChange(BoardSection section)
+    public void emitGridChange(BoardSection section)
     {
         for (int i = 0; i < section.getHeight(); i++) {
             int y = section.getY() + i;

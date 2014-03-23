@@ -5,20 +5,13 @@ import game.GameObserver;
 import game.GamePlayer;
 import game.GameStateListener;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
-import java.net.Socket;
-import java.net.UnknownHostException;
+import java.io.*;
+import java.net.*;
 import java.util.ArrayList;
 
-import network.protocol.Message;
-import network.protocol.ServerConfigMessage;
-import network.protocol.actions.NewGameAction;
-import network.protocol.events.ManagerEvent;
-import network.protocol.events.ObserverEvent;
+import network.protocol.*;
+import network.protocol.actions.*;
+import network.protocol.events.*;
 
 /** This class will listen to a network socket and will transmit events from and
  * to the views by implementing the GameManager, GameObserver and GamePlayer
@@ -43,34 +36,30 @@ public class GameClient implements GameManager {
     private ArrayList<GameObserverProxy> _players
         = new ArrayList<GameObserverProxy>();
 
-    /** Negociates the connexion with the server. Returns when the game has
-     * been started. Spawns a new thread to receive events. */
+    /** Negociates the connexion with the server. Returns when the game can
+     * be started. Spawns a new thread to receive events. */
     public GameClient(String host, int port)
-        throws UnknownHostException, IOException
+        throws ClassNotFoundException, IOException, UnknownHostException
     {
         Socket sock = new Socket(host, port);
         this._in  = new ObjectInputStream(sock.getInputStream());
         this._out = new ObjectOutputStream(sock.getOutputStream());
-    }
-
-    public GameClient(InputStream in, OutputStream out)
-    {
-        this._in  = new ObjectInputStream(in);
-        this._out = new ObjectOutputStream(out);
 
         // The server first send its configuratiob (number of players, the width
         // and the height of the board).
         this._config = (ServerConfigMessage) this._in.readObject();
 
         // Creates the playable controller for the player.
-        this._opponents.add(
+        this._players.add(
             new GamePlayerProxy(this, this._config.width, this._config.height)
         );
 
         // Creates the observers for the other players.
         for (int i = 1; i < this._config.nPlayers; i++) {
-            this._opponents.add(
-                new GameObserverProxy(this._config.width, this._config.height)
+            this._players.add(
+                new GameObserverProxy(
+                    this, this._config.width, this._config.height
+                )
             );
         }
 
@@ -82,13 +71,12 @@ public class GameClient implements GameManager {
                     eventLoop();
                 } catch (Exception e) {
                     System.err.println(
-                        "The client listening connection crashed with the " +
-                        "following exception :"
+                        "Error while receiving a message from the server."
                     );
                     e.printStackTrace();
                 }
             }
-        }.run();
+        }.start();
     }
 
     /** This is the main loop in which the thread is trapped, listening for
@@ -98,7 +86,7 @@ public class GameClient implements GameManager {
         throws ClassNotFoundException, IOException, ProtocolException
     {
         for (;;) {
-            Message msg = recvMessage();
+            Message msg = (Message) this._in.readObject();
 
             if (msg instanceof ManagerEvent) {
                 // Manager events need to be broadcasted to every observer.
@@ -106,15 +94,15 @@ public class GameClient implements GameManager {
                 if (msg instanceof StateChangedEvent)
                     this.emitStateChanged(((StateChangedEvent) msg).newState);
                 else if (msg instanceof TimeChangedEvent)
-                    this.emitStateChanged(((TimeChangedEvent) msg).elapsedTime);
+                    this.emitTimeChanged(((TimeChangedEvent) msg).elapsedTime);
             } else if (msg instanceof ObserverEvent) {
                 // Events for a given player's board.
 
-                int playerId = ((ObserverEvent) msg).getPlayerId();
+                int playerId = ((ObserverEvent) msg).playerId;
                 GameObserverProxy observer = this._players.get(playerId);
 
-                if (msg instanceof BoardChangeEvent)
-                    observer.emitBoardChange(((BoardChangeEvent) msg).section);
+                if (msg instanceof GridChangeEvent)
+                    observer.emitGridChange(((GridChangeEvent) msg).section);
                 else if (msg instanceof NewPieceEvent) {
                     NewPieceEvent event = (NewPieceEvent) msg;
                     observer.emitNewPiece(event.currentPiece, event.nextPiece);
@@ -124,7 +112,7 @@ public class GameClient implements GameManager {
                     observer.emitLevelChange(((LevelChangeEvent) msg).newLevel);
                 else if (msg instanceof ClockDelayChangeEvent) {
                     observer.emitClockDelayChange(
-                        ((ClockDelayChange) msg).newClockDelay
+                        ((ClockDelayChangeEvent) msg).newClockDelay
                     );
                 }
             } else
@@ -133,19 +121,18 @@ public class GameClient implements GameManager {
     }
 
     /** Sends a message to the server. */
-    public void sendMessage(Message msg) throws IOException
+    public void sendMessage(Message msg)
     {
-        synchronized (this._out) {
-            this._out.writeObject(msg);
-            this._out.flush();
-        }
-    }
-
-    /** Waits for a message to the server. */
-    public Message recvMessage() throws ClassNotFoundException, IOException
-    {
-        synchronized (this._in) {
-            return (Message) this._in.readObject();
+        try {
+            synchronized (this._out) {
+                this._out.writeObject(msg);
+                this._out.flush();
+            }
+        } catch (Exception e) {
+            System.err.println(
+                "Error while sending a message to the server."
+            );
+            e.printStackTrace();
         }
     }
 
@@ -154,18 +141,18 @@ public class GameClient implements GameManager {
     /** Returns the interface with control the player game. */
     public GamePlayer getPlayer()
     {
-        return this._players.get(0);
+        return (GamePlayerProxy) this._players.get(0);
     }
 
     /** Returns the set of observers interfaces.
      * The first player (index = 0) is the player (returned by getPlayer())
      * while others are opponents. */
-    public ArrayList<GameObserver> getPlayers()
+    public ArrayList<GameObserverProxy> getPlayers()
     {
         return this._players;
     }
 
-    /****************** Manager actions ******************/
+    /****************** GameManager actions ******************/
 
     /** Starts the game and resets the game if needed. */
     public void newGame()
