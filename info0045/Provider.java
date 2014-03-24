@@ -80,9 +80,6 @@ public class Provider {
         // Derives the keys from the master password.
         DerivedKeys master_keys = new DerivedKeys(this.master_pwd);
 
-//         System.out.println(Arrays.toString(master_keys.cipher.getEncoded()));
-//         System.out.println(Arrays.toString(master_keys.hmac.getEncoded()));
-
         this.encryptDataFile(master_keys);
         this.encryptPassFile(master_keys);
     }

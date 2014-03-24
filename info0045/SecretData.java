@@ -57,7 +57,7 @@ public class SecretData<T extends Serializable> implements Serializable {
 
     /**
      * Returns the deciphered cipher text using the given cipher key.
-     * Check integrity and authentication before deciphering the content.
+     * Checks integrity and authentication before deciphering the content.
      */
     public T getPlaintext(DerivedKeys keys)
         throws ClassNotFoundException, InvalidAlgorithmParameterException,

@@ -87,9 +87,6 @@ public class Client
             this.client_socket.getInputStream()
         );
 
-//         // First, we receive a random 64-bits nounce from the server
-//         long nounce = ((Long) from_server.readObject()).longValue();
-
         // Then we send the encrypted content password ...
         to_server.writeObject(encrypted_pass);
         // .. and our user name.

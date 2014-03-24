@@ -58,7 +58,7 @@ public class AuthorityServer
              NoSuchAlgorithmException, NoSuchPaddingException,
              NumberFormatException, SignatureException
     {
-        // Open a socket for incoming connections
+        // Opens a socket for incoming connections
         this.server_socket = new ServerSocket(port_nb);
 
         // Derives the keys from the master password.
@@ -69,7 +69,7 @@ public class AuthorityServer
 
     public void listen() throws IOException
     {
-        // Wait for clients
+        // Waits for clients
         for (;;) {
             Socket client_socket = server_socket.accept();
 
@@ -77,9 +77,7 @@ public class AuthorityServer
             System.out.println(client_socket.getInetAddress().toString());
             System.out.println();
 
-            // Spawn new thread to handle the client request.
-            // Depending on your design you might want to pass more
-            // parameters to the AuthorityServerThread.
+            // Spawns new thread to handle the client request.
             new AuthorityServerThread(
                 client_socket, this.master_keys, this.user_keys
             ).start();
