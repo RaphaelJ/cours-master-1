@@ -290,7 +290,7 @@ public class GameServer implements GameStateListener {
             );
         }
 
-        this.log("Sent a grid change event to player " + playerId + ".");
+        this.log("Sent a grid change event of player " + playerId + ".");
     }
 
     public void emitNewPiece(int playerId, Piece currentPiece, Piece nextPiece)
@@ -304,7 +304,7 @@ public class GameServer implements GameStateListener {
             );
         }
 
-        this.log("Sent a new piece event to player " + playerId + ".");
+        this.log("Sent a new piece event of player " + playerId + ".");
     }
 
     public void emitScoreChange(int playerId, int newScore)
@@ -316,7 +316,7 @@ public class GameServer implements GameStateListener {
             );
         }
 
-        this.log("Sent a score change event to player " + playerId +".");
+        this.log("Sent a score change event of player " + playerId +".");
     }
 
     public void emitLevelChange(int playerId, int newLevel)
@@ -328,7 +328,7 @@ public class GameServer implements GameStateListener {
             );
         }
 
-        this.log("Sent a level change event to player " + playerId + ".");
+        this.log("Sent a level change event of player " + playerId + ".");
     }
 
     public void emitClockDelayChange(int playerId, int newClockDelay)
@@ -342,7 +342,7 @@ public class GameServer implements GameStateListener {
             );
         }
 
-        this.log("Sent a clock change event to player " + playerId + ".");
+        this.log("Sent a clock change event of player " + playerId + ".");
     }
 
     /** As the client always sees itself as player 0, we need to correct/shift

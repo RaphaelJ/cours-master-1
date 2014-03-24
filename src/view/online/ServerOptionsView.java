@@ -204,12 +204,6 @@ public class ServerOptionsView extends JFrame {
         int port     = Integer.parseInt(this._portTextField.getText());
 
         try {
-            // Creates a logger for the server.
-            // Creates a DuplicateWriter which writes messages on the given
-            // output file and on the GUI.
-            Writer fileLogger = new FileWriter(
-                this._logFileTextField.getText()
-            );
 
             // Hides the current view and show the server status view
             this.setVisible(false);
@@ -228,7 +222,19 @@ public class ServerOptionsView extends JFrame {
                     serverStatusView.log(new String(cbuf, off, len));
                 }
             };
-            Writer logger = new DuplicateWriter(fileLogger, guiLogger);
+
+            // Creates a logger for the server.
+            Writer logger;
+            String logFile = this._logFileTextField.getText();
+            if ("".equals(logFile)) // Log only on the GUI
+                logger = guiLogger;
+            else {
+                // Creates a DuplicateWriter which writes messages on the given
+                // output file and on the GUI.
+                logger = new DuplicateWriter(
+                    guiLogger, new FileWriter(logFile)
+                );
+            }
 
             // Creates the socket.
             final GameServer server = new GameServer(
