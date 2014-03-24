@@ -8,7 +8,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.io.File;
+import java.io.*;
 
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
@@ -24,6 +24,7 @@ import game.rules.*;
 import model.config.OnlineConfig;
 import model.config.OnlineConfig.GameMode;
 import network.*;
+import util.DuplicateWriter;
 
 /** Displays a window to enter the configuration (log file, game mode, number of
  * players and the server's port) of the server before starting it. */
@@ -203,14 +204,41 @@ public class ServerOptionsView extends JFrame {
         int port     = Integer.parseInt(this._portTextField.getText());
 
         try {
+            // Creates a logger for the server.
+            // Creates a DuplicateWriter which writes messages on the given
+            // output file and on the GUI.
+            Writer fileLogger = new FileWriter(
+                this._logFileTextField.getText()
+            );
+            Writer guiLogger  = new Writer() {
+                public void close() { }
+
+                public void flush() { }
+
+                public void write(char[] cbuf, int off, int len)
+                {
+                    // TODO : remplacer la ligne suivante avec un affichage
+                    // dans une nouvelle GUI (ServerStatusView ?), style une
+                    // TextArea.
+                    System.out.println(new String(cbuf, off, len));
+                }
+            };
+            Writer logger = new DuplicateWriter(fileLogger, guiLogger);
+
+            // Creates the socket.
             GameServer server = new GameServer(
                 port, new MultiGame(
                     this._config.getBoardWidth(), this._config.getBoardHeight(),
                     nPlayers, new NintendoGameBoyFactory()
-                )
+                ), logger
             );
+
+            // Starts listening for players to connect.
             server.waitForPlayers();
+
+            // Server started
         } catch (Exception e) {
+            // TODO afficher l'exception dans l'interface.
             System.err.println("Unable to start the server.");
             e.printStackTrace();
         }

@@ -1,8 +1,5 @@
 package view;
 
-import game.GameManager;
-import game.GamePlayer;
-import game.multi.MultiGame;
 
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -15,44 +12,55 @@ import java.util.Set;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
+import game.*;
+import game.multi.*;
 import model.config.LocalConfig;
+import network.*;
 import view.keyboard.KeyboardHandler;
-import view.panel.PlayerGamePanel;
+import view.panel.*;
 
 public class MultiPlayerSwingView extends SwingView implements KeyListener {
 
-	private static final long serialVersionUID = -4872922659546948308L;
-
-	private MultiGame _multiGame;
-    private ArrayList<PlayerGamePanel> _panels;
+    private GameManager _game;
+    private ArrayList<GameObserver> _games = new ArrayList<GameObserver>();
+    private ArrayList<ObserverGamePanel> _panels
+        = new ArrayList<ObserverGamePanel>();
 
     private LocalConfig _config;
-    private Set<Integer> _activeKeys;
-    private ArrayList<KeyboardHandler> _keyboardHandlers;
+    private Set<Integer> _activeKeys = new HashSet<Integer>();
+    private ArrayList<KeyboardHandler> _keyboardHandlers
+        = new ArrayList<KeyboardHandler>();
 
+    /** Starts the interface for a multiplayer game. */
     public MultiPlayerSwingView(JFrame parent, MultiGame multiGame,
                                 LocalConfig config, boolean useImages)
     {
         super(parent, multiGame);
 
-        this._multiGame = multiGame;
-        multiGame.addListener(this);
-
-        this._panels = new ArrayList<PlayerGamePanel>();
-
+        this._game = multiGame;
         this._config = config;
-        this._activeKeys = new HashSet<Integer>();
-        this._keyboardHandlers = new ArrayList<KeyboardHandler>();
 
-        initComponents();
+        initMultiComponents(multiGame);
     }
 
-    private void initComponents()
+    /** Starts the interface for an online multiplayer game. */
+    public MultiPlayerSwingView(JFrame parent, GameClient client,
+                                LocalConfig config, boolean useImages)
     {
-        // Creates a game panel for each player with an associed keyboard
+        super(parent, client);
+
+        this._game = client;
+        this._config = config;
+
+        initOnlineComponents(client);
+    }
+
+    private void initMultiComponents(MultiGame multiGame)
+    {
+        // Creates a PlayerGamePanel for each player with an associed keyboard
         // handler.
         for (int i = 0; i < this._config.getNbPlayersMulti(); i++) {
-            GamePlayer game = this._multiGame.getPlayerGame(i);
+            GamePlayer game = multiGame.getPlayerGame(i);
 
             KeyboardHandler handler = new KeyboardHandler(
                 this._activeKeys, this._config.getKeySet(i), game
@@ -60,6 +68,7 @@ public class MultiPlayerSwingView extends SwingView implements KeyListener {
 
             this._keyboardHandlers.add(handler);
 
+            this._games.add(game);
             PlayerGamePanel panel = new PlayerGamePanel(
                 this, game, this._config, handler
             );
@@ -67,10 +76,48 @@ public class MultiPlayerSwingView extends SwingView implements KeyListener {
             this.gamePanel.add(panel);
         }
 
+        this.initComponents();
+    }
+
+    private void initOnlineComponents(GameClient client)
+    {
+        ArrayList<GameObserverProxy> players = client.getPlayers();
+
+        // Creates a PlayerGamePanel for the first player.
+        GamePlayer player = (GamePlayerProxy) players.get(0);
+        KeyboardHandler handler = new KeyboardHandler(
+            this._activeKeys, this._config.getKeySet(0), player
+        );
+        this._keyboardHandlers.add(handler);
+
+        this._games.add(player);
+        PlayerGamePanel playerPanel = new PlayerGamePanel(
+            this, player, this._config, handler
+        );
+        this._panels.add(playerPanel);
+        this.gamePanel.add(playerPanel);
+
+        // Creates ObserverGamePanels for opponents.
+        for (int i = 1; i < players.size(); i++) {
+            GameObserverProxy observer = players.get(i);
+
+            this._games.add(observer);
+            ObserverGamePanel panel = new ObserverGamePanel(
+                this, observer, this._config
+            );
+            this._panels.add(panel);
+            this.gamePanel.add(panel);
+        }
+
+        this.initComponents();
+    }
+
+    private void initComponents()
+    {
         this.addKeyListener(this);
         this.addWindowListener(new WindowAdapter() {
             public void windowClosing(java.awt.event.WindowEvent evt){
-                _multiGame.stop();
+                _game.stop();
             }
         });
 
@@ -80,7 +127,7 @@ public class MultiPlayerSwingView extends SwingView implements KeyListener {
     @Override
     protected void newGame()
     {
-        this._multiGame.newGame();
+        this._game.newGame();
     }
 
     @Override
@@ -89,7 +136,7 @@ public class MultiPlayerSwingView extends SwingView implements KeyListener {
         _activeKeys.add(event.getKeyCode());
 
         if (_activeKeys.contains(KeyEvent.VK_P))
-            this._multiGame.pause();
+            this._game.pause();
 
         for (KeyboardHandler handler : this._keyboardHandlers)
             handler.checkKeys();
@@ -113,7 +160,7 @@ public class MultiPlayerSwingView extends SwingView implements KeyListener {
             int scoreWinner = 0;
 
             int i = 0;
-            for (GamePlayer game : this._multiGame.getGames()) {
+            for (GameObserver game : this._games) {
                 int score = game.getScore();
 
                 if (score > scoreWinner) {

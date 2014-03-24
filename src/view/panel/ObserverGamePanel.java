@@ -25,9 +25,7 @@ import view.piece.PieceViewModel;
  * Is extended by PlayerGamePanel (for games on which the user has control). */
 public class ObserverGamePanel extends JPanel implements GameListener {
 
-	private static final long serialVersionUID = -8912831479539837009L;
-
-	protected SwingView _parent;
+    protected SwingView _parent;
 
     private JPanel _playPanel;
 

@@ -1,12 +1,5 @@
 package view;
 
-import game.Game;
-import game.multi.MultiClassic;
-import game.multi.MultiCooperative;
-import game.multi.MultiGame;
-import game.rules.NintendoGameBoy;
-import game.rules.NintendoGameBoyFactory;
-
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
@@ -19,6 +12,9 @@ import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.WindowConstants;
 
+import game.*;
+import game.multi.*;
+import game.rules.*;
 import model.Board;
 import model.config.LocalConfig;
 import model.config.OnlineConfig;
