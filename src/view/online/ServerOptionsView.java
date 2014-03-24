@@ -8,6 +8,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.event.WindowAdapter;
 import java.io.*;
 
 import javax.swing.DefaultComboBoxModel;
@@ -39,17 +40,20 @@ public class ServerOptionsView extends JFrame {
 
     private JTextField _logFileTextField;
     private JButton _browseButton;
-    private JComboBox _gameModeComboBox;
+    private JComboBox<String> _gameModeComboBox;
     private JTextField _nPlayersTextField;
     private JTextField _portTextField;
     private JButton _startButton;
+    
+    private JFrame _parent;
 
     private OnlineConfig _config;
-    private String _logFile;
-    private int _port;
 
-    public ServerOptionsView(OnlineConfig config)
+    public ServerOptionsView(JFrame parent, OnlineConfig config)
     {
+        super("Server options");
+        
+        this._parent = parent;
         this._config = config;
 
         initComponents();
@@ -177,6 +181,13 @@ public class ServerOptionsView extends JFrame {
         // Setup the frame
         this.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
         this.setLayout(new BorderLayout(6, 6));
+        
+        this.addWindowListener(new WindowAdapter() {
+            public void windowClosing(java.awt.event.WindowEvent evt){
+                if(_parent != null)
+                    _parent.setVisible(true);
+            }
+        });
 
         // Add components to the frame
         this.add(this._formPanel, BorderLayout.NORTH);
@@ -271,7 +282,7 @@ public class ServerOptionsView extends JFrame {
 
     public static void main(String[] args)
     {
-        ServerOptionsView sov = new ServerOptionsView(new OnlineConfig());
+        ServerOptionsView sov = new ServerOptionsView(null, new OnlineConfig());
         sov.setDefaultCloseOperation(EXIT_ON_CLOSE);
         sov.setVisible(true);
     }

@@ -4,13 +4,11 @@ package view;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
 import javax.swing.JFrame;
-import javax.swing.JOptionPane;
 
 import game.*;
 import game.multi.*;
@@ -170,27 +168,12 @@ public class MultiPlayerSwingView extends SwingView implements KeyListener {
 
                 i++;
             }
-
-            JOptionPane.showMessageDialog(
-                this,
-                "Player " + (numWinner+1) + " wins the game with " + scoreWinner
-                + " points !",
-                "Game Over",
-                JOptionPane.INFORMATION_MESSAGE
-            );
-
-            int choice = JOptionPane.showConfirmDialog(
-                this, "Would you like to retry ?", "Game Over",
-                JOptionPane.YES_NO_OPTION
-            );
-
-            if (choice == 0)
-                newGame();
-            else {
-                this.dispatchEvent(
-                    new WindowEvent(this, WindowEvent.WINDOW_CLOSING)
-                );
-            }
+            
+            this.status.setText(
+                    String.format("Player %d wins the game with %d points !",
+                            (numWinner+1), scoreWinner));
+        } else if(newState == GameManager.GameState.INITIALIZED) {
+            this.status.setText("");
         }
     }
 }

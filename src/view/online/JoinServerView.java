@@ -26,6 +26,8 @@ public class JoinServerView extends JFrame {
 
     public JoinServerView(JFrame parent, LocalConfig config) 
     {
+        super("Join server");
+        
         this._config = config;
         this._parent = parent;
 
@@ -82,6 +84,7 @@ public class JoinServerView extends JFrame {
         gbc.gridx = 1;
         gbc.gridy = 2;
         gbc.weightx = 0.5;
+        gbc.anchor = GridBagConstraints.SOUTH;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         this._formPanel.add(this._joinButton, gbc);
 
@@ -89,6 +92,11 @@ public class JoinServerView extends JFrame {
         this.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
         this.setLayout(new BorderLayout(6, 6));
         this.setSize(350, 150);
+        this.addWindowListener(new WindowAdapter() {
+            public void windowClosing(java.awt.event.WindowEvent evt){
+                    _parent.setVisible(true);
+            }
+        });
 
         // Add components to the frame
         this.add(this._formPanel, BorderLayout.CENTER);
