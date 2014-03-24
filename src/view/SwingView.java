@@ -4,10 +4,13 @@ import game.GameManager;
 import game.GameStateListener;
 
 import java.awt.BorderLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 
 import javax.swing.BoxLayout;
 import javax.swing.GroupLayout;
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -23,9 +26,11 @@ public abstract class SwingView extends JFrame implements GameStateListener {
 
     protected JPanel gamePanel;
 
-    private JPanel infoPanel;
-    private JLabel time;
-    private JLabel timeTitle;
+    protected JPanel infoPanel;
+    protected JLabel time;
+    protected JLabel timeTitle;
+    protected JButton newGameButton;
+    protected JLabel status;
 
     public SwingView(JFrame parent, GameManager game)
     {
@@ -48,6 +53,17 @@ public abstract class SwingView extends JFrame implements GameStateListener {
         this.infoPanel = new JPanel();
         this.timeTitle = new JLabel();
         this.time = new JLabel();
+        
+        this.newGameButton = new JButton("New game");
+        this.newGameButton.addActionListener(new ActionListener() {
+            
+            @Override
+            public void actionPerformed(ActionEvent arg0) {
+                newGame();
+            }
+        });
+        
+        this.status = new JLabel();
 
         setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
 
@@ -61,17 +77,23 @@ public abstract class SwingView extends JFrame implements GameStateListener {
 
         this.time.setText("00:00:00");
 
-        javax.swing.GroupLayout infoPanelLayout = new GroupLayout(infoPanel);
-        infoPanel.setLayout(infoPanelLayout);
+        javax.swing.GroupLayout infoPanelLayout = new GroupLayout(this.infoPanel);
+        this.infoPanel.setLayout(infoPanelLayout);
         infoPanelLayout.setHorizontalGroup(
             infoPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
             .addGroup(GroupLayout.Alignment.TRAILING,
                     infoPanelLayout.createSequentialGroup()
-                .addComponent(timeTitle)
+                .addComponent(this.timeTitle)
                 .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(time)
+                .addComponent(this.time)
+                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(this.newGameButton)
                 .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                 .addContainerGap())
+            .addGroup(GroupLayout.Alignment.TRAILING,
+                    infoPanelLayout.createSequentialGroup()
+                .addComponent(this.status))
+                
         );
         infoPanelLayout.setVerticalGroup(
             infoPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
@@ -79,9 +101,14 @@ public abstract class SwingView extends JFrame implements GameStateListener {
                     infoPanelLayout.createSequentialGroup()
                 .addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(infoPanelLayout.createParallelGroup(
+                        GroupLayout.Alignment.CENTER)
+                    .addComponent(this.status))
+                .addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGroup(infoPanelLayout.createParallelGroup(
                         GroupLayout.Alignment.BASELINE)
-                    .addComponent(timeTitle)
-                    .addComponent(time))
+                    .addComponent(this.timeTitle)
+                    .addComponent(this.time)
+                    .addComponent(this.newGameButton))
                 .addContainerGap())
         );
 

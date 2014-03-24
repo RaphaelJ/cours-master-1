@@ -203,7 +203,7 @@ public class WelcomeView extends javax.swing.JFrame {
     private void jButtonStartServerActionPerformed(ActionEvent evt)
     {
         OnlineConfig oc = new OnlineConfig(this._config);
-        ServerOptionsView sov = new ServerOptionsView(oc);
+        ServerOptionsView sov = new ServerOptionsView(this, oc);
         this.setVisible(false);
         sov.setVisible(true);
     }
