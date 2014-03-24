@@ -26,8 +26,8 @@ public class JoinServerView extends JFrame {
 
     public JoinServerView(JFrame parent, LocalConfig config) 
     {
-        super("Join server");
-        
+        super("Join a server");
+
         this._config = config;
         this._parent = parent;
 
@@ -109,8 +109,6 @@ public class JoinServerView extends JFrame {
             int    port = Integer.parseInt(this._portTextField.getText());
 
             this.setTitle("Waiting for other players to join ...");
-            this._joinButton.setText("Waiting ...");
-            this._joinButton.setEnabled(false);
 
             // Connects itself to the server.
             GameClient client = new GameClient(host, port);
@@ -128,10 +126,8 @@ public class JoinServerView extends JFrame {
             System.err.println("Unable to start the client.");
             e.printStackTrace();
 
-            this.setTitle("");
+            this.setTitle("Join a server");
             this.setVisible(true);
-            this._joinButton.setText("Join");
-            this._joinButton.setEnabled(true);
         }
     }
 }

@@ -19,9 +19,7 @@ import view.keyboard.KeyboardHandler;
  * state. */
 public class PlayerGamePanel extends ObserverGamePanel implements ItemListener {
 
-	private static final long serialVersionUID = 4213895928311919154L;
-
-	private KeyboardHandler _keyboardHandler;
+    private KeyboardHandler _keyboardHandler;
 
     private JPanel _autoPlayerPanel;
     private JLabel _autoPlayerLabel;

@@ -178,6 +178,8 @@ public class MultiGame implements GameManager {
     {
         for (MultiGameProxy game : this._games)
             game.getTimer().stop();
+
+        this._timer.stop();
     }
 
     /*********************** Getters ***********************/

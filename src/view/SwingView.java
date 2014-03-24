@@ -53,16 +53,16 @@ public abstract class SwingView extends JFrame implements GameStateListener {
         this.infoPanel = new JPanel();
         this.timeTitle = new JLabel();
         this.time = new JLabel();
-        
+
         this.newGameButton = new JButton("New game");
         this.newGameButton.addActionListener(new ActionListener() {
-            
             @Override
             public void actionPerformed(ActionEvent arg0) {
                 newGame();
+                requestFocus();
             }
         });
-        
+
         this.status = new JLabel();
 
         setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
@@ -93,7 +93,6 @@ public abstract class SwingView extends JFrame implements GameStateListener {
             .addGroup(GroupLayout.Alignment.TRAILING,
                     infoPanelLayout.createSequentialGroup()
                 .addComponent(this.status))
-                
         );
         infoPanelLayout.setVerticalGroup(
             infoPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)

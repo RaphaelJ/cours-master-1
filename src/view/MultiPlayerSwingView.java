@@ -168,7 +168,7 @@ public class MultiPlayerSwingView extends SwingView implements KeyListener {
 
                 i++;
             }
-            
+
             this.status.setText(
                     String.format("Player %d wins the game with %d points !",
                             (numWinner+1), scoreWinner));

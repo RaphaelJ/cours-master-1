@@ -38,7 +38,7 @@ public class ServerOptionsView extends JFrame {
     private JTextField _nPlayersTextField;
     private JTextField _portTextField;
     private JButton _startButton;
-    
+
     private JFrame _parent;
 
     private OnlineConfig _config;
@@ -46,7 +46,7 @@ public class ServerOptionsView extends JFrame {
     public ServerOptionsView(JFrame parent, OnlineConfig config)
     {
         super("Server options");
-        
+
         this._parent = parent;
         this._config = config;
 
