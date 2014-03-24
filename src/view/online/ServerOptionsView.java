@@ -10,14 +10,7 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.io.*;
 
-import javax.swing.DefaultComboBoxModel;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JTextField;
+import javax.swing.*;
 
 import game.multi.*;
 import game.rules.*;
@@ -25,6 +18,7 @@ import model.config.OnlineConfig;
 import model.config.OnlineConfig.GameMode;
 import network.*;
 import util.DuplicateWriter;
+import util.random.*;
 
 /** Displays a window to enter the configuration (log file, game mode, number of
  * players and the server's port) of the server before starting it. */
@@ -236,13 +230,32 @@ public class ServerOptionsView extends JFrame {
                 );
             }
 
-            // Creates the socket.
-            final GameServer server = new GameServer(
-                port, new MultiGame(
+            // Creates the game the server is running on
+            MultiGame game;
+            GameMode mode = this._config.getGameMode();
+            if (mode == GameMode.SIMPLE) {
+                game = new MultiGame(
                     this._config.getBoardWidth(), this._config.getBoardHeight(),
                     nPlayers, new NintendoGameBoyFactory()
-                ), logger
-            );
+                );
+            } else if (mode == GameMode.CLASSIC) {
+                int posHole = new LCGRandom().nextInt(
+                    this._config.getBoardWidth()
+                );
+
+                game = new MultiClassic(
+                    this._config.getBoardWidth(), this._config.getBoardHeight(),
+                    nPlayers, new NintendoGameBoyFactory(), posHole
+                );
+            } else {
+                game = new MultiCooperative(
+                    this._config.getBoardWidth(), this._config.getBoardHeight(),
+                    nPlayers, new NintendoGameBoyFactory()
+                );
+            }
+
+            // Creates the server.
+            final GameServer server = new GameServer(port, game, logger);
 
             // Starts listening for players to connect. Starts in new thread
             // to keep the GUI responsive.

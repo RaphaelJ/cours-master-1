@@ -101,15 +101,13 @@ public class JoinServerView extends JFrame {
             int    port = Integer.parseInt(this._portTextField.getText());
 
             this.setTitle("Waiting for other players to join ...");
-
-            this.setEnabled(false);
+            this._joinButton.setText("Waiting ...");
+            this._joinButton.setEnabled(false);
 
             // Connects itself to the server.
             GameClient client = new GameClient(host, port);
 
-            this.setTitle("");
             this.setVisible(false);
-            this.setEnabled(true);
 
             // Start the view of the game.
             MultiPlayerSwingView mpsv = new MultiPlayerSwingView(
@@ -123,8 +121,9 @@ public class JoinServerView extends JFrame {
             e.printStackTrace();
 
             this.setTitle("");
-            this.setVisible(false);
-            this.setEnabled(true);
+            this.setVisible(true);
+            this._joinButton.setText("Join");
+            this._joinButton.setEnabled(true);
         }
     }
 }

@@ -1,10 +1,6 @@
 package view.online;
 
-import javax.swing.BoxLayout;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JTextArea;
+import javax.swing.*;
 
 public class ServerStatusView extends JFrame {
 
@@ -32,7 +28,7 @@ public class ServerStatusView extends JFrame {
 
         // Add the components to the panel
         this._panel.add(this._logLabel);
-        this._panel.add(this._logTextArea);
+        this._panel.add(new JScrollPane(this._logTextArea));
 
         // Setup the frame
         this.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
