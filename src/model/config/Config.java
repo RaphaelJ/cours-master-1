@@ -2,10 +2,10 @@ package model.config;
 
 public abstract class Config {
 
-    private int _boardWidth;
-    private int _boardHeight;
+    protected int _boardWidth;
+    protected int _boardHeight;
 
-    private boolean _useImages;
+    protected boolean _useImages;
 
     public Config()
     {
