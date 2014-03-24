@@ -117,7 +117,7 @@ public class JoinServerView extends JFrame {
 
             // Start the view of the game.
             MultiPlayerSwingView mpsv = new MultiPlayerSwingView(
-                this._parent, client, this._config, true
+                this._parent, client, this._config
             );
             mpsv.setVisible(true);
         } catch (Exception e) {

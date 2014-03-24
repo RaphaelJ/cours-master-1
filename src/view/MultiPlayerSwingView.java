@@ -31,7 +31,7 @@ public class MultiPlayerSwingView extends SwingView implements KeyListener {
 
     /** Starts the interface for a multiplayer game. */
     public MultiPlayerSwingView(JFrame parent, MultiGame multiGame,
-                                LocalConfig config, boolean useImages)
+                                LocalConfig config)
     {
         super(parent, multiGame);
 
@@ -43,7 +43,7 @@ public class MultiPlayerSwingView extends SwingView implements KeyListener {
 
     /** Starts the interface for an online multiplayer game. */
     public MultiPlayerSwingView(JFrame parent, GameClient client,
-                                LocalConfig config, boolean useImages)
+                                LocalConfig config)
     {
         super(parent, client);
 

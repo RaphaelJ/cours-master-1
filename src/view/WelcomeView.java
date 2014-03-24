@@ -6,7 +6,6 @@ import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
 
 import javax.swing.JButton;
 import javax.swing.JPanel;
@@ -15,7 +14,6 @@ import javax.swing.WindowConstants;
 import game.*;
 import game.multi.*;
 import game.rules.*;
-import model.Board;
 import model.config.LocalConfig;
 import model.config.OnlineConfig;
 import util.random.LCGRandom;
@@ -212,7 +210,7 @@ public class WelcomeView extends javax.swing.JFrame {
     {
         this.setVisible(false);
 
-        new MultiPlayerSwingView(this, game, this._config, true).run();
+        new MultiPlayerSwingView(this, game, this._config).run();
     }
 
     private void jButtonOptionsActionPerformed(ActionEvent evt)
