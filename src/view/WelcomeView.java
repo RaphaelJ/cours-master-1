@@ -195,7 +195,7 @@ public class WelcomeView extends javax.swing.JFrame {
 
     private void jButtonJoinServerActionPerformed(ActionEvent evt)
     {
-        JoinServerView jsv = new JoinServerView();
+        JoinServerView jsv = new JoinServerView(this._config);
         this.setVisible(false);
         jsv.setVisible(true);
     }

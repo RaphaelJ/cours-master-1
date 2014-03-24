@@ -6,14 +6,16 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.*;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
+import view.MultiPlayerSwingView;
+import model.config.LocalConfig;
 import network.*;
 
 public class JoinServerView extends JFrame {
@@ -26,9 +28,13 @@ public class JoinServerView extends JFrame {
     private JTextField _ipTextField;
     private JTextField _portTextField;
     private JButton _joinButton;
+    
+    private LocalConfig _config;
 
-    public JoinServerView() 
+    public JoinServerView(LocalConfig config) 
     {
+        this._config = config;
+        
         initComponents();
     }
 
@@ -82,18 +88,17 @@ public class JoinServerView extends JFrame {
         gbc.gridx = 1;
         gbc.gridy = 2;
         gbc.weightx = 0.5;
-        gbc.anchor = GridBagConstraints.EAST;
-        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.SOUTH;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
         this._formPanel.add(this._joinButton, gbc);
 
         // Setup the frame
         this.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
         this.setLayout(new BorderLayout(6, 6));
+        this.setSize(200, 150);
 
         // Add components to the frame
-        this.add(this._formPanel, BorderLayout.NORTH);
-
-        this.pack();
+        this.add(this._formPanel, BorderLayout.CENTER);
     }
 
     private void joinServer()
@@ -105,14 +110,13 @@ public class JoinServerView extends JFrame {
             // Connects itself to the server.
             GameClient client = new GameClient(host, port);
 
-            // Obtains observers for each board.
-            ArrayList<GameObserverProxy> players = client.getPlayers();
-            GamePlayerProxy player = (GamePlayerProxy) players.get(0);
-
-            // TODO : initialiser l'interface.
-            // new MultiPlayerSwingView(parent, client, config, useImage);
+            // Start the view of the game.
+            MultiPlayerSwingView mpsv = new MultiPlayerSwingView(this, client,
+                    this._config, true);
+            mpsv.setVisible(true);
         } catch (Exception e) {
-            // TODO afficher l'exception dans l'interface.
+            JOptionPane.showMessageDialog(this, "Unable to start the client.",
+                    "Error", JOptionPane.ERROR_MESSAGE);
             System.err.println("Unable to start the client.");
             e.printStackTrace();
         }
@@ -120,7 +124,7 @@ public class JoinServerView extends JFrame {
 
     public static void main(String[] args)
     {
-        JoinServerView jsv = new JoinServerView();
+        JoinServerView jsv = new JoinServerView(new LocalConfig());
         jsv.setDefaultCloseOperation(EXIT_ON_CLOSE);
         jsv.setVisible(true);
     }

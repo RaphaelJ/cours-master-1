@@ -210,17 +210,22 @@ public class ServerOptionsView extends JFrame {
             Writer fileLogger = new FileWriter(
                 this._logFileTextField.getText()
             );
+            
+            // Hides the current view and show the server status view
+            this.setVisible(false);
+            
+            final ServerStatusView serverStatusView = new ServerStatusView();
+            serverStatusView.setVisible(true);
+            
+            /* Instantiate the writer that will write messages to the server
+             * status view. */
             Writer guiLogger  = new Writer() {
                 public void close() { }
 
                 public void flush() { }
 
-                public void write(char[] cbuf, int off, int len)
-                {
-                    // TODO : remplacer la ligne suivante avec un affichage
-                    // dans une nouvelle GUI (ServerStatusView ?), style une
-                    // TextArea.
-                    System.out.println(new String(cbuf, off, len));
+                public void write(char[] cbuf, int off, int len) {
+                    serverStatusView.log(new String(cbuf, off, len));
                 }
             };
             Writer logger = new DuplicateWriter(fileLogger, guiLogger);
