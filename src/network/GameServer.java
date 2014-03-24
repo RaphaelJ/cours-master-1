@@ -69,8 +69,8 @@ public class GameServer implements GameStateListener {
          * dispatches them. */
         public void run()
         {
-            for (;;) {
-                try {
+            try {
+                for (;;) {
                     Message msg = (Message) this._in.readObject();
 
                     if (msg instanceof NewGameAction) {
@@ -134,12 +134,12 @@ public class GameServer implements GameStateListener {
                         );
                         this.game.setAI(((SetAIAction) msg).enable);
                     }
-                } catch (Exception e) {
-                    System.err.println(
-                        "Error while receiving a message from the client."
-                    );
-                    e.printStackTrace();
                 }
+            } catch (Exception e) {
+                System.err.println(
+                    "Error while receiving a message from the client."
+                );
+                e.printStackTrace();
             }
         }
 
@@ -233,6 +233,7 @@ public class GameServer implements GameStateListener {
                 this, client_sock, game, games.size(), i
             );
             client.start();
+            game.addListener(client);
 
             this._clients.add(client);
         }
@@ -289,7 +290,7 @@ public class GameServer implements GameStateListener {
             );
         }
 
-        this.log("Sent a grid change event from player " + playerId + ".");
+        this.log("Sent a grid change event to player " + playerId + ".");
     }
 
     public void emitNewPiece(int playerId, Piece currentPiece, Piece nextPiece)
@@ -303,7 +304,7 @@ public class GameServer implements GameStateListener {
             );
         }
 
-        this.log("Sent a new piece event from player " + playerId + ".");
+        this.log("Sent a new piece event to player " + playerId + ".");
     }
 
     public void emitScoreChange(int playerId, int newScore)
@@ -315,7 +316,7 @@ public class GameServer implements GameStateListener {
             );
         }
 
-        this.log("Sent a score change event from player " + playerId +".");
+        this.log("Sent a score change event to player " + playerId +".");
     }
 
     public void emitLevelChange(int playerId, int newLevel)
@@ -327,7 +328,7 @@ public class GameServer implements GameStateListener {
             );
         }
 
-        this.log("Sent a level change event from player " + playerId + ".");
+        this.log("Sent a level change event to player " + playerId + ".");
     }
 
     public void emitClockDelayChange(int playerId, int newClockDelay)
@@ -341,7 +342,7 @@ public class GameServer implements GameStateListener {
             );
         }
 
-        this.log("Sent a clock change event from player " + playerId + ".");
+        this.log("Sent a clock change event to player " + playerId + ".");
     }
 
     /** As the client always sees itself as player 0, we need to correct/shift

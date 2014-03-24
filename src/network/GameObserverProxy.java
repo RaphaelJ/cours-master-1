@@ -28,8 +28,7 @@ public class GameObserverProxy implements GameObserver {
     private int _score = 0;
     private int _level = 0;
 
-    private ArrayList<GameListener> _listeners
-        = new ArrayList<GameListener>();
+    private ArrayList<GameListener> _listeners = new ArrayList<GameListener>();
 
     public GameObserverProxy(GameClient client, int width, int height)
     {
@@ -42,7 +41,7 @@ public class GameObserverProxy implements GameObserver {
 
     public void addListener(GameListener listener)
     {
-        this.addListener(listener);
+        this._listeners.add(listener);
     }
 
     public FullBoardSection getGrid()

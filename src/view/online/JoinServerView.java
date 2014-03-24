@@ -20,6 +20,7 @@ import network.*;
 
 public class JoinServerView extends JFrame {
 
+    private JFrame _parent;
     private JPanel _formPanel;
 
     private JLabel _ipLabel;
@@ -28,13 +29,14 @@ public class JoinServerView extends JFrame {
     private JTextField _ipTextField;
     private JTextField _portTextField;
     private JButton _joinButton;
-    
+
     private LocalConfig _config;
 
-    public JoinServerView(LocalConfig config) 
+    public JoinServerView(JFrame parent, LocalConfig config) 
     {
         this._config = config;
-        
+        this._parent = parent;
+
         initComponents();
     }
 
@@ -110,9 +112,12 @@ public class JoinServerView extends JFrame {
             // Connects itself to the server.
             GameClient client = new GameClient(host, port);
 
+            this.setVisible(false);
+
             // Start the view of the game.
-            MultiPlayerSwingView mpsv = new MultiPlayerSwingView(this, client,
-                    this._config, true);
+            MultiPlayerSwingView mpsv = new MultiPlayerSwingView(
+                this._parent, client, this._config, true
+            );
             mpsv.setVisible(true);
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Unable to start the client.",
@@ -120,12 +125,5 @@ public class JoinServerView extends JFrame {
             System.err.println("Unable to start the client.");
             e.printStackTrace();
         }
-    }
-
-    public static void main(String[] args)
-    {
-        JoinServerView jsv = new JoinServerView(new LocalConfig());
-        jsv.setDefaultCloseOperation(EXIT_ON_CLOSE);
-        jsv.setVisible(true);
     }
 }

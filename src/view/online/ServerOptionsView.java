@@ -210,13 +210,13 @@ public class ServerOptionsView extends JFrame {
             Writer fileLogger = new FileWriter(
                 this._logFileTextField.getText()
             );
-            
+
             // Hides the current view and show the server status view
             this.setVisible(false);
-            
+
             final ServerStatusView serverStatusView = new ServerStatusView();
             serverStatusView.setVisible(true);
-            
+
             /* Instantiate the writer that will write messages to the server
              * status view. */
             Writer guiLogger  = new Writer() {
@@ -231,17 +231,31 @@ public class ServerOptionsView extends JFrame {
             Writer logger = new DuplicateWriter(fileLogger, guiLogger);
 
             // Creates the socket.
-            GameServer server = new GameServer(
+            final GameServer server = new GameServer(
                 port, new MultiGame(
                     this._config.getBoardWidth(), this._config.getBoardHeight(),
                     nPlayers, new NintendoGameBoyFactory()
                 ), logger
             );
 
-            // Starts listening for players to connect.
-            server.waitForPlayers();
+            // Starts listening for players to connect. Starts in new thread
+            // to keep the GUI responsive.
+            new Thread() {
+                public void run()
+                {
+                    try {
+                        server.waitForPlayers();
+                        server.newGame();
+                    } catch (Exception e) {
+                        server.log("Error while running the server.");
+                        System.err.println("Error while running the server.");
+                        e.printStackTrace();
+                    }
+                }
+            }.start();
 
             // Server started
+            this.dispose();
         } catch (Exception e) {
             // TODO afficher l'exception dans l'interface.
             System.err.println("Unable to start the server.");
