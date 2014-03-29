@@ -1,14 +1,14 @@
-/**
-* AgentsPool consists in a hashmap storing every remote SNMP agent and their respective data,
-* denoted by the IP of the host where they are running. Only one instance of the class will
-* be used during the execution of the SNMP monitor (this property is used to provide concurrent
-* access to the structure).
-*/
-
 package database;
 
 import java.util.*;
 
+/**
+ * AgentsPool consists in a hashmap storing every remote SNMP agent and their
+ * respective data, denoted by the IP of the host where they are running.
+ * Only one instance of the class will be used during the execution of the SNMP
+ * monitor (this property is used to provide concurrent access to the
+ * structure).
+ */
 public class AgentsPool
 {
    private HashMap<String, RemoteAgent> agents;
@@ -17,12 +17,12 @@ public class AgentsPool
    {
       agents = new HashMap<String, RemoteAgent>(maxNbAgents);
    }
-   
+
    public synchronized boolean agentExists(String IP)
    {
       return agents.containsKey(IP);
    }
-   
+
    // Version of SNMP is the only additionnal data besides IP for now.
    public synchronized void addAgent(String IP, int snmpVersion)
    {

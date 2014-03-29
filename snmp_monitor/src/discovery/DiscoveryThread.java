@@ -12,13 +12,17 @@ import main.*;
 import database.*;
 
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class DiscoveryThread extends Thread
 {
    private Parameters p;
    private AgentsPool ap;
    private DiscoveryGuardian dg;
-   
+
+   private Map<String, RemoteAgent> agents;
+
    public DiscoveryThread(Parameters p, AgentsPool ap, int maxNbThreads)
    {
       this.p = p;
@@ -28,7 +32,7 @@ public class DiscoveryThread extends Thread
 
    public void run()
    {
-      while (true)
+      for (;;)
       {
          // Prints on the standard output the current agents.
          List<RemoteAgent> list = ap.listAgents();

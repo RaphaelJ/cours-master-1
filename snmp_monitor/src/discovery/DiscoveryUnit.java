@@ -1,11 +1,3 @@
-/**
-* Thread checking a single host by sending different PDUs to it in order to verify if that host is
-* running a SNMP agent. To do so, the "unit" uses a Snmp object and send up to 3 PDUs to the host
-* given to it upon constructor. First PDU is in SNMPv3. If the host does not reply, we send a v2
-* PDU, and we will send a 3rd and last PDU in v1 to see if that host is running SNMPv1. If the host
-* never replies to any of these PDUs, we consider it is not running any SNMP agent.
-*/
-
 package discovery;
 
 import main.*;
@@ -39,6 +31,15 @@ import org.snmp4j.security.SecurityModels;
 import org.snmp4j.security.SecurityLevel;
 import org.snmp4j.security.SecurityModel;
 
+/**
+ * Thread checking a single host by sending different PDUs to it in order to
+ * verify if that host is running a SNMP agent.
+ * To do so, the "unit" uses a Snmp object and send up to 3 PDUs to the host
+ * given to it upon constructor. First PDU is in SNMPv3. If the host does not
+ * reply, we send a v2 PDU, and we will send a 3rd and last PDU in v1 to see if
+ * that host is running SNMPv1. If the host never replies to any of these PDUs,
+ * we consider it is not running any SNMP agent.
+ */
 public class DiscoveryUnit extends Thread
 {
    private Parameters p;
@@ -46,26 +47,28 @@ public class DiscoveryUnit extends Thread
    private DiscoveryGuardian dg;
    private String host;
    private Snmp s;
-   
+
    // Constructor; will initialize Snmp object.
-   public DiscoveryUnit(Parameters p, AgentsPool ap, DiscoveryGuardian dg, String host) throws Exception
+   public DiscoveryUnit(
+      Parameters p, AgentsPool ap, DiscoveryGuardian dg, String host
+   ) throws Exception
    {
       this.p = p;
       this.ap = ap;
       this.dg = dg;
       this.host = host;
-      
+
       try
       {
          // Transport mapping
          TransportMapping tm = new DefaultUdpTransportMapping();
          s = new Snmp(tm);
-         
-         // Message dispatcher
-         MessageDispatcher disp = s.getMessageDispatcher();
-         disp.addMessageProcessingModel(new MPv1());
-         disp.addMessageProcessingModel(new MPv2c());
-         OctetString localEngineID = new OctetString(MPv3.createLocalEngineID());
+
+         // Creates a new security model based on the username and the pair of
+         // passwords given in the command line fot SNMPv3.
+         OctetString localEngineID = new OctetString(
+            MPv3.createLocalEngineID()
+         );
          USM usm = new USM(SecurityProtocols.getInstance(), localEngineID, 0);
          SecurityModels.getInstance().addSecurityModel(usm);
          usm.addUser(new OctetString(p.getUserName()),
@@ -74,8 +77,14 @@ public class DiscoveryUnit extends Thread
                                  new OctetString(p.getAuthPassword()),
                                  PrivAES128.ID,
                                  new OctetString(p.getPrivPassword())));
+
+         // Makes the SNMP listenner able to receive messages from the three
+         // versions of the protocol.
+         MessageDispatcher disp = s.getMessageDispatcher();
+         disp.P(new MPv1());
+         disp.addMessageProcessingModel(new MPv2c());
          disp.addMessageProcessingModel(new MPv3(usm));
-         
+
          // SNMP starts listening.
          s.listen();
       }
@@ -85,15 +94,17 @@ public class DiscoveryUnit extends Thread
       }
    }
    
-   /* Private method to send a PDU to a given host. An integer tells which version of SNMP we
-   * use (we will first try SNMPv3, then v2c, then v1), because the AbstractTarget and the PDU
-   * objects we use differ depending on the SNMP version we are testing. Returns true if we got
-   * a response and false otherwise. */
-   
-   private boolean sendPDU(String host, int snmpVersion)
+   /**
+    * Sends a PDU to a given host. An integer tells which version of SNMP we
+    * use (we will first try SNMPv3, then v2c, then v1), because the
+    * AbstractTarget and the PDU objects we use differ depending on the SNMP
+    * version we are testing. Returns true if we got a response and false
+    * otherwise. 
+    */
+   private boolean sendPDU(String host, SNMPVersion snmpVersion)
    {
       AbstractTarget target;
-      if (snmpVersion == Monitor.SNMPv3)
+      if (snmpVersion == Monitor.SNMPVersion.SNMPv3)
       {
          target = new UserTarget();
          target.setVersion(SnmpConstants.version3);
@@ -108,12 +119,15 @@ public class DiscoveryUnit extends Thread
             target.setVersion(SnmpConstants.version2c);
          else
             target.setVersion(SnmpConstants.version1);
-         ((CommunityTarget) target).setCommunity(new OctetString(p.getCommunityName()));
+         ((CommunityTarget) target).setCommunity(
+            new OctetString(p.getCommunityName())
+         );
       }
+
       target.setAddress(new UdpAddress(host + "/" + 161));
       target.setRetries(1);
       target.setTimeout(1000);
-      
+
       PDU pdu;
       if (snmpVersion == Monitor.SNMPv3)
          pdu = new ScopedPDU();

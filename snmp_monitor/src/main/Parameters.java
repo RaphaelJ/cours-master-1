@@ -1,157 +1,156 @@
-/*
-* Parameters class essentially consists in gathering all the main parameters of the SNMP monitor
-* into one single object which will be accessible by classes that need to know such parameters.
-* This avoids writing constructors/methods with too many arguments. The class also provides a
-* method to obtain an IP in the given range by giving a kind of index (e.g. if we give
-* 139.165.222.0/24, there are 256 addresses and address 2 is 139.165.222.2).
-*/
-
 package main;
 
 import java.lang.Math;
 
+/**
+ * Parameters class essentially consists in gathering all the command line
+ * parameters of the SNMP monitor into one single object which will be
+ * accessible by classes that need to know such parameters.
+ * This avoids writing constructors/methods with too many arguments. The class
+ * also provides a method to obtain an IP in the given range by giving a kind of
+ * index (e.g. if we give 139.165.222.0/24, there are 256 addresses and address
+ * 2 is 139.165.222.2).
+ */
 public class Parameters
 {
-   // Constants for fields for which there are only 2 or 3 possible values.
-   public static final int NOAUTH_NOPRIV = 0;
-   public static final int AUTH_NOPRIV = 1;
-   public static final int AUTH_PRIV = 2;
-   
-   public static final int MD5 = 0;
-   public static final int SHA1 = 1;
-   
-   public static final int DES = 0;
-   public static final int AES = 1;
+   public enum AuthLevel { NOAUTH_NOPRIV, AUTH_NOPRIV, AUTH_PRIV };
+   public enum HashType { MD5, SHA1 };
+   public enum CipherType { DES, AES };
 
-   // Fields are just parameters specified by the assignement.
+   // Fields are just parameters specified by the assignment.
    private String outputDirectory;
    private String communityName;
    private String userName;
-   private int securityLevel;
-   private int authProtocol;
+   private AuthLevel securityLevel;
+   private HashType authProtocol;
    private String authPassword;
-   private int privProtocol;
+   private CipherType privProtocol;
    private String privPassword;
    private int trapPort;
    private int maxNbThreads;
-   
-   // We will also get the address range in CIDR notation; for this one, we use a few more fields.
-   private int splittedIP[];
+
+   // Contains the address range mask in CIDR notation.
+   private int splittedMask[];
+
+   // Contains the number of addresses of the mask.
    private int nbAddresses;
 
-   // Constructor; takes directly the args[] array.
+   /** Constructs the object from the command line args[] array. */
    public Parameters(String args[]) throws Exception
    {
-      int nbErrors = 0;
-      String errors = "";
-      
+      LinkedList<String> errors = LinkedList<String>();
+
       // Tries to parse the port number.
-      int portNumber = 0;
-      try
-      {
-         portNumber = Integer.parseInt(args[9]);
-      }
-      catch (Exception e) {}
-      
+      int portNumber = Integer.parseInt(args[9]);
+
       // Tries to parse the maximum number of threads (default value : 64).
       int nbThreads = 64;
       if (args.length == 11)
+         nbThreads = Math.max(0, Integer.parseInt(args[10]));
+
+      // Checks if the content of args[] is correct.
+      // Builds an exception message if not.
+      if (!args[4].equals("noAuthNoPriv") && !args[4].equals("authNoPriv")
+          && !args[4].equals("authPriv"))
       {
-         try
-         {
-            int temp = 0;
-            temp = Integer.parseInt(args[10]);
-            if (temp >= 1)
-               nbThreads = temp;
-            else
-               nbThreads = 0;
-         }
-         catch (Exception e) {}
-      }
-   
-      // Checks if the content of args[] is correct. Prepare an exception message if not.
-      if (!args[4].equals("noAuthNoPriv") && !args[4].equals("authNoPriv") && !args[4].equals("authPriv"))
-      {
-         nbErrors++;
-         errors += "-Security level must be : noAuthNoPriv, authNoPriv or authPriv.\n";
+         errors.add(
+            "Security level must be : noAuthNoPriv, authNoPriv or authPriv."
+         );
       }
       if (!args[5].equals("MD5") && !args[5].equals("SHA1"))
       {
-         nbErrors++;
-         errors += "-Authentication protocol must be MD5 or SHA1.\n";
+         errors.add(
+            "Authentication protocol must be MD5 or SHA1."
+         );
       }
       if (!args[7].equals("DES") && !args[7].equals("AES"))
       {
-         nbErrors++;
-         errors += "-SNMPv3 privacy protocol must be DES or AES.\n";
+         errors.add(
+            "SNMPv3 privacy protocol must be DES or AES."
+         );
       }
       if (portNumber <= 0)
       {
-         nbErrors++;
-         errors += "-Port for trap must be a positive integer.\n";
+         errors.add(
+            "Port for trap must be a positive integer."
+         );
       }
       if (nbThreads == 0)
       {
-         nbErrors++;
-         errors += "-Number of threads must be a positive integer.\n";
+         errors.add(
+            "Number of threads must be a positive integer."
+         );
       }
-      
+
       // Tries to parse the address range.
-      int IP[] = new int[4];
+      splittedMask = new int[4];
       int lengthMask = 0;
       try
       {
          String firstSplit[] = args[1].split("/");
          lengthMask = 32 - Integer.parseInt(firstSplit[1]);
          String secondSplit[] = firstSplit[0].split("\\.");
-         IP[0] = Integer.parseInt(secondSplit[0]);
-         IP[1] = Integer.parseInt(secondSplit[1]);
-         IP[2] = Integer.parseInt(secondSplit[2]);
-         IP[3] = Integer.parseInt(secondSplit[3]);
+         splittedMask[0] = Integer.parseInt(secondSplit[0]);
+         splittedMask[1] = Integer.parseInt(secondSplit[1]);
+         splittedMask[2] = Integer.parseInt(secondSplit[2]);
+         splittedMask[3] = Integer.parseInt(secondSplit[3]);
       }
       catch (Exception e)
       {
-         nbErrors++;
-         errors += "-The program failed to parse the address range. Please check it.\n";
+         error.add(
+            "The program failed to parse the address range. Please check it."
+         );
       }
-      
-      // Throws an exception if necessary.
-      if (nbErrors > 0)
+
+      // Throws an exception if the command arguments parsing failed.
+      if (errors.size() > 0)
       {
-         String msg = "Encountered ";
-         if(nbErrors == 1)
-            msg += "one error ";
+         StringBuilder msg = new StringBuilder("Encountered ");
+         if (errors.size() == 1)
+            msg.append("one error ");
          else
-            msg += Integer.toString(nbErrors) + " errors ";
-         msg += "while parsing the parameters :\n" + errors;
-         throw new Exception(msg);
+            msg.append(errors.size() + " errors ");
+
+         msg.append("while parsing the parameters :\n");
+
+         for (String error : errors)
+            msg.append("- " + error + '\n');
+
+         throw new IllegalArgumentException.(msg.toString());
       }
-      
+
       // Finally sets the fields.
       outputDirectory = args[0];
       communityName = args[2];
       userName = args[3];
-      securityLevel = NOAUTH_NOPRIV;
+
       if (args[4].equals("authNoPriv"))
-         securityLevel = AUTH_NOPRIV;
+         securityLevel = AuthLevel.AUTH_NOPRIV;
       else if (args[4].equals("authPriv"))
-         securityLevel = AUTH_PRIV;
-      authProtocol = MD5;
+         securityLevel = AuthLevel.AUTH_PRIV;
+      else
+         securityLevel = AuthLevel.NOAUTH_NOPRIV;
+
       if (args[5].equals("SHA1"))
-         authProtocol = SHA1;
+         authProtocol = HashType.SHA1;
+      else
+         authProtocol = HashType.MD5;
+
       authPassword = args[6];
-      privProtocol = DES;
+
       if (args[7].equals("AES"))
-         privProtocol = AES;
+         privProtocol = CipherType.AES;
+      else
+         privProtocol = CipherType.DES;
+
       privPassword = args[8];
       trapPort = portNumber;
       maxNbThreads = nbThreads;
-      
-      nbAddresses = (int) Math.pow(2.0, (double) lengthMask);
-      splittedIP = IP;
+      nbAddresses = Math.round(Math.pow(2.0, (double) lengthMask));
    }
-   
+
    // Accessers.
+
    public String getOutputDirectory() { return outputDirectory; }
    public String getCommunityName() { return communityName; }
    public String getUserName() { return userName; }
@@ -163,65 +162,62 @@ public class Parameters
    public int getTrapPort() { return trapPort; }
    public int getNbAddresses() { return nbAddresses; }
    public int getMaxNbThreads() { return maxNbThreads; }
-   
+
    // String accessers for the fields denoted with constants.
+
    public String stringSecurityLevel()
    {
-      if (securityLevel == AUTH_NOPRIV)
-         return "authNoPriv";
-      else if (securityLevel == AUTH_PRIV)
-         return "authPriv";
-      return "noAuthNoPriv";
+      switch (securityLevel) {
+      case AuthLevel.AUTH_NOPRIV:   return "authNoPriv";
+      case AuthLevel.AUTH_PRIV:     return "authPriv";
+      case AuthLevel.NOAUTH_NOPRIV: return "noAuthNoPriv";
+      }
    }
-   
+
    public String stringAuthProtocol()
    {
-      if (authProtocol == SHA1)
-         return "SHA1";
-      return "MD5";
+      switch (authProtocol) {
+      case CipherType.SHA1: return "SHA1";
+      case CipherType.MD5:  return "MD5";
+      }
    }
-   
+
    public String stringPrivProtocol()
    {
-      if (privProtocol == AES)
-         return "AES";
-      return "DES";
+      switch (privProtocol) {
+      case CipherType.AES: return "AES";
+      case CipherType.DES: return "DES";
+      }
    }
-   
-   // Method giving an IP in String format given an "index" (see header of this file).
-   public String getIP(int index)
+
+   /** Gives the index-th IP from the address range in String format.
+    * Note that the first (index = 0) address will be the network address while
+    * the last one will be the broadcast address. */
+   public String getIP(int index) throws IllegalArgumentException
    {
-      // Index = 0 or nbAddresses - 1 if out of range (should never happen, but just in case).
-      if (index < 0)
-         index = 0;
-      else if (index >= nbAddresses)
-         index = nbAddresses - 1;
-      
-      int copy[] = new int[4];
-      copy[0] = splittedIP[0];
-      copy[1] = splittedIP[1];
-      copy[2] = splittedIP[2];
-      copy[3] = splittedIP[3];
-      
-      int divider = nbAddresses;
-      if (divider > 256)
-         divider = 256;
-      
+      // Negative or greater that nbAddresses - 1 indexes are out of range.
+      if (index < 0 || index >= nbAddresses)
+         throws IllegalArgumentException("The given IP index is out of range.");
+
+      // Copies the mask into a local array.
+      int ip[] = new int[] {
+         splittedMask[0], splittedMask[1], splittedMask[2], splittedMask[3]
+      };
+
+      // Computes and adds the correct index-shift for each byte of the IP.
+      int divisor = Math.min(256, nbAddresses);
       int quotient = index, remainder = 0;
       for (int i = 3; i >= 0; i--)
       {
          if (quotient == 0)
             break;
-      
-         remainder = quotient % divider;
-         copy[i] += remainder;
-         quotient /= divider;
+
+         remainder = quotient % divisor;
+         ip[i] += remainder;
+         quotient /= divisor;
       }
-      
-      String res = Integer.toString(copy[0]) + "." + Integer.toString(copy[1]) + ".";
-      res += Integer.toString(copy[2]) + "." + Integer.toString(copy[3]);
-      
-      return res;
+
+      return Integer.toString(ip[0]) + "." + Integer.toString(ip[1]) + "." +
+             Integer.toString(ip[2]) + "." + Integer.toString(ip[3]);
    }
 }
-
