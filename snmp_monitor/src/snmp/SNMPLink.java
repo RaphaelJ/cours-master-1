@@ -1,56 +1,62 @@
 package snmp;
 
-import main.*;
+import main.Parameters;
 
+import org.snmp4j.PDU;
 import org.snmp4j.Snmp;
+import org.snmp4j.Target;
+import org.snmp4j.event.ResponseListener;
 import org.snmp4j.mp.MessageProcessingModel;
+import org.snmp4j.smi.OID;
 import org.snmp4j.transport.DefaultUdpTransportMapping;
 
 /** This abstract class is a wrapper over SNMP4j to make easier simple
  * comunications with an host. */
 public abstract class SNMPLink {
 
-   /** Constants to distinct SNMP versions. */
+   /** Number of milliseconds before returning a timeout error. */
+   public static final long REQUEST_TIMEOUT = 1000;
+
+   /** Constants to distinguish SNMP versions. */
    public enum SNMPVersion { SNMPv1, SNMPv2c, SNMPv3 };
 
-   private Snmp s;
+   private Snmp   s;
+   private Target target;
 
-   public SNMPLink()
+   /** Start listening for SNMP messages using the MessageProcessingModel given
+    * by the overloaded getMessageProcessingModel() method. */
+   public SNMPLink(String host, Parameters p)
    {
       s = new Snmp(new DefaultUdpTransportMapping());
-      s.getMessageDispatcher().addMessageProcessingModel(getMessageProcessingModel());
 
-         // Creates a new security model based on the username and the pair of
-         // passwords given in the command line fot SNMPv3.
-         OctetString localEngineID = new OctetString(
-            MPv3.createLocalEngineID()
-         );
-         USM usm = new USM(SecurityProtocols.getInstance(), localEngineID, 0);
-         SecurityModels.getInstance().addSecurityModel(usm);
-         usm.addUser(new OctetString(p.getUserName()),
-                     new UsmUser(new OctetString(p.getUserName()),
-                                 AuthSHA.ID,
-                                 new OctetString(p.getAuthPassword()),
-                                 PrivAES128.ID,
-                                 new OctetString(p.getPrivPassword())));
+      s.getMessageDispatcher()
+       .addMessageProcessingModel(
+         this.getMessageProcessingModel(host, p)
+      );
 
-         // Makes the SNMP listenner able to receive messages from the three
-         // versions of the protocol.
-         MessageDispatcher disp = s.getMessageDispatcher();
-         disp.P(new MPv1());
-         disp.addMessageProcessingModel(new MPv2c());
-         disp.addMessageProcessingModel(new MPv3(usm));
+      // Starts listening for SNMP packets.
+      s.listen();
 
-         // SNMP starts listening.
-         s.listen();
+      this.target = this.getTarget(p);
+      this.target.setAddress(new UdpAddress(host + "/" + 161));
+      this.target.setRetries(0);
+      this.target.setTimeout(REQUEST_TIMEOUT);
    }
 
-   /** This method is to be overrided by subclasses to provide a model able
+   /** This method is to be overrided by sub-classes to provide a model able
     * to receive their messages. */
-   protected abstract MessageProcessingModel getMessageProcessingModel();
-   
-   
+   protected abstract MessageProcessingModel getMessageProcessingModel(
+      Parameters p
+   );
 
+   /** This method is to be overrided by sub-classes to instantiate a target
+    * used to receive a PDU. */
+   protected abstract Target getTarget(Parameters p);
+
+   /** This method is to be overrided by sub-classes to instantiate a PDU. */
+   protected abstract PDU getPDU();
+
+   /** Returns a SNMPLink instance of the given SNMP version. */
    public static SNMPLink getInstance(
       SNMPVersion version, String host, Parameters p
    )
@@ -63,6 +69,44 @@ public abstract class SNMPLink {
       case SNMPVersion.SNMPv3:
          return new SNMPv3Link(host, p)
       }
+   }
+
+   /** Executes the given OID get request synchronously. */
+   public PDU get(OID oid) throws IOException
+   {
+      PDU pdu = this.getPDU();
+      pdu.add(new VariableBinding(oid));
+
+      ResponseEvent e = s.get(pdu, this.target);
+
+      if (e == null)
+         throw new IOException("Request timeout.");
+      else
+         return e.responsePDU(pdu, target);
+   }
+
+   /** Executes the given OID get request asynchronously. Calls the given
+    * callback on error or success. */
+   public void get(OID oid, ResponseListener callback) throws IOException
+   {
+      PDU pdu = this.getPDU();
+      pdu.add(new VariableBinding(oid));
+
+      s.get(pdu, this.target, null, callback);
+   }
+
+   /** Executes the given OID getnext request synchronously. */
+   public PDU getNext(OID oid) throws IOException
+   {
+      PDU pdu = this.getPDU();
+      pdu.add(new VariableBinding(oid));
+
+      ResponseEvent e = s.getNext(pdu, this.target);
+
+      if (e == null)
+         throw new IOException("Request timeout.");
+      else
+         return e.responsePDU(pdu, target);
    }
 
    /** Gives the SNMP version in String format. */

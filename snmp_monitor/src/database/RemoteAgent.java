@@ -2,6 +2,9 @@ package database;
 
 import main.Monitor;
 
+import org.snmp4j.smi.OID;
+import org.snmp4j.smi.VariableBinding;
+
 /**
  * RemoteAgent is a class representing a single remote SNMP agent detected
  * during the discovery step.
@@ -23,53 +26,84 @@ public class RemoteAgent implements Comparable<RemoteAgent>
    public static final long DEFAULT_VAR_UPDATE_DELAY = 5000;
 
    /** After which number of failed updates a variable will be removed. */
-   public static final int VAR_UPDATE_RETRIES       = 1;
+   public static final int VAR_UPDATE_RETRIES        = 1;
 
-   private class Variable implements Comparable<Variable> {
+   private class Variable {
       public final OID oid;
-      public String value;
+      public volatile String value;
 
       public long delay = DEFAULT_VAR_UPDATE_DELAY;
-      public int reties = 0;
+      public volatile int retries = 0;
 
       public Variable(OID oid, String value)
       {
          this.oid   = oid;
          this.value = value;
       }
-
-      /** Compares using only the variable id. */
-      public int compareTo(Variable other)
-      {
-         this.oid.compareTo(other.oid);
-      }
    }
 
    private String host;
-   private Monitor.SNMPVersion version;
+   private SNMPLink link;
 
    /** Keeps all tracked variables.
-    * The first thread will probe repeatedly the remote agent to update the
-    * set of variables.
+    * This set of variables will be 
     */
-   private Set<Variable> variables;
+   private TreeMap<OID, Variable> variables;
 
    /** This timer will manage a thread which will be used to periodically probe
     * variable for new values. */
    private Timer varUpdateTimer = new Timer();
 
-   public RemoteAgent(String host, Monitor.SNMPVersion version)
+   public RemoteAgent(Monitor.SNMPVersion version, String host, Parameters p)
    {
       assert version < 0 || version > 3;
 
       this.host    = host;
-      this.version = version;
+
+      this.link = SNMPLink.getInstance(version, host, p);
    }
 
    // Accessers/setters
    public String getHost() { return host; }
-   public int getSnmpVersion() { return snmpVersion; }
-   public void setSnmpVersion(int version) { snmpVersion = version; }
+
+   /** Goes through the entire MIB tree to get the new variables.
+    * Does this by iterating the entire tree using GETNEXT packets starting with
+    * the first OID lexicographic ("."). */
+   public void updateVars()
+   {
+      OID cursor = new OID(".");
+
+      for (;;) {
+         PDU response;
+         synchronized (this.link) {
+            response = this.link.getNext(cursor);
+         }
+
+         // Stops if the response is empty.
+         if (response == null || response.getErrorStatus() != 0)
+            break;
+
+         VariableBinding bind = response.get(0);
+         OID    oid   = bind.getOid();
+         String value = bind.getVariable().toString();
+
+         // Stops if if the PDU is looping (lexicographic order has been
+         // reversed).
+         if (oid == null || oid.compareTo(cursor) <= 0)
+            break;
+
+         synchronized (this.variables) {
+            if (this.variables.contains(oid)) {
+               Variable var = this.variables.get(oid);
+               var.value   = value;
+               var.retries = 0;
+            } else
+               this.variables.add(oid, new Variable(oid, value));
+         }
+
+         cursor = oid;
+      }
+   }
 
    private updateVar(Variable var)
    {

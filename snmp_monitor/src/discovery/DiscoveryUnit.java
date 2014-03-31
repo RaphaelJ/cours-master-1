@@ -81,7 +81,7 @@ public class DiscoveryUnit extends Thread
          // Makes the SNMP listenner able to receive messages from the three
          // versions of the protocol.
          MessageDispatcher disp = s.getMessageDispatcher();
-         disp.P(new MPv1());
+         disp.addMessageProcessingModel(new MPv1());
          disp.addMessageProcessingModel(new MPv2c());
          disp.addMessageProcessingModel(new MPv3(usm));
 

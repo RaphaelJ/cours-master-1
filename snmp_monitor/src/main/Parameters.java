@@ -9,22 +9,24 @@ import java.lang.Math;
  * This avoids writing constructors/methods with too many arguments. The class
  * also provides a method to obtain an IP in the given range by giving a kind of
  * index (e.g. if we give 139.165.222.0/24, there are 256 addresses and address
- * 2 is 139.165.222.2).
+ * at index 2 is 139.165.222.2).
  */
 public class Parameters
 {
+   public static final int DEFAULT_THREADS = 64;
+
    public enum AuthLevel { NOAUTH_NOPRIV, AUTH_NOPRIV, AUTH_PRIV };
-   public enum HashType { MD5, SHA1 };
-   public enum CipherType { DES, AES };
+   public enum AuthProtocol { MD5, SHA1 };
+   public enum PrivacyProtocol { DES, AES };
 
    // Fields are just parameters specified by the assignment.
    private String outputDirectory;
    private String communityName;
    private String userName;
    private AuthLevel securityLevel;
-   private HashType authProtocol;
+   private AuthProtocol authProtocol;
    private String authPassword;
-   private CipherType privProtocol;
+   private PrivacyProtocol privProtocol;
    private String privPassword;
    private int trapPort;
    private int maxNbThreads;
@@ -43,8 +45,8 @@ public class Parameters
       // Tries to parse the port number.
       int portNumber = Integer.parseInt(args[9]);
 
-      // Tries to parse the maximum number of threads (default value : 64).
-      int nbThreads = 64;
+      // Tries to parse the maximum number of threads.
+      int nbThreads = DEFAULT_THREADS;
       if (args.length == 11)
          nbThreads = Math.max(0, Integer.parseInt(args[10]));
 
@@ -132,16 +134,16 @@ public class Parameters
          securityLevel = AuthLevel.NOAUTH_NOPRIV;
 
       if (args[5].equals("SHA1"))
-         authProtocol = HashType.SHA1;
+         authProtocol = AuthProtocol.SHA1;
       else
-         authProtocol = HashType.MD5;
+         authProtocol = AuthProtocol.MD5;
 
       authPassword = args[6];
 
       if (args[7].equals("AES"))
-         privProtocol = CipherType.AES;
+         privProtocol = PrivacyProtocol.AES;
       else
-         privProtocol = CipherType.DES;
+         privProtocol = PrivacyProtocol.DES;
 
       privPassword = args[8];
       trapPort = portNumber;
@@ -155,9 +157,9 @@ public class Parameters
    public String getCommunityName() { return communityName; }
    public String getUserName() { return userName; }
    public int getSecurityLevel() { return securityLevel; }
-   public int getAuthProtocol() { return authProtocol; }
+   public AuthProtocol getAuthProtocol() { return authProtocol; }
    public String getAuthPassword() { return authPassword; }
-   public int getPrivProtocol() { return privProtocol; }
+   public PrivacyProtocol getPrivProtocol() { return privProtocol; }
    public String getPrivPassword() { return privPassword; }
    public int getTrapPort() { return trapPort; }
    public int getNbAddresses() { return nbAddresses; }
