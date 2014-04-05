@@ -52,7 +52,9 @@ public class RemoteAgent implements Comparable<RemoteAgent>
       }
    }
 
-   private String     host;
+   public final SNMPLink.SNMPVersion version
+   public final String               host;
+
    private Parameters p;
    private Writer     logger = null; // The log file is opened on the first
                                      // write.
@@ -73,14 +75,13 @@ public class RemoteAgent implements Comparable<RemoteAgent>
    public RemoteAgent(SNMPLink.SNMPVersion version, String host, Parameters p)
       throws IOException
    {
+      this.version = version;
       this.host = host;
+
       this.p    = p;
 
       this.link = SNMPLink.getInstance(version, host, p);
    }
-
-   // Accessers/setters
-   public String getHost() { return host; }
 
    /** Stops the update timer and the listening socket. */
    public void dispose() throws IOException
@@ -124,7 +125,7 @@ public class RemoteAgent implements Comparable<RemoteAgent>
             if (this.variables.containsKey(oid)) {
                Variable var = this.variables.get(oid);
                var.retries  = 0;
-               if (value != var.value) {
+               if (!var.value.equals(value)) {
                   var.value = value;
                   this.log(var);
                }
@@ -168,7 +169,7 @@ public class RemoteAgent implements Comparable<RemoteAgent>
          var.retries = 0;
 
          // Reschedules the variable according to its change.
-         if (var.value != newValue) {
+         if (!var.value.equals(newValue)) {
             var.value = newValue;
             this.log(var);
             this.scheduleVar(var, var.delay / 2);
@@ -197,7 +198,7 @@ public class RemoteAgent implements Comparable<RemoteAgent>
    private void removeVar(Variable var)
    {
       synchronized (this.variables) {
-         this.variables.remove(var);
+         this.variables.remove(var.oid);
       }
    }
 
@@ -239,7 +240,7 @@ public class RemoteAgent implements Comparable<RemoteAgent>
          Date now = new Date();
          synchronized (this.logger) {
             this.logger.write(
-               new SimpleDateFormat("yyyyy-mm-dd hh:mm:ss").format(now) + ' ' +
+               new SimpleDateFormat("yyyy-mm-dd hh:mm:ss").format(now) + ' ' +
                var.oid + ' ' + var.value + '\n'
             );
          }
@@ -259,5 +260,10 @@ public class RemoteAgent implements Comparable<RemoteAgent>
       else if (host.length() < host2.length())
          return -1;
       return 1;
+   }
+
+   public String toString()
+   {
+      return this.host + " (" + SNMPLink.snmpVersion(this.version) + ')';
    }
 }

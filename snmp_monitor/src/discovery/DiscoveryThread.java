@@ -24,6 +24,8 @@ public class DiscoveryThread extends Thread
    /** Number of milliseconds between two checks of the address range. */
    public final long DISCOVERY_DELAY = 5000;
 
+   private enum EventType { NEW_AGENT, REMOVE_AGENT };
+
    private final Parameters p;
 
    private final int             nThreads;
@@ -82,6 +84,7 @@ public class DiscoveryThread extends Thread
                      } catch (IOException e) {
                         try {
                            agent.dispose();
+                           this.log(agent, REMOVE_AGENT);
                         } catch (IOException e2) { }
                      }
                   }
@@ -104,6 +107,7 @@ public class DiscoveryThread extends Thread
 
                      if (agent != null) { // Succeeds to contact the agent.
                         synchronized (agents) {
+                           this.log(agent, NEW_AGENT);
                            agents.put(ip, agent);
                         }
                      }
@@ -153,5 +157,16 @@ public class DiscoveryThread extends Thread
          } catch (IOException e2) { }
          return null;
       }
+   }
+
+   private void log(RemoteAgent agent, LogEvent event)
+   {
+      switch (event) {
+      case NEW_AGENT:
+         System.out.println("New agent : " + agent);
+         break;
+      case REMOVE_AGENT:
+         System.out.println("Agent removed : " + agent);
+         break;
    }
 }
