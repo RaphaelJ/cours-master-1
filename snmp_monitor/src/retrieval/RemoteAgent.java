@@ -53,6 +53,7 @@ public class RemoteAgent implements Comparable<RemoteAgent>
 
    private String host;
    private SNMPLink link;
+   private volatile boolean stopped = false;
 
    /** Keeps all tracked variables.
     * This set of variables will be 
@@ -78,8 +79,11 @@ public class RemoteAgent implements Comparable<RemoteAgent>
    /** Stops the update timer and the listening socket. */
    public void dispose() throws IOException
    {
-      this.varUpdateTimer.cancel();
-      this.link.dispose();
+      synchronized (this.varUpdateTimer) {
+         this.stopped = true;
+         this.varUpdateTimer.cancel();
+         this.link.dispose();
+      }
    }
 
    /** Goes through the entire MIB tree to get the new variables.
@@ -166,7 +170,10 @@ public class RemoteAgent implements Comparable<RemoteAgent>
    {
       try {
          PDU response = this.link.get(var.oid);
-         return response.get(0).getVariable().toString();
+         if (response != null)
+            return response.get(0).getVariable().toString();
+         else
+            return null;
       } catch (IOException e) {
          return null;
       }
@@ -183,20 +190,25 @@ public class RemoteAgent implements Comparable<RemoteAgent>
     * delay. */
    private void scheduleVar(final Variable var, long delay)
    {
-      if (delay > MAX_VAR_UPDATE_DELAY)
-         delay = MAX_VAR_UPDATE_DELAY;
-      else if (delay < MIN_VAR_UPDATE_DELAY)
-         delay = MIN_VAR_UPDATE_DELAY;
-      var.delay = delay;
+      synchronized (this.varUpdateTimer) {
+         if (stopped)
+            return;
 
-      this.varUpdateTimer.schedule(
-         new TimerTask() {
-            public void run()
-            {
-               updateVar(var);
-            }
-         }, delay
-      );
+         if (delay > MAX_VAR_UPDATE_DELAY)
+            delay = MAX_VAR_UPDATE_DELAY;
+         else if (delay < MIN_VAR_UPDATE_DELAY)
+            delay = MIN_VAR_UPDATE_DELAY;
+         var.delay = delay;
+
+         this.varUpdateTimer.schedule(
+            new TimerTask() {
+               public void run()
+               {
+                  updateVar(var);
+               }
+            }, delay
+         );
+      }
    }
 
    /** Compares two remote agents.
