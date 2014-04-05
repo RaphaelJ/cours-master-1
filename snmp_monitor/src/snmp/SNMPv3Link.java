@@ -2,26 +2,36 @@ package snmp;
 
 import main.Parameters;
 
+import java.io.*;
+
 import org.snmp4j.PDU;
-import org.snmp4j.SnmpConstants;
 import org.snmp4j.ScopedPDU;
 import org.snmp4j.Target;
+import org.snmp4j.UserTarget;
 import org.snmp4j.mp.MessageProcessingModel;
+import org.snmp4j.mp.MPv3;
+import org.snmp4j.mp.SnmpConstants;
 import org.snmp4j.security.AuthMD5;
 import org.snmp4j.security.AuthSHA;
 import org.snmp4j.security.PrivAES128;
 import org.snmp4j.security.PrivDES;
-import org.snmp4j.smi.IOD;
+import org.snmp4j.security.SecurityLevel;
+import org.snmp4j.security.SecurityModel;
+import org.snmp4j.security.SecurityProtocols;
+import org.snmp4j.security.UsmUser;
+import org.snmp4j.security.USM;
+import org.snmp4j.smi.OctetString;
+import org.snmp4j.smi.OID;
 
 /** Creates an SNMPv3 link with the given host. */
-public class SNMPv3cLink extends SNMPLink {
+public class SNMPv3Link extends SNMPLink {
 
-   public SNMPv3cLink(String host, Parameters p)
+   public SNMPv3Link(String host, Parameters p) throws IOException
    {
       super(host, p);
    }
 
-   protected abstract MessageProcessingModel getMessageProcessingModel(
+   protected MessageProcessingModel getMessageProcessingModel(
       Parameters p
    )
    {
@@ -47,8 +57,8 @@ public class SNMPv3cLink extends SNMPLink {
       usm.addUser(
          new OctetString(p.getUserName()),
          new UsmUser(
-            new OctetString(p.getUserName()), authProtocol
-            new OctetString(p.getAuthPassword()), privProtocol
+            new OctetString(p.getUserName()), authProtocol,
+            new OctetString(p.getAuthPassword()), privProtocol,
             new OctetString(p.getPrivPassword())
          )
       );
@@ -56,7 +66,7 @@ public class SNMPv3cLink extends SNMPLink {
       return new MPv3(usm);
    }
 
-   protected abstract Target getTarget(Parameters p)
+   protected Target getTarget(Parameters p)
    {
       UserTarget target = new UserTarget();
       target.setVersion(SnmpConstants.version3);
@@ -66,7 +76,7 @@ public class SNMPv3cLink extends SNMPLink {
       return target;
    }
 
-   protected abstract PDU getPDU()
+   protected PDU getPDU()
    {
       return new ScopedPDU();
    }

@@ -1,6 +1,7 @@
 package main;
 
 import java.lang.Math;
+import java.util.*;
 
 /**
  * Parameters class essentially consists in gathering all the command line
@@ -40,7 +41,7 @@ public class Parameters
    /** Constructs the object from the command line args[] array. */
    public Parameters(String args[]) throws Exception
    {
-      LinkedList<String> errors = LinkedList<String>();
+      LinkedList<String> errors = new LinkedList<String>();
 
       // Tries to parse the port number.
       int portNumber = Integer.parseInt(args[9]);
@@ -99,7 +100,7 @@ public class Parameters
       }
       catch (Exception e)
       {
-         error.add(
+         errors.add(
             "The program failed to parse the address range. Please check it."
          );
       }
@@ -118,7 +119,7 @@ public class Parameters
          for (String error : errors)
             msg.append("- " + error + '\n');
 
-         throw new IllegalArgumentException.(msg.toString());
+         throw new IllegalArgumentException(msg.toString());
       }
 
       // Finally sets the fields.
@@ -148,7 +149,7 @@ public class Parameters
       privPassword = args[8];
       trapPort = portNumber;
       maxNbThreads = nbThreads;
-      nbAddresses = Math.round(Math.pow(2.0, (double) lengthMask));
+      nbAddresses = (int) Math.round(Math.pow(2.0, (double) lengthMask));
    }
 
    // Accessers.
@@ -156,7 +157,7 @@ public class Parameters
    public String getOutputDirectory() { return outputDirectory; }
    public String getCommunityName() { return communityName; }
    public String getUserName() { return userName; }
-   public int getSecurityLevel() { return securityLevel; }
+   public AuthLevel getSecurityLevel() { return securityLevel; }
    public AuthProtocol getAuthProtocol() { return authProtocol; }
    public String getAuthPassword() { return authPassword; }
    public PrivacyProtocol getPrivProtocol() { return privProtocol; }
@@ -170,25 +171,28 @@ public class Parameters
    public String stringSecurityLevel()
    {
       switch (securityLevel) {
-      case AuthLevel.AUTH_NOPRIV:   return "authNoPriv";
-      case AuthLevel.AUTH_PRIV:     return "authPriv";
-      case AuthLevel.NOAUTH_NOPRIV: return "noAuthNoPriv";
+      case AUTH_NOPRIV:   return "authNoPriv";
+      case AUTH_PRIV:     return "authPriv";
+      case NOAUTH_NOPRIV: return "noAuthNoPriv";
+      default:            return null;
       }
    }
 
    public String stringAuthProtocol()
    {
       switch (authProtocol) {
-      case CipherType.SHA1: return "SHA1";
-      case CipherType.MD5:  return "MD5";
+      case SHA1: return "SHA1";
+      case MD5:  return "MD5";
+      default:   return null;
       }
    }
 
    public String stringPrivProtocol()
    {
       switch (privProtocol) {
-      case CipherType.AES: return "AES";
-      case CipherType.DES: return "DES";
+      case AES: return "AES";
+      case DES: return "DES";
+      default:  return null;
       }
    }
 
@@ -198,8 +202,11 @@ public class Parameters
    public String getIP(int index) throws IllegalArgumentException
    {
       // Negative or greater that nbAddresses - 1 indexes are out of range.
-      if (index < 0 || index >= nbAddresses)
-         throws IllegalArgumentException("The given IP index is out of range.");
+      if (index < 0 || index >= nbAddresses) {
+         throw new IllegalArgumentException(
+            "The given IP index is out of range."
+         );
+      }
 
       // Copies the mask into a local array.
       int ip[] = new int[] {

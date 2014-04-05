@@ -1,10 +1,10 @@
-
-
 package discovery;
 
 import main.*;
-import database.*;
+import retrieval.*;
+import snmp.*;
 
+import java.io.*;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -26,23 +26,32 @@ public class DiscoveryThread extends Thread
 
    private final Parameters p;
 
-   private int             nThreads;
-   private Semaphore       threadSem;
-   private ExecutorService threadPool;
+   private final int             nThreads;
+   private final Semaphore       threadSem;
+   private final ExecutorService threadPool;
 
-   public DiscoveryThread(Parameters p, AgentsPool ap)
+   public DiscoveryThread(Parameters p)
    {
       this.p = p;
-      this.ap = ap;
 
       this.nThreads   = p.getMaxNbThreads();
-      this.threadSem  = new Semaphore(this.Threads);
-      this.threadPool = Executors.newFixedThreadPool(this.Threads);
+      this.threadSem  = new Semaphore(this.nThreads);
+      this.threadPool = Executors.newFixedThreadPool(this.nThreads);
    }
 
    public void run()
    {
-      Map<String, RemoteAgent> agents;
+      try {
+         this.discoveryLoop();
+      } catch (InterruptedException e) {
+         System.err.println("The discovery loop has crashes");
+         e.printStackTrace();
+      }
+   }
+
+   public void discoveryLoop() throws InterruptedException
+   {
+      final TreeMap<String, RemoteAgent> agents = new TreeMap<>();
 
       // Loops every DISCOVERY_DELAY the entire IP range using a pool of
       // threads.
@@ -71,7 +80,9 @@ public class DiscoveryThread extends Thread
                      try {
                         agent.updateVars();
                      } catch (IOException e) {
-                        agent.dispose();
+                        try {
+                           agent.dispose();
+                        } catch (IOException e2) { }
                      }
                   }
                };
@@ -83,14 +94,15 @@ public class DiscoveryThread extends Thread
                   public void run()
                   {
                      // Tries the three versions of SNMP.
-                     RemoteAgent agent = tryAgent(SNMPLink.SNMPv3, ip, p);
+                     RemoteAgent agent = tryAgent(
+                        SNMPLink.SNMPVersion.SNMPv3, ip, p
+                     );
                      if (agent == null)
-                        agent = tryAgent(SNMPLink.SNMPv2c, ip, p);
+                        agent = tryAgent(SNMPLink.SNMPVersion.SNMPv2c, ip, p);
                      if (agent == null)
-                        agent = tryAgent(SNMPLink.SNMPv1, ip, p);
+                        agent = tryAgent(SNMPLink.SNMPVersion.SNMPv1, ip, p);
 
                      if (agent != null) { // Succeeds to contact the agent.
-                        agent.start();
                         synchronized (agents) {
                            agents.put(ip, agent);
                         }
@@ -100,24 +112,29 @@ public class DiscoveryThread extends Thread
             }
 
             // Acquires the right to start a thread.
-            this.threadSem.aquire();
+            this.threadSem.acquire();
 
             // Runs the action and releases the thread.
+            final Runnable finalAction = action;
             this.threadPool.execute(
                new Runnable() {
-                  action.run();
-                  this.threadSem.release();
+                  public void run()
+                  {
+                     finalAction.run();
+                     threadSem.release();
+                  }
                }
             );
          }
 
          // Waits for every thread to finish.
-         this.threadSem.aquire(this.nThreads);
+         this.threadSem.acquire(this.nThreads);
          this.threadSem.release(this.nThreads);
 
          // Waits before next check.
          Thread.sleep(DISCOVERY_DELAY);
       }
+   }
 
    /** Tries to connect to an agent by retrieving its list of variables.
     * Returns the RemoteAgent or null if the connection failed. */
@@ -125,11 +142,15 @@ public class DiscoveryThread extends Thread
       SNMPLink.SNMPVersion version, String host, Parameters p
    )
    {
+      RemoteAgent agent = null;
       try {
-         RemoteAgent agent = new RemoteAgent(version, host, p);
+         agent = new RemoteAgent(version, host, p);
          agent.updateVars();
          return agent;
       } catch (IOException e) {
+         try {
+            agent.dispose();
+         } catch (IOException e2) { }
          return null;
       }
    }

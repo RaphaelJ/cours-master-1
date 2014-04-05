@@ -1,7 +1,6 @@
 package main;
 
 import discovery.DiscoveryThread;
-import database.AgentsPool;
 
 /**
  * Main class of the program. For now, it just parses the input parameters and
@@ -56,9 +55,7 @@ public class Monitor
       System.out.println("Maximum number of threads for discovery : " + p.getMaxNbThreads());
       System.out.println();
 
-      // Setting the agents pool and launching the discovery thread.
-      AgentsPool ap = new AgentsPool(p.getNbAddresses());
-
-      new DiscoveryThread(p, ap, p.getMaxNbThreads()).start();
+      // Launchs the discovery thread.
+      new DiscoveryThread(p).start();
    }
 }

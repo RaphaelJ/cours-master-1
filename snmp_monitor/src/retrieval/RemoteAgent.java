@@ -1,9 +1,14 @@
-package database;
+package retrieval;
 
-import main.Monitor;
+import main.*;
+import snmp.*;
+
+import java.io.*;
+import java.util.*;
 
 import org.snmp4j.smi.OID;
 import org.snmp4j.smi.VariableBinding;
+import org.snmp4j.PDU;
 
 /**
  * RemoteAgent is a class representing a single remote SNMP agent detected
@@ -60,6 +65,7 @@ public class RemoteAgent implements Comparable<RemoteAgent>
 
    /** Initialises a RemoteAgent instance with an empty set of variables. */
    public RemoteAgent(SNMPLink.SNMPVersion version, String host, Parameters p)
+      throws IOException
    {
       this.host = host;
 
@@ -70,7 +76,7 @@ public class RemoteAgent implements Comparable<RemoteAgent>
    public String getHost() { return host; }
 
    /** Stops the update timer and the listening socket. */
-   public void dispose()
+   public void dispose() throws IOException
    {
       this.varUpdateTimer.cancel();
       this.link.dispose();
@@ -102,13 +108,13 @@ public class RemoteAgent implements Comparable<RemoteAgent>
             break;
 
          synchronized (this.variables) {
-            if (this.variables.contains(oid)) {
+            if (this.variables.containsKey(oid)) {
                Variable var = this.variables.get(oid);
                var.value    = value;
                var.retries  = 0;
             } else { // New variable, schedules it.
                Variable var = new Variable(oid, value);
-               this.variables.add(oid, var);
+               this.variables.put(oid, var);
                this.scheduleVar(var, var.delay);
             }
          }
@@ -118,10 +124,10 @@ public class RemoteAgent implements Comparable<RemoteAgent>
    }
 
    /** Updates the value of the given variable by probing the remote agent. */
-   private updateVar(Variable var)
+   private void updateVar(Variable var)
    {
       synchronized (this.variables) {
-         if (!this.variables.contains(var))
+         if (!this.variables.containsKey(var.oid))
             // The variable has been removed since it was scheduled.
             return;
       }
@@ -137,10 +143,10 @@ public class RemoteAgent implements Comparable<RemoteAgent>
          var.retries++;
 
          // Removes the variable if too many retries.
-         if (var.retries > VAR_UPDATE_RETIES)
+         if (var.retries > VAR_UPDATE_RETRIES)
             this.removeVar(var);
          else
-            this.scheduleVar(var, var.delay)
+            this.scheduleVar(var, var.delay);
       } else {                // Received a new value.
          var.retries = 0;
 
@@ -159,7 +165,7 @@ public class RemoteAgent implements Comparable<RemoteAgent>
    private String probeVar(Variable var)
    {
       try {
-         PDU response = this.link.get();
+         PDU response = this.link.get(var.oid);
          return response.get(0).getVariable().toString();
       } catch (IOException e) {
          return null;
@@ -185,7 +191,10 @@ public class RemoteAgent implements Comparable<RemoteAgent>
 
       this.varUpdateTimer.schedule(
          new TimerTask() {
-            updateVar(var);
+            public void run()
+            {
+               updateVar(var);
+            }
          }, delay
       );
    }

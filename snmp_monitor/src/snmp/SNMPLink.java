@@ -2,12 +2,16 @@ package snmp;
 
 import main.Parameters;
 
+import java.io.*;
 import org.snmp4j.PDU;
 import org.snmp4j.Snmp;
 import org.snmp4j.Target;
+import org.snmp4j.event.ResponseEvent;
 import org.snmp4j.event.ResponseListener;
 import org.snmp4j.mp.MessageProcessingModel;
 import org.snmp4j.smi.OID;
+import org.snmp4j.smi.UdpAddress;
+import org.snmp4j.smi.VariableBinding;
 import org.snmp4j.transport.DefaultUdpTransportMapping;
 
 /** This abstract class is a wrapper over SNMP4j to make easier simple
@@ -25,14 +29,12 @@ public abstract class SNMPLink {
 
    /** Start listening for SNMP messages using the MessageProcessingModel given
     * by the overloaded getMessageProcessingModel() method. */
-   public SNMPLink(String host, Parameters p)
+   public SNMPLink(String host, Parameters p) throws IOException
    {
       this.s = new Snmp(new DefaultUdpTransportMapping());
 
       this.s.getMessageDispatcher()
-       .addMessageProcessingModel(
-         this.getMessageProcessingModel(host, p)
-      );
+            .addMessageProcessingModel(this.getMessageProcessingModel(p));
 
       // Starts listening for SNMP packets.
       this.s.listen();
@@ -59,15 +61,13 @@ public abstract class SNMPLink {
    /** Returns a SNMPLink instance of the given SNMP version. */
    public static SNMPLink getInstance(
       SNMPVersion version, String host, Parameters p
-   )
+   ) throws IOException
    {
       switch (version) {
-      case SNMPVersion.SNMPv1:
-         return new SNMPv1Link(host, p)
-      case SNMPVersion.SNMPv2c:
-         return new SNMPv2cLink(host, p)
-      case SNMPVersion.SNMPv3:
-         return new SNMPv3Link(host, p)
+      case SNMPv1:  return new SNMPv1Link(host, p);
+      case SNMPv2c: return new SNMPv2cLink(host, p);
+      case SNMPv3:  return new SNMPv3Link(host, p);
+      default:      return null;
       }
    }
 
@@ -82,7 +82,7 @@ public abstract class SNMPLink {
       if (e == null)
          throw new IOException("Request timeout.");
       else
-         return e.responsePDU(pdu, target);
+         return e.getResponse();
    }
 
    /** Executes the given OID get request asynchronously. Calls the given
@@ -107,12 +107,12 @@ public abstract class SNMPLink {
       if (e == null)
          throw new IOException("Request timeout.");
       else
-         return e.responsePDU(pdu, target);
+         return e.getResponse();
    }
 
    /** Closes the session and frees any allocated resources, i.e. sockets and
     * the internal thread for processing request timeouts. */
-   public synchronized void dispose()
+   public synchronized void dispose() throws IOException
    {
       this.s.close();
    }
@@ -121,12 +121,10 @@ public abstract class SNMPLink {
    public static String snmpVersion(SNMPVersion version)
    {
       switch(version) {
-      case SNMPVersion.SNMPv1:
-         return "SNMPv1";
-      case SNMPVersion.SNMPv2c:
-         return "SNMPv2c";
-      case SNMPVersion.SNMPv3:
-         return "SNMPv3";
+      case SNMPv1:  return "SNMPv1";
+      case SNMPv2c: return "SNMPv2c";
+      case SNMPv3:  return "SNMPv3";
+      default:      return null;
       }
    }
 }
