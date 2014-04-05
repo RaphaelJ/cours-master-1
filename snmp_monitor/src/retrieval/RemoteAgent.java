@@ -4,6 +4,7 @@ import main.*;
 import snmp.*;
 
 import java.io.*;
+import java.text.*;
 import java.util.*;
 
 import org.snmp4j.smi.OID;
@@ -51,7 +52,11 @@ public class RemoteAgent implements Comparable<RemoteAgent>
       }
    }
 
-   private String host;
+   private String     host;
+   private Parameters p;
+   private Writer     logger = null; // The log file is opened on the first
+                                     // write.
+
    private SNMPLink link;
    private volatile boolean stopped = false;
 
@@ -69,6 +74,7 @@ public class RemoteAgent implements Comparable<RemoteAgent>
       throws IOException
    {
       this.host = host;
+      this.p    = p;
 
       this.link = SNMPLink.getInstance(version, host, p);
    }
@@ -83,6 +89,9 @@ public class RemoteAgent implements Comparable<RemoteAgent>
          this.stopped = true;
          this.varUpdateTimer.cancel();
          this.link.dispose();
+
+         if (this.logger != null)
+            this.logger.close();
       }
    }
 
@@ -114,10 +123,14 @@ public class RemoteAgent implements Comparable<RemoteAgent>
          synchronized (this.variables) {
             if (this.variables.containsKey(oid)) {
                Variable var = this.variables.get(oid);
-               var.value    = value;
                var.retries  = 0;
+               if (value != var.value) {
+                  var.value = value;
+                  this.log(var);
+               }
             } else { // New variable, schedules it.
                Variable var = new Variable(oid, value);
+               this.log(var);
                this.variables.put(oid, var);
                this.scheduleVar(var, var.delay);
             }
@@ -155,9 +168,11 @@ public class RemoteAgent implements Comparable<RemoteAgent>
          var.retries = 0;
 
          // Reschedules the variable according to its change.
-         if (var.value != newValue)
+         if (var.value != newValue) {
+            var.value = newValue;
+            this.log(var);
             this.scheduleVar(var, var.delay / 2);
-         else {
+         } else {
             var.value = newValue;
             this.scheduleVar(var, var.delay * 2);
          }
@@ -208,6 +223,29 @@ public class RemoteAgent implements Comparable<RemoteAgent>
                }
             }, delay
          );
+      }
+   }
+
+   /** Dumps the variable content as YYYY-MM-DD HH:MM:SS OID VALUE in the log
+    * file associed with the agent IP. */
+   private void log(Variable var)
+   {
+      try {
+         if (logger == null) { // Opens the log file for the first time.
+            File file = new File(this.p.getOutputDirectory(), this.host + ".log");
+            this.logger = new FileWriter(file, true);
+         }
+
+         Date now = new Date();
+         synchronized (this.logger) {
+            this.logger.write(
+               new SimpleDateFormat("yyyyy-mm-dd hh:mm:ss").format(now) + ' ' +
+               var.oid + ' ' + var.value + '\n'
+            );
+         }
+      } catch (IOException e) {
+         System.err.println("Unable to write to the log file.");
+         e.printStackTrace();
       }
    }
 
