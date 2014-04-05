@@ -96,9 +96,22 @@ public class RemoteAgent implements Comparable<RemoteAgent>
       }
    }
 
+   /** Returns true if the remote agent responds to requests.
+    * Tries to contact the remote agent with a GETNEXT request with the first
+    * lexicographic OID ("."). */
+   public boolean exists()
+   {
+      try {
+         PDU response = this.link.getNext(new OID("."));
+         return response != null && response.getErrorStatus() == 0;
+      } catch (IOException e) {
+         return false;
+      }
+   }
+
    /** Goes through the entire MIB tree to get the new variables.
-    * Does this by iterating the entire tree using GETNEXT packets starting with
-    * the first lexicographic OID (".").
+    * Does this by iterating the entire tree using GETNEXT requests starting
+    * with the first lexicographic OID (".").
     * Schedules new variables to be updated with the default delay. */
    public void updateVars() throws IOException
    {
@@ -240,7 +253,7 @@ public class RemoteAgent implements Comparable<RemoteAgent>
          Date now = new Date();
          synchronized (this.logger) {
             this.logger.write(
-               new SimpleDateFormat("yyyy-mm-dd hh:mm:ss").format(now) + ' ' +
+               new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").format(now) + ' ' +
                var.oid + ' ' + var.value + '\n'
             );
          }

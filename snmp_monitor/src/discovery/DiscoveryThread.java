@@ -140,7 +140,7 @@ public class DiscoveryThread extends Thread
       }
    }
 
-   /** Tries to connect to an agent by retrieving its list of variables.
+   /** Tries to connect to an agent and retrieves its list of variables.
     * Returns the RemoteAgent or null if the connection failed. */
    private static RemoteAgent tryAgent(
       SNMPLink.SNMPVersion version, String host, Parameters p
@@ -149,6 +149,9 @@ public class DiscoveryThread extends Thread
       RemoteAgent agent = null;
       try {
          agent = new RemoteAgent(version, host, p);
+         if (!agent.exists())
+            return null;
+
          agent.updateVars();
          return agent;
       } catch (IOException e) {
