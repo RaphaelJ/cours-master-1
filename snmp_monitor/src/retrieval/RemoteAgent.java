@@ -52,7 +52,7 @@ public class RemoteAgent implements Comparable<RemoteAgent>
       }
    }
 
-   public final SNMPLink.SNMPVersion version
+   public final SNMPLink.SNMPVersion version;
    public final String               host;
 
    private Parameters p;
@@ -254,9 +254,9 @@ public class RemoteAgent implements Comparable<RemoteAgent>
     * This is used to sort agents by the IP of their host computer. */
    public int compareTo(RemoteAgent ra)
    {
-      String host2 = ra.getHost();
+      String host2 = ra.host;
       if (host.length() == host2.length())
-         return host.compareTo(ra.getHost());
+         return host.compareTo(host2);
       else if (host.length() < host2.length())
          return -1;
       return 1;

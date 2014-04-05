@@ -24,7 +24,7 @@ public class DiscoveryThread extends Thread
    /** Number of milliseconds between two checks of the address range. */
    public final long DISCOVERY_DELAY = 5000;
 
-   private enum EventType { NEW_AGENT, REMOVE_AGENT };
+   private enum LogEvent { NEW_AGENT, REMOVE_AGENT };
 
    private final Parameters p;
 
@@ -84,7 +84,7 @@ public class DiscoveryThread extends Thread
                      } catch (IOException e) {
                         try {
                            agent.dispose();
-                           this.log(agent, REMOVE_AGENT);
+                           log(agent, LogEvent.REMOVE_AGENT);
                         } catch (IOException e2) { }
                      }
                   }
@@ -107,7 +107,7 @@ public class DiscoveryThread extends Thread
 
                      if (agent != null) { // Succeeds to contact the agent.
                         synchronized (agents) {
-                           this.log(agent, NEW_AGENT);
+                           log(agent, LogEvent.NEW_AGENT);
                            agents.put(ip, agent);
                         }
                      }
@@ -142,7 +142,7 @@ public class DiscoveryThread extends Thread
 
    /** Tries to connect to an agent by retrieving its list of variables.
     * Returns the RemoteAgent or null if the connection failed. */
-   private RemoteAgent tryAgent(
+   private static RemoteAgent tryAgent(
       SNMPLink.SNMPVersion version, String host, Parameters p
    )
    {
@@ -159,7 +159,7 @@ public class DiscoveryThread extends Thread
       }
    }
 
-   private void log(RemoteAgent agent, LogEvent event)
+   private synchronized void log(RemoteAgent agent, LogEvent event)
    {
       switch (event) {
       case NEW_AGENT:
@@ -168,5 +168,6 @@ public class DiscoveryThread extends Thread
       case REMOVE_AGENT:
          System.out.println("Agent removed : " + agent);
          break;
+      }
    }
 }
