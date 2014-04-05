@@ -27,15 +27,15 @@ public abstract class SNMPLink {
     * by the overloaded getMessageProcessingModel() method. */
    public SNMPLink(String host, Parameters p)
    {
-      s = new Snmp(new DefaultUdpTransportMapping());
+      this.s = new Snmp(new DefaultUdpTransportMapping());
 
-      s.getMessageDispatcher()
+      this.s.getMessageDispatcher()
        .addMessageProcessingModel(
          this.getMessageProcessingModel(host, p)
       );
 
       // Starts listening for SNMP packets.
-      s.listen();
+      this.s.listen();
 
       this.target = this.getTarget(p);
       this.target.setAddress(new UdpAddress(host + "/" + 161));
@@ -72,12 +72,12 @@ public abstract class SNMPLink {
    }
 
    /** Executes the given OID get request synchronously. */
-   public PDU get(OID oid) throws IOException
+   public synchronized PDU get(OID oid) throws IOException
    {
       PDU pdu = this.getPDU();
       pdu.add(new VariableBinding(oid));
 
-      ResponseEvent e = s.get(pdu, this.target);
+      ResponseEvent e = this.s.get(pdu, this.target);
 
       if (e == null)
          throw new IOException("Request timeout.");
@@ -87,26 +87,34 @@ public abstract class SNMPLink {
 
    /** Executes the given OID get request asynchronously. Calls the given
     * callback on error or success. */
-   public void get(OID oid, ResponseListener callback) throws IOException
+   public synchronized void get(OID oid, ResponseListener callback)
+      throws IOException
    {
       PDU pdu = this.getPDU();
       pdu.add(new VariableBinding(oid));
 
-      s.get(pdu, this.target, null, callback);
+      this.s.get(pdu, this.target, null, callback);
    }
 
    /** Executes the given OID getnext request synchronously. */
-   public PDU getNext(OID oid) throws IOException
+   public synchronized PDU getNext(OID oid) throws IOException
    {
       PDU pdu = this.getPDU();
       pdu.add(new VariableBinding(oid));
 
-      ResponseEvent e = s.getNext(pdu, this.target);
+      ResponseEvent e = this.s.getNext(pdu, this.target);
 
       if (e == null)
          throw new IOException("Request timeout.");
       else
          return e.responsePDU(pdu, target);
+   }
+
+   /** Closes the session and frees any allocated resources, i.e. sockets and
+    * the internal thread for processing request timeouts. */
+   public synchronized void dispose()
+   {
+      this.s.close();
    }
 
    /** Gives the SNMP version in String format. */

@@ -1,10 +1,4 @@
-/**
-* Thread checking from time to time the address range given to the program to detect remote SNMP
-* agents running on these hosts. After checking all the addresses in the range, the thread performs
-* the same task anew 5s later.
-*
-* For now, the thread prints out the currently running agents on the standard output every 5s.
-*/
+
 
 package discovery;
 
@@ -16,16 +10,21 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 
+/**
+ * Thread checking from time to time the address range given to the program to
+ * detect remote SNMP agents and their variables.
+ * After checking the address range, the thread sleeps for DISCOVERY_DELAY and
+ * then restart the discovery process. There is a reserved number of threads
+ * dedicated for the detection to avoid too many concurrent process.
+ * If the agent has already been discovered, this thread updates its variable
+ * set.
+ */
 public class DiscoveryThread extends Thread
 {
    /** Number of milliseconds between two checks of the address range. */
    public final long DISCOVERY_DELAY = 5000;
 
-   private Parameters p;
-   private AgentsPool ap;
-   private DiscoveryGuardian dg;
-
-   private Map<String, RemoteAgent> agents;
+   private final Parameters p;
 
    private int             nThreads;
    private Semaphore       threadSem;
@@ -43,39 +42,71 @@ public class DiscoveryThread extends Thread
 
    public void run()
    {
-      // Loops every DISCOVERY_DELAY the entire IP range using a pool of thread.
+      Map<String, RemoteAgent> agents;
+
+      // Loops every DISCOVERY_DELAY the entire IP range using a pool of
+      // threads.
       for (;;)
       {
          // Checks every host within the range. Skips the network and the
          // broadcast addresses.
          for (int i = 1; i < this.p.getNbAddresses() - 1; i++)
          {
-            String ip = this.p.getIP(i);
+            final String ip = this.p.getIP(i);
+            Runnable action; // Action to execute asynchronously. Depends if the
+                             // client is already known.
 
-            RemoteAgent agent;
-            boolean newAgent;
-            if (agents.contains(ip)) {
-               // This IP is already known, just refresh its variables list.
-               agent = agents.get(ip);
-               newAgent = false;
+            RemoteAgent existingAgent;
+            synchronized (agents) {
+               existingAgent = agents.get(ip);
+            }
+
+            if (existingAgent != null) {
+               // This IP is already known, just refresh its variables list
+               // asynchronously.
+               final RemoteAgent agent = existingAgent;
+               action = new Runnable() {
+                  public void run()
+                  {
+                     try {
+                        agent.updateVars();
+                     } catch (IOException e) {
+                        agent.dispose();
+                     }
+                  }
+               };
             } else {
                // Unknown IP, tries to reach it for the first time.
-               agent = new RemoteAgent(ip);
-               newAgent = true;
+               // Tries to retrieve the variable set using the three versions of
+               // SNMP.
+               action = new Runnable() {
+                  public void run()
+                  {
+                     // Tries the three versions of SNMP.
+                     RemoteAgent agent = tryAgent(SNMPLink.SNMPv3, ip, p);
+                     if (agent == null)
+                        agent = tryAgent(SNMPLink.SNMPv2c, ip, p);
+                     if (agent == null)
+                        agent = tryAgent(SNMPLink.SNMPv1, ip, p);
+
+                     if (agent != null) { // Succeeds to contact the agent.
+                        agent.start();
+                        synchronized (agents) {
+                           agents.put(ip, agent);
+                        }
+                     }
+                  }
+               };
             }
 
             // Acquires the right to start a thread.
             this.threadSem.aquire();
 
-            // Updates asynchronously the variables of the remote agent.
-            final RemoteAgent finalAgent = agent;
+            // Runs the action and releases the thread.
             this.threadPool.execute(
                new Runnable() {
-                  try {
-                     finalAgent.updateVars();
-                  } finally {
-                     this.threadSem.release();
-                  }
+                  action.run();
+                  this.threadSem.release();
                }
             );
          }
@@ -87,62 +118,19 @@ public class DiscoveryThread extends Thread
          // Waits before next check.
          Thread.sleep(DISCOVERY_DELAY);
       }
-         
-         // Prints on the standard output the current agents.
-         List<RemoteAgent> list = ap.listAgents();
-         Collections.sort(list);
-         if (list.size() > 0)
-         {
-            System.out.println("\nCurrently running SNMP agents :");
-            for (int i = 0; i < list.size(); i++)
-            {
-               RemoteAgent cur = list.get(i);
-               String stringSnmp = Monitor.snmpVersion(cur.getSnmpVersion());
-               System.out.println(cur.getHost() + " (" + stringSnmp + ")");
-            }
-            System.out.println();
-         }
-      
-         // Checks every host within the range
-         for (int i = 0; i < p.getNbAddresses(); i++)
-         {
-            String curIP = p.getIP(i);
-            
-            // Discards .0 and .255 addresses; moves to next address
-            if (curIP.endsWith(".0") || curIP.endsWith(".255"))
-            {
-               continue;
-            }
-            
-            try
-            {
-               DiscoveryUnit du = new DiscoveryUnit(p, ap, dg, curIP);
-               du.start();
-               dg.signalNewThreadStarted();
-            }
-            catch (Exception e)
-            {
-               // Goes on, this host may be discovered later anyway
-            }
-            
-            // Waits 100ms if too many threads.
-            while (dg.tooManyThreads())
-            {
-               try
-               {
-                  Thread.sleep(100);
-               }
-               catch (InterruptedException e) {}
-            }
-         }
-      
-         // Waits 5s before next check.
-         try
-         {
-            Thread.sleep(DISCOVERY_DELAY);
-         }
-         catch (InterruptedException e) {}
+
+   /** Tries to connect to an agent by retrieving its list of variables.
+    * Returns the RemoteAgent or null if the connection failed. */
+   private RemoteAgent tryAgent(
+      SNMPLink.SNMPVersion version, String host, Parameters p
+   )
+   {
+      try {
+         RemoteAgent agent = new RemoteAgent(version, host, p);
+         agent.updateVars();
+         return agent;
+      } catch (IOException e) {
+         return null;
       }
    }
 }
-

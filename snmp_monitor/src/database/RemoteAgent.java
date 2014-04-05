@@ -8,9 +8,13 @@ import org.snmp4j.smi.VariableBinding;
 /**
  * RemoteAgent is a class representing a single remote SNMP agent detected
  * during the discovery step.
- * For now, only the IP of the host computer and the SNMP version are maintained
- * in this class, but it should contain some structure with the records for this
- * agent in the final version.
+ * The class provides a method to update its variable set (method called by
+ * DiscoveryThread).
+ * Every detected variable will be periodically checked for a new value using an
+ * adaptive algorithm : first the variable is updated with a delay of
+ * DEFAULT_VAR_UPDATE_DELAY. This delay is divided by two for the next
+ * update if the variable has been modified and is multiplied by two if it
+ * hasn't been modified.
  */
 public class RemoteAgent implements Comparable<RemoteAgent>
 {
@@ -32,7 +36,7 @@ public class RemoteAgent implements Comparable<RemoteAgent>
       public final OID oid;
       public volatile String value;
 
-      public long delay = DEFAULT_VAR_UPDATE_DELAY;
+      public volatile long delay = DEFAULT_VAR_UPDATE_DELAY;
       public volatile int retries = 0;
 
       public Variable(OID oid, String value)
@@ -48,17 +52,16 @@ public class RemoteAgent implements Comparable<RemoteAgent>
    /** Keeps all tracked variables.
     * This set of variables will be 
     */
-   private TreeMap<OID, Variable> variables;
+   private TreeMap<OID, Variable> variables = new TreeMap<OID, Variable>();
 
    /** This timer will manage a thread which will be used to periodically probe
     * variable for new values. */
    private Timer varUpdateTimer = new Timer();
 
-   public RemoteAgent(Monitor.SNMPVersion version, String host, Parameters p)
+   /** Initialises a RemoteAgent instance with an empty set of variables. */
+   public RemoteAgent(SNMPLink.SNMPVersion version, String host, Parameters p)
    {
-      assert version < 0 || version > 3;
-
-      this.host    = host;
+      this.host = host;
 
       this.link = SNMPLink.getInstance(version, host, p);
    }
@@ -66,18 +69,24 @@ public class RemoteAgent implements Comparable<RemoteAgent>
    // Accessers/setters
    public String getHost() { return host; }
 
+   /** Stops the update timer and the listening socket. */
+   public void dispose()
+   {
+      this.varUpdateTimer.cancel();
+      this.link.dispose();
+   }
+
    /** Goes through the entire MIB tree to get the new variables.
     * Does this by iterating the entire tree using GETNEXT packets starting with
-    * the first OID lexicographic ("."). */
-   public void updateVars()
+    * the first lexicographic OID (".").
+    * Schedules new variables to be updated with the default delay. */
+   public void updateVars() throws IOException
    {
       OID cursor = new OID(".");
 
+      // Tries to read the entire OID tree by calling recursively GETNEXT.
       for (;;) {
-         PDU response;
-         synchronized (this.link) {
-            response = this.link.getNext(cursor);
-         }
+         PDU response = this.link.getNext(cursor);
 
          // Stops if the response is empty.
          if (response == null || response.getErrorStatus() != 0)
@@ -95,48 +104,52 @@ public class RemoteAgent implements Comparable<RemoteAgent>
          synchronized (this.variables) {
             if (this.variables.contains(oid)) {
                Variable var = this.variables.get(oid);
-               var.value   = value;
-               var.retries = 0;
-            } else
-               this.variables.add(oid, new Variable(oid, value));
+               var.value    = value;
+               var.retries  = 0;
+            } else { // New variable, schedules it.
+               Variable var = new Variable(oid, value);
+               this.variables.add(oid, var);
+               this.scheduleVar(var, var.delay);
+            }
          }
 
          cursor = oid;
       }
    }
 
+   /** Updates the value of the given variable by probing the remote agent. */
    private updateVar(Variable var)
    {
       synchronized (this.variables) {
          if (!this.variables.contains(var))
             // The variable has been removed since it was scheduled.
             return;
+      }
 
-         // Probes the new value of the variable.
-         // If the variable value changed, reschedules it with half the delay.
-         // If the variable value didn't change, reschedules it by doubling the
-         // delay.
-         // If the update failed, reschedules the update using the same delay or
-         // removes it if the number of retries exceeded VAR_UPDATE_RETRIES.
-         String newValue = probeVar(var);
-         if (newValue == null) { // Failed to receive the value.
-            var.retries++;
+      // Probes the new value of the variable.
+      // If the variable value changed, reschedules it with half the delay.
+      // If the variable value didn't change, reschedules it by doubling the
+      // delay.
+      // If the update failed, reschedules the update using the same delay or
+      // removes it if the number of retries exceeded VAR_UPDATE_RETRIES.
+      String newValue = probeVar(var);
+      if (newValue == null) { // Failed to receive the value.
+         var.retries++;
 
-            // Removes the variable if too many retries.
-            if (var.retries > VAR_UPDATE_RETIES)
-               removeVar(var);
-            else
-               rescheduleVar(var, var.delay)
-         } else {                // Received a new value.
-            var.retries = 0;
+         // Removes the variable if too many retries.
+         if (var.retries > VAR_UPDATE_RETIES)
+            this.removeVar(var);
+         else
+            this.scheduleVar(var, var.delay)
+      } else {                // Received a new value.
+         var.retries = 0;
 
-            // Reschedules the variable according to its change.
-            if (var.value != newValue)
-               rescheduleVar(var, var.delay / 2);
-            else {
-               var.value = newValue;
-               rescheduleVar(var, var.delay * 2);
-            }
+         // Reschedules the variable according to its change.
+         if (var.value != newValue)
+            this.scheduleVar(var, var.delay / 2);
+         else {
+            var.value = newValue;
+            this.scheduleVar(var, var.delay * 2);
          }
       }
    }
@@ -145,7 +158,12 @@ public class RemoteAgent implements Comparable<RemoteAgent>
     * Returns null if the query failed. */
    private String probeVar(Variable var)
    {
-      var.oid;
+      try {
+         PDU response = this.link.get();
+         return response.get(0).getVariable().toString();
+      } catch (IOException e) {
+         return null;
+      }
    }
 
    private void removeVar(Variable var)
@@ -157,7 +175,7 @@ public class RemoteAgent implements Comparable<RemoteAgent>
 
    /** Schedules a variable update with the given number of milliseconds as
     * delay. */
-   private void rescheduleVar(final Variable var, long delay)
+   private void scheduleVar(final Variable var, long delay)
    {
       if (delay > MAX_VAR_UPDATE_DELAY)
          delay = MAX_VAR_UPDATE_DELAY;
