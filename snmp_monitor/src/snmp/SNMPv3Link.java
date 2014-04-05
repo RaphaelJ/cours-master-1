@@ -17,6 +17,7 @@ import org.snmp4j.security.PrivAES128;
 import org.snmp4j.security.PrivDES;
 import org.snmp4j.security.SecurityLevel;
 import org.snmp4j.security.SecurityModel;
+import org.snmp4j.security.SecurityModels;
 import org.snmp4j.security.SecurityProtocols;
 import org.snmp4j.security.UsmUser;
 import org.snmp4j.security.USM;
@@ -53,7 +54,7 @@ public class SNMPv3Link extends SNMPLink {
          MPv3.createLocalEngineID()
       );
       USM usm = new USM(SecurityProtocols.getInstance(), localEngineID, 0);
-      //SecurityModels.getInstance().addSecurityModel(usm);
+      SecurityModels.getInstance().addSecurityModel(usm);
       usm.addUser(
          new OctetString(p.getUserName()),
          new UsmUser(
