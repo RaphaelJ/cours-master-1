@@ -14,11 +14,12 @@ import org.snmp4j.mp.SnmpConstants;
 import org.snmp4j.smi.OctetString;
 
 /** Creates an SNMPv2c link with the given host. */
-public class SNMPv2cLink extends SNMPLink {
+public class SNMPv2cLink extends SNMPLink<SNMPParameters>  {
 
-   public SNMPv2cLink(String host, Parameters p) throws IOException
+   public SNMPv2cLink(String host, int port, SNMPParameters p)
+      throws IOException
    {
-      super(host, p);
+      super(host, port, p);
    }
 
    protected MessageProcessingModel getMessageProcessingModel(

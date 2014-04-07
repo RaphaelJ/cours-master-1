@@ -16,7 +16,7 @@ import org.snmp4j.transport.DefaultUdpTransportMapping;
 
 /** This abstract class is a wrapper over SNMP4j to make easier simple
  * comunications with an host. */
-public abstract class SNMPLink {
+public abstract class SNMPLink<P> {
 
    /** Number of milliseconds before returning a timeout error. */
    public static final long REQUEST_TIMEOUT = 1000;
@@ -29,7 +29,7 @@ public abstract class SNMPLink {
 
    /** Start listening for SNMP messages using the MessageProcessingModel given
     * by the overloaded getMessageProcessingModel() method. */
-   public SNMPLink(String host, Parameters p) throws IOException
+   public SNMPLink(String host, int port, P p) throws IOException
    {
       this.s = new Snmp(new DefaultUdpTransportMapping());
 
@@ -40,33 +40,31 @@ public abstract class SNMPLink {
       this.s.listen();
 
       this.target = this.getTarget(p);
-      this.target.setAddress(new UdpAddress(host + "/" + 161));
+      this.target.setAddress(new UdpAddress(host + "/" + port));
       this.target.setRetries(0);
       this.target.setTimeout(REQUEST_TIMEOUT);
    }
 
    /** This method is to be overrided by sub-classes to provide a model able
     * to receive their messages. */
-   protected abstract MessageProcessingModel getMessageProcessingModel(
-      Parameters p
-   );
+   protected abstract MessageProcessingModel getMessageProcessingModel(P p);
 
    /** This method is to be overrided by sub-classes to instantiate a target
     * used to receive a PDU. */
-   protected abstract Target getTarget(Parameters p);
+   protected abstract Target getTarget(P p);
 
    /** This method is to be overrided by sub-classes to instantiate a PDU. */
    protected abstract PDU getPDU();
 
    /** Returns a SNMPLink instance of the given SNMP version. */
-   public static SNMPLink getInstance(
-      SNMPVersion version, String host, Parameters p
+   public static SNMPLink<?> getInstance(
+      SNMPVersion version, String host, int port, Parameters p
    ) throws IOException
    {
       switch (version) {
-      case SNMPv1:  return new SNMPv1Link(host, p);
-      case SNMPv2c: return new SNMPv2cLink(host, p);
-      case SNMPv3:  return new SNMPv3Link(host, p);
+      case SNMPv1:  return new SNMPv1Link(host, port, p);
+      case SNMPv2c: return new SNMPv2cLink(host, port, p);
+      case SNMPv3:  return new SNMPv3Link(host, port, p);
       default:      return null;
       }
    }

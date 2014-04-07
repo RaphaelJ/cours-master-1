@@ -57,5 +57,8 @@ public class Monitor
 
       // Launchs the discovery thread.
       new DiscoveryThread(p).start();
+      
+      // Launchs the trap listener.
+      new TrapHandler(p).start();
    }
 }

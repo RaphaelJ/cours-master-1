@@ -16,9 +16,9 @@ import org.snmp4j.smi.OctetString;
 /** Creates an SNMPv1 link with the given host. */
 public class SNMPv1Link extends SNMPLink {
 
-   public SNMPv1Link(String host, Parameters p) throws IOException
+   public SNMPv1Link(String host, int port, Parameters p) throws IOException
    {
-      super(host, p);
+      super(host, port, p);
    }
 
    protected MessageProcessingModel getMessageProcessingModel(

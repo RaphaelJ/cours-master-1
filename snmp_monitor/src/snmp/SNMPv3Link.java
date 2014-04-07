@@ -27,9 +27,9 @@ import org.snmp4j.smi.OID;
 /** Creates an SNMPv3 link with the given host. */
 public class SNMPv3Link extends SNMPLink {
 
-   public SNMPv3Link(String host, Parameters p) throws IOException
+   public SNMPv3Link(String host, int port, Parameters p) throws IOException
    {
-      super(host, p);
+      super(host, port, p);
    }
 
    protected MessageProcessingModel getMessageProcessingModel(

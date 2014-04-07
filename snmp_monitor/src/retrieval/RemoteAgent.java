@@ -80,7 +80,7 @@ public class RemoteAgent implements Comparable<RemoteAgent>
 
       this.p    = p;
 
-      this.link = SNMPLink.getInstance(version, host, p);
+      this.link = SNMPLink.getInstance(version, host, 161, p);
    }
 
    /** Stops the update timer and the listening socket. */
