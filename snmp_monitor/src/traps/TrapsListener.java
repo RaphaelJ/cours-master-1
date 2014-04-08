@@ -1,16 +1,14 @@
-package trap;
+package traps;
 
-import main.Parameters;
+import monitor.MonitorParameters;
 
 import java.io.*;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
-import org.snmp4j.Snmp;
-import org.snmp4j.smi.Address;
-import org.snmp4j.smi.IpAddress;
-import org.snmp4j.smi.VariableBinding;
-import org.snmp4j.smi.OID;
-import org.snmp4j.smi.Variable;
+import org.snmp4j.*;
+import org.snmp4j.smi.*;
+import org.snmp4j.transport.DefaultUdpTransportMapping;
 
 /**
  * Thread for receiving traps.
@@ -18,72 +16,58 @@ import org.snmp4j.smi.Variable;
  */
 public class TrapsListener implements CommandResponder
 {
-   private Parameters p;
-   private Snmp snmp;
+   private MonitorParameters p;
+   private Snmp              s;
 
-   public TrapHandler(Parameters p) throws Exception
+   private Writer logger;
+
+   public TrapsListener(MonitorParameters p) throws IOException
    {
       this.p = p;
+
+      UdpAddress udpAddress = new UdpAddress("0.0.0.0/" + p.getTrapPort());
+      this.s = new Snmp(new DefaultUdpTransportMapping(udpAddress));
+      this.s.addCommandResponder(this);
+
+      // Opens the log file.
+      File file = new File(this.p.getOutputDirectory(), "traps.log");
+      this.logger = new FileWriter(file, true);
    }
 
    /** Starts listening for traps. */
-   public void start()
+   public void start() throws IOException
    {
-      snmp.listen();
+      this.s.listen();
    }
 
    // Method to handle a single trap/PDU at a time.
-   public void processPdu(CommandResponderEvent event)
+   public synchronized void processPdu(CommandResponderEvent event)
    {
       try
       {
          // Obtains IP address and PDU from this event.
          PDU pdu = event.getPDU();
          String ip = ((IpAddress) event.getPeerAddress()).toString();
-         
-         // Looks for traps.log; creates it if it does not exist and opens a stream.
-         String dest = p.getOutputDirectory();
-         File log = null;
-         if (dest.endsWith("/"))
-            log = new File(dest + "traps.log");
-         else
-            log = new File(dest + "/traps.log");
-         if (!dest.exists())
-            dest.createNewFile(
-            );
-         BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(log));
-         
-         // Checks if pdu is an actual trap, then explores the variable bindings.
+
+         // Checks if pdu is an actual trap.
          if (pdu != null && pdu.isConfirmedPdu() && pdu.getType() == PDU.TRAP)
          {
-            Vector<VariableBinding> bindings = pdu.getVariableBindings();
-            if (bindings != null && !bindings.isEmpty())
-            {
-               Iterator<VariableBinding> iterator = varBinds.iterator();
-               
-               // Object to format the current time
-               SimpleDateFormat simpleDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-               
-               while (iterator.hasNext())
-               {
-                  VariableBinding var = iterator.next();
-                  String oid = var.getOid().toString();
-                  String value = var.getVariable().toString();
-                  
-                  // Adds a new line into the traps.log file.
-                  String newLine = simpleDate.format(new Date());
-                  newLine += " " + ip + " " + oid + " " + value + "\n";
-                  bos.write(newLine.getBytes());
-               }
-            }
+            VariableBinding bind = pdu.get(0);
+
+            OID    oid   = bind.getOid();
+            String value = bind.getVariable().toString();
+
+            Date now = new Date();
+
+            this.logger.write(
+               new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").format(now) + ' ' +
+               ip + ' ' + oid + ' ' + value + '\n'
+            );
          }
-         
-         bos.flush();
-         bos.close();
       }
       catch (Exception e)
       {
-         System.err.println("Error while receiving a trap");
+         System.err.println("Error while receiving a trap.");
          e.printStackTrace();
       }
    }

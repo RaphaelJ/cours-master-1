@@ -1,4 +1,4 @@
-package main;
+package monitor;
 
 import snmp.*;
 
@@ -6,7 +6,7 @@ import java.lang.Math;
 import java.util.*;
 
 /**
- * Parameters class essentially consists in gathering all the command line
+ * Parameters class which essentially consists in gathering all the command line
  * parameters of the SNMP monitor into one single object which will be
  * accessible by classes that need to know such parameters.
  * This avoids writing constructors/methods with too many arguments. The class
@@ -37,7 +37,7 @@ public class MonitorParameters implements SNMPParameters, SNMPv3Parameters
    private int nbAddresses;
 
    /** Constructs the object from the command line args[] array. */
-   public Parameters(String args[]) throws Exception
+   public MonitorParameters(String args[]) throws Exception
    {
       LinkedList<String> errors = new LinkedList<String>();
 
@@ -183,9 +183,9 @@ public class MonitorParameters implements SNMPParameters, SNMPv3Parameters
    public String stringSecurityLevel()
    {
       switch (securityLevel) {
-      case SNMPv3Parameters.AuthLevel.AUTH_NOPRIV:   return "authNoPriv";
-      case SNMPv3Parameters.AuthLevel.AUTH_PRIV:     return "authPriv";
-      case SNMPv3Parameters.AuthLevel.NOAUTH_NOPRIV: return "noAuthNoPriv";
+      case AUTH_NOPRIV:   return "authNoPriv";
+      case AUTH_PRIV:     return "authPriv";
+      case NOAUTH_NOPRIV: return "noAuthNoPriv";
       default:            return null;
       }
    }
@@ -193,8 +193,8 @@ public class MonitorParameters implements SNMPParameters, SNMPv3Parameters
    public String stringAuthProtocol()
    {
       switch (authProtocol) {
-      case SNMPv3Parameters.AuthProtocol.SHA1: return "SHA1";
-      case SNMPv3Parameters.AuthProtocol.MD5:  return "MD5";
+      case SHA1: return "SHA1";
+      case MD5:  return "MD5";
       default:   return null;
       }
    }
@@ -202,8 +202,8 @@ public class MonitorParameters implements SNMPParameters, SNMPv3Parameters
    public String stringPrivProtocol()
    {
       switch (privProtocol) {
-      case SNMPv3Parameters.PrivacyProtocol.AES: return "AES";
-      case SNMPv3Parameters.PrivacyProtocol.DES: return "DES";
+      case AES: return "AES";
+      case DES: return "DES";
       default:  return null;
       }
    }

@@ -1,7 +1,5 @@
 package snmp;
 
-import main.Parameters;
-
 import java.io.*;
 import org.snmp4j.PDU;
 import org.snmp4j.Snmp;
@@ -9,9 +7,7 @@ import org.snmp4j.Target;
 import org.snmp4j.event.ResponseEvent;
 import org.snmp4j.event.ResponseListener;
 import org.snmp4j.mp.MessageProcessingModel;
-import org.snmp4j.smi.OID;
-import org.snmp4j.smi.UdpAddress;
-import org.snmp4j.smi.VariableBinding;
+import org.snmp4j.smi.*;
 import org.snmp4j.transport.DefaultUdpTransportMapping;
 
 /** This abstract class is a wrapper over SNMP4j to make easier simple
@@ -28,17 +24,12 @@ public abstract class SNMPLink<P> {
    private Snmp   s;
    private Target target;
 
-   /** Start listening for SNMP messages using the MessageProcessingModel given
-    * by the overloaded getMessageProcessingModel() method. */
    public SNMPLink(String host, int port, P p) throws IOException
    {
       this.s = new Snmp(new DefaultUdpTransportMapping());
 
       this.s.getMessageDispatcher()
             .addMessageProcessingModel(this.getMessageProcessingModel(p));
-
-      // Starts listening for SNMP packets.
-      this.s.listen();
 
       this.target = this.getTarget(p);
       this.target.setAddress(new UdpAddress(host + "/" + port));
@@ -59,7 +50,7 @@ public abstract class SNMPLink<P> {
 
    /** Returns a SNMPLink instance of the given SNMP version. */
    public static <P extends SNMPParameters & SNMPv3Parameters>
-   SNMPLink<P> getInstance<T>(
+   SNMPLink<P> getInstance(
       SNMPVersion version, String host, int port, P p
    ) throws IOException
    {
@@ -69,6 +60,12 @@ public abstract class SNMPLink<P> {
       case SNMPv3:  return new SNMPv3Link<P>(host, port, p);
       default:      return null;
       }
+   }
+
+   /** Starts listening for SNMP packets. */
+   public synchronized void listen() throws IOException
+   {
+      this.s.listen();
    }
 
    /** Executes the given OID get request synchronously. */
@@ -110,10 +107,13 @@ public abstract class SNMPLink<P> {
          return e.getResponse();
    }
 
-   public synchronized void sendTrap(OID oid)
+   /** Sends a trap with the given variable. */
+   public synchronized void notify(OID oid, String value) throws IOException
    {
       PDU pdu = this.getPDU();
-      pdu.add();
+      pdu.add(new VariableBinding(oid, new OctetString(value)));
+
+      this.s.notify(pdu, this.target);
    }
 
    /** Closes the session and frees any allocated resources, i.e. sockets and

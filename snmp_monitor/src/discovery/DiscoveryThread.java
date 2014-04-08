@@ -1,6 +1,6 @@
 package discovery;
 
-import main.*;
+import monitor.*;
 import retrieval.*;
 import snmp.*;
 
@@ -26,13 +26,13 @@ public class DiscoveryThread extends Thread
 
    private enum LogEvent { NEW_AGENT, REMOVE_AGENT };
 
-   private final Parameters p;
+   private final MonitorParameters p;
 
    private final int             nThreads;
    private final Semaphore       threadSem;
    private final ExecutorService threadPool;
 
-   public DiscoveryThread(Parameters p)
+   public DiscoveryThread(MonitorParameters p)
    {
       this.p = p;
 
@@ -143,7 +143,7 @@ public class DiscoveryThread extends Thread
    /** Tries to connect to an agent and retrieves its list of variables.
     * Returns the RemoteAgent or null if the connection failed. */
    private static RemoteAgent tryAgent(
-      SNMPLink.SNMPVersion version, String host, Parameters p
+      SNMPLink.SNMPVersion version, String host, MonitorParameters p
    )
    {
       RemoteAgent agent = null;

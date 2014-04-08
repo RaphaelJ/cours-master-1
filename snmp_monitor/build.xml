@@ -1,44 +1,48 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="SNMPMonitor" basedir="." default="all">
+   <!-- Defining properties -->
+   <property name="src.dir" value="src"/>
+   <property name="build.dir" value="build"/>
+   <property name="lib.dir" value="/opt/snmp4j-2.2.5/dist"/>
+   <property name="main-class" value=""/>
 
-	<!-- Defining properties -->
-	<property name="src.dir" value="src"/>
-	<property name="build.dir" value="build"/>
-	<property name="lib.dir" value="/opt/snmp4j-2.2.5/dist"/>
-	<property name="main-class" value="main.Monitor"/>
-	
-	<!-- Declaring path for SNMP4j library -->
-	<path id="snmp4j.classpath">
-       <pathelement location="${lib.dir}/snmp4j-2.2.5.jar"/>
+   <!-- Declaring path for SNMP4j library -->
+   <path id="snmp4j.classpath">
+      <pathelement location="${lib.dir}/snmp4j-2.2.5.jar"/>
    </path>
 
-	<!-- Target deleting compiled class and the JAR file -->
-	<target name="clean">
-		<delete dir="${build.dir}"/>
-		<delete file="${ant.project.name}.jar"/>
-	</target>
+   <!-- Target deleting compiled class and the JAR file -->
+   <target name="clean">
+      <delete dir="${build.dir}"/>
+      <delete file="${ant.project.name}.jar"/>
+   </target>
 
-	<!-- Target compiling the code in the build/ directory -->
-	<target name="compile">
-		<mkdir dir="${build.dir}"/>
-		<javac includeantruntime="false" source="1.7" target="1.7" destdir="${build.dir}" debug="yes" optimize="on" nowarn="on">
-		   <src path="${src.dir}"/>
+   <!-- Target compiling the code in the build/ directory -->
+   <target name="compile">
+      <mkdir dir="${build.dir}"/>
+      <javac includeantruntime="false" source="1.7" target="1.7"
+             destdir="${build.dir}" debug="yes" optimize="on" nowarn="on">
+         <src path="${src.dir}"/>
          <classpath refid="snmp4j.classpath"/>
-		</javac>
-	</target>
-	
-	<!-- Default target creating the JAR file -->
-	<target name="default" depends="clean,compile">
-		<jar destfile="${ant.project.name}.jar" basedir="${build.dir}">
-			<manifest>
-				<attribute name="Main-Class" value="${main-class}"/>
-			</manifest>
-			<zipgroupfileset dir="${lib.dir}" includes="*.jar" />
-		</jar>
-	</target>
+      </javac>
+   </target>
 
-	<!-- Target creating the JAR -->
-	<target name="all" depends="default"/>
+   <!-- Default target creating the JAR file -->
+   <target name="default" depends="clean,compile">
+      <jar destfile="Monitor.jar" basedir="${build.dir}">
+         <manifest>
+            <attribute name="Main-Class" value="monitor.Monitor"/>
+         </manifest>
+         <zipgroupfileset dir="${lib.dir}" includes="*.jar" />
+      </jar>
+      <jar destfile="TrapsDaemon.jar" basedir="${build.dir}">
+         <manifest>
+            <attribute name="Main-Class" value="traps.TrapsDaemon"/>
+         </manifest>
+         <zipgroupfileset dir="${lib.dir}" includes="*.jar" />
+      </jar>
+   </target>
 
+   <!-- Target creating the JAR -->
+   <target name="all" depends="default"/>
 </project>
-
