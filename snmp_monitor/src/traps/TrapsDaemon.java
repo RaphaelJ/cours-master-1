@@ -61,8 +61,8 @@ public class TrapsDaemon {
       file.close();
 
       return new RAMUsage(
-         Long.parseLong(totalLn.split("MemTotal:\\p{Blank}*(\\p{Digit}*)")[1]),
-         Long.parseLong(freeLn.split("MemFree:\\p{Blank}*(\\p{Digit}*)")[1])
+         Long.parseLong(totalLn.split("\\p{Blank}+")[1]),
+         Long.parseLong(freeLn.split("\\p{Blank}+")[1])
       );
    }
 
@@ -70,6 +70,7 @@ public class TrapsDaemon {
    public void run()
    {
       try {
+         System.out.println("Traps daemon started.");
          // True when the last a trap has already been send since the RAM usage
          // has exceeded the total available RAM.
          boolean already_exceeded = false;
@@ -95,8 +96,10 @@ public class TrapsDaemon {
 
    public static void main(String[] args) throws IOException
    {
-      if (args.length != 3);
+      if (args.length != 3) {
          printUsage();
+         return;
+      }
 
       new TrapsDaemon(args[0], Integer.parseInt(args[1]), args[2]).run();
    }

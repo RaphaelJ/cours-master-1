@@ -40,7 +40,7 @@ public class TrapsListener implements CommandResponder
       this.s.listen();
    }
 
-   // Method to handle a single trap/PDU at a time.
+   /* Method to handle a single trap/PDU at a time. */
    public synchronized void processPdu(CommandResponderEvent event)
    {
       try
@@ -48,9 +48,10 @@ public class TrapsListener implements CommandResponder
          // Obtains IP address and PDU from this event.
          PDU pdu = event.getPDU();
          String ip = ((IpAddress) event.getPeerAddress()).toString();
+         System.out.println("Received a trap from " + ip + '.');
 
          // Checks if pdu is an actual trap.
-         if (pdu != null && pdu.isConfirmedPdu() && pdu.getType() == PDU.TRAP)
+         if (pdu != null && pdu.getType() == PDU.TRAP)
          {
             VariableBinding bind = pdu.get(0);
 
@@ -63,6 +64,7 @@ public class TrapsListener implements CommandResponder
                new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").format(now) + ' ' +
                ip + ' ' + oid + ' ' + value + '\n'
             );
+            this.logger.flush();
          }
       }
       catch (Exception e)
