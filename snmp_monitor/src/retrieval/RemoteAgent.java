@@ -36,7 +36,7 @@ public class RemoteAgent implements Comparable<RemoteAgent>
    public static final long DEFAULT_VAR_UPDATE_DELAY = 5000;
 
    /** After which number of failed updates a variable will be removed. */
-   public static final int VAR_UPDATE_RETRIES        = 1;
+   public static final int VAR_UPDATE_RETRIES        = 2;
 
    private class Variable {
       public final OID oid;
