@@ -1,6 +1,6 @@
 package traps;
 
-import snmp.SNMPv2cLink;
+import snmp.*;
 
 import org.snmp4j.smi.OID;
 
@@ -12,21 +12,46 @@ import org.snmp4j.smi.OID;
  *   the memory which but only the truly free RAM ;
  * - this script will not send a new trap unless the total free ram fell below
  *   10%. */
-public class TrapsDaemon {
+public class TrapsDaemon extends Thread {
    /** Number of milliseconds between two probes of the RAM usage. */
    public static final long POOLING_DELAY = 5000;
 
    public static final OID FREE_RAM_OID = new OID(".1.3.6.1.4.1.2021.4.11.0");
 
-   private final SNMPv2cLink link;
+   private class RAMUsage {
+      public final long total;
+      public final long free;
 
-   public TrapsDaemon()
-   {
-      this.link = new SNMPv2cLink(host, port, p)
+      public class RAMUsage(long total, long free)
+      {
+         total = total;
+         free  = free;
+      }
    }
 
-   public void sendTrap()
+   private final SNMPv2cLink<SNMPParameters> link;
+
+   public TrapsDaemon(final String communityName)
    {
-      this.link.send(pdu);
+      SNMPParameters p = new SNMPParameters() {
+         public String getCommunityName()
+         {
+            return communityName;
+         }
+      };
+      this.link = new SNMPv2cLink<SNMPParameters>(host, port, p);
+   }
+
+   public static RAMUsage getCurrentRAMUsage()
+   {
+   }
+
+   public void run()
+   {
+      
+   }
+
+   public static void main(String[] args)
+   {
    }
 }

@@ -1,5 +1,7 @@
 package main;
 
+import snmp.*;
+
 import java.lang.Math;
 import java.util.*;
 
@@ -12,22 +14,18 @@ import java.util.*;
  * index (e.g. if we give 139.165.222.0/24, there are 256 addresses and address
  * at index 2 is 139.165.222.2).
  */
-public class Parameters
+public class MonitorParameters implements SNMPParameters, SNMPv3Parameters
 {
    public static final int DEFAULT_THREADS = 64;
-
-   public enum AuthLevel { NOAUTH_NOPRIV, AUTH_NOPRIV, AUTH_PRIV };
-   public enum AuthProtocol { MD5, SHA1 };
-   public enum PrivacyProtocol { DES, AES };
 
    // Fields are just parameters specified by the assignment.
    private String outputDirectory;
    private String communityName;
    private String userName;
-   private AuthLevel securityLevel;
-   private AuthProtocol authProtocol;
+   private SNMPv3Parameters.AuthLevel securityLevel;
+   private SNMPv3Parameters.AuthProtocol authProtocol;
    private String authPassword;
-   private PrivacyProtocol privProtocol;
+   private SNMPv3Parameters.PrivacyProtocol privProtocol;
    private String privPassword;
    private int trapPort;
    private int maxNbThreads;
@@ -128,23 +126,23 @@ public class Parameters
       userName = args[3];
 
       if (args[4].equals("authNoPriv"))
-         securityLevel = AuthLevel.AUTH_NOPRIV;
+         securityLevel = SNMPv3Parameters.AuthLevel.AUTH_NOPRIV;
       else if (args[4].equals("authPriv"))
-         securityLevel = AuthLevel.AUTH_PRIV;
+         securityLevel = SNMPv3Parameters.AuthLevel.AUTH_PRIV;
       else
-         securityLevel = AuthLevel.NOAUTH_NOPRIV;
+         securityLevel = SNMPv3Parameters.AuthLevel.NOAUTH_NOPRIV;
 
       if (args[5].equals("SHA1"))
-         authProtocol = AuthProtocol.SHA1;
+         authProtocol = SNMPv3Parameters.AuthProtocol.SHA1;
       else
-         authProtocol = AuthProtocol.MD5;
+         authProtocol = SNMPv3Parameters.AuthProtocol.MD5;
 
       authPassword = args[6];
 
       if (args[7].equals("AES"))
-         privProtocol = PrivacyProtocol.AES;
+         privProtocol = SNMPv3Parameters.PrivacyProtocol.AES;
       else
-         privProtocol = PrivacyProtocol.DES;
+         privProtocol = SNMPv3Parameters.PrivacyProtocol.DES;
 
       privPassword = args[8];
       trapPort = portNumber;
@@ -157,10 +155,24 @@ public class Parameters
    public String getOutputDirectory() { return outputDirectory; }
    public String getCommunityName() { return communityName; }
    public String getUserName() { return userName; }
-   public AuthLevel getSecurityLevel() { return securityLevel; }
-   public AuthProtocol getAuthProtocol() { return authProtocol; }
+
+   public SNMPv3Parameters.AuthLevel getSecurityLevel()
+   {
+      return securityLevel;
+   }
+
+   public SNMPv3Parameters.AuthProtocol getAuthProtocol()
+   {
+      return authProtocol;
+   }
+
    public String getAuthPassword() { return authPassword; }
-   public PrivacyProtocol getPrivProtocol() { return privProtocol; }
+
+   public SNMPv3Parameters.PrivacyProtocol getPrivProtocol()
+   {
+      return privProtocol;
+   }
+
    public String getPrivPassword() { return privPassword; }
    public int getTrapPort() { return trapPort; }
    public int getNbAddresses() { return nbAddresses; }
@@ -171,9 +183,9 @@ public class Parameters
    public String stringSecurityLevel()
    {
       switch (securityLevel) {
-      case AUTH_NOPRIV:   return "authNoPriv";
-      case AUTH_PRIV:     return "authPriv";
-      case NOAUTH_NOPRIV: return "noAuthNoPriv";
+      case SNMPv3Parameters.AuthLevel.AUTH_NOPRIV:   return "authNoPriv";
+      case SNMPv3Parameters.AuthLevel.AUTH_PRIV:     return "authPriv";
+      case SNMPv3Parameters.AuthLevel.NOAUTH_NOPRIV: return "noAuthNoPriv";
       default:            return null;
       }
    }
@@ -181,8 +193,8 @@ public class Parameters
    public String stringAuthProtocol()
    {
       switch (authProtocol) {
-      case SHA1: return "SHA1";
-      case MD5:  return "MD5";
+      case SNMPv3Parameters.AuthProtocol.SHA1: return "SHA1";
+      case SNMPv3Parameters.AuthProtocol.MD5:  return "MD5";
       default:   return null;
       }
    }
@@ -190,8 +202,8 @@ public class Parameters
    public String stringPrivProtocol()
    {
       switch (privProtocol) {
-      case AES: return "AES";
-      case DES: return "DES";
+      case SNMPv3Parameters.PrivacyProtocol.AES: return "AES";
+      case SNMPv3Parameters.PrivacyProtocol.DES: return "DES";
       default:  return null;
       }
    }

@@ -29,10 +29,10 @@ public class Monitor
          return;
       }
 
-      Parameters p = null;
+      MonitorParameters p = null;
       try
       {
-         p = new Parameters(args);
+         p = new MonitorParameters(args);
       }
       catch(Exception e)
       {
@@ -57,7 +57,7 @@ public class Monitor
 
       // Launchs the discovery thread.
       new DiscoveryThread(p).start();
-      
+
       // Launchs the trap listener.
       new TrapHandler(p).start();
    }

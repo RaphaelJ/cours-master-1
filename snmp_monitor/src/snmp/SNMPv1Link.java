@@ -14,21 +14,19 @@ import org.snmp4j.mp.SnmpConstants;
 import org.snmp4j.smi.OctetString;
 
 /** Creates an SNMPv1 link with the given host. */
-public class SNMPv1Link extends SNMPLink {
+public class SNMPv1Link<P implements SNMPParameters> extends SNMPLink<P> {
 
-   public SNMPv1Link(String host, int port, Parameters p) throws IOException
+   public SNMPv1Link(String host, int port, SNMPParameters p) throws IOException
    {
       super(host, port, p);
    }
 
-   protected MessageProcessingModel getMessageProcessingModel(
-      Parameters p
-   )
+   protected MessageProcessingModel getMessageProcessingModel(P p)
    {
       return new MPv1();
    }
 
-   protected Target getTarget(Parameters p)
+   protected Target getTarget(P p)
    {
       CommunityTarget target = new CommunityTarget();
       target.setVersion(SnmpConstants.version1);

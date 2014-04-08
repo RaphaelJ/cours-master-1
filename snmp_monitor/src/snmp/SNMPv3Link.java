@@ -25,25 +25,24 @@ import org.snmp4j.smi.OctetString;
 import org.snmp4j.smi.OID;
 
 /** Creates an SNMPv3 link with the given host. */
-public class SNMPv3Link extends SNMPLink {
+public class SNMPv3Link<P implements SNMPv3Parameters> extends SNMPLink<P> {
 
-   public SNMPv3Link(String host, int port, Parameters p) throws IOException
+   public SNMPv3Link(String host, int port, P p)
+      throws IOException
    {
       super(host, port, p);
    }
 
-   protected MessageProcessingModel getMessageProcessingModel(
-      Parameters p
-   )
+   protected MessageProcessingModel getMessageProcessingModel(P p)
    {
       OID authProtocol;
-      if (p.getAuthProtocol() == Parameters.AuthProtocol.MD5)
+      if (p.getAuthProtocol() == SNMPv3Parameters.AuthProtocol.MD5)
          authProtocol = AuthMD5.ID;
       else
          authProtocol = AuthSHA.ID;
 
       OID privProtocol;
-      if (p.getPrivProtocol() == Parameters.PrivacyProtocol.DES)
+      if (p.getPrivProtocol() == SNMPv3Parameters.PrivacyProtocol.DES)
          privProtocol = PrivDES.ID;
       else
          privProtocol = PrivAES128.ID;
@@ -67,7 +66,7 @@ public class SNMPv3Link extends SNMPLink {
       return new MPv3(usm);
    }
 
-   protected Target getTarget(Parameters p)
+   protected Target getTarget(P p)
    {
       UserTarget target = new UserTarget();
       target.setVersion(SnmpConstants.version3);

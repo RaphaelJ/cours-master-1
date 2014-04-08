@@ -13,10 +13,10 @@ import org.snmp4j.smi.OID;
 import org.snmp4j.smi.Variable;
 
 /**
- * Class for receiving traps.
+ * Thread for receiving traps.
  * It implements a special interface of SNMP4j to handle traps.
  */
-public class TrapHandler implements CommandResponder
+public class TrapsListener implements CommandResponder
 {
    private Parameters p;
    private Snmp snmp;

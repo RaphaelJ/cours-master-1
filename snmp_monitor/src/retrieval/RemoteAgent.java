@@ -22,7 +22,8 @@ import org.snmp4j.PDU;
  * update if the variable has been modified and is multiplied by two if it
  * hasn't been modified.
  */
-public class RemoteAgent implements Comparable<RemoteAgent>
+public class RemoteAgent<P implements SNMPParameters & SNMPv3Parameters>
+   implements Comparable<RemoteAgent>
 {
    /** Minimum number of milliseconds between two updates of the same
     * variable. */
@@ -55,11 +56,11 @@ public class RemoteAgent implements Comparable<RemoteAgent>
    public final SNMPLink.SNMPVersion version;
    public final String               host;
 
-   private Parameters p;
-   private Writer     logger = null; // The log file is opened on the first
-                                     // write.
+   private P      p;
+   private Writer logger = null; // The log file is opened on the first
+                                 // write.
 
-   private SNMPLink link;
+   private SNMPLink<P> link;
    private volatile boolean stopped = false;
 
    /** Keeps all tracked variables.
@@ -72,13 +73,12 @@ public class RemoteAgent implements Comparable<RemoteAgent>
    private Timer varUpdateTimer = new Timer();
 
    /** Initialises a RemoteAgent instance with an empty set of variables. */
-   public RemoteAgent(SNMPLink.SNMPVersion version, String host, Parameters p)
+   public RemoteAgent(SNMPLink.SNMPVersion version, String host, P p)
       throws IOException
    {
       this.version = version;
-      this.host = host;
-
-      this.p    = p;
+      this.host    = host;
+      this.p       = p;
 
       this.link = SNMPLink.getInstance(version, host, 161, p);
    }

@@ -14,7 +14,7 @@ import org.snmp4j.mp.SnmpConstants;
 import org.snmp4j.smi.OctetString;
 
 /** Creates an SNMPv2c link with the given host. */
-public class SNMPv2cLink extends SNMPLink<SNMPParameters>  {
+public class SNMPv2cLink<P implements SNMPParameters> extends SNMPLink<P> {
 
    public SNMPv2cLink(String host, int port, SNMPParameters p)
       throws IOException
@@ -22,14 +22,12 @@ public class SNMPv2cLink extends SNMPLink<SNMPParameters>  {
       super(host, port, p);
    }
 
-   protected MessageProcessingModel getMessageProcessingModel(
-      Parameters p
-   )
+   protected MessageProcessingModel getMessageProcessingModel(P p)
    {
       return new MPv2c();
    }
 
-   protected Target getTarget(Parameters p)
+   protected Target getTarget(P p)
    {
       CommunityTarget target = new CommunityTarget();
       target.setVersion(SnmpConstants.version2c);

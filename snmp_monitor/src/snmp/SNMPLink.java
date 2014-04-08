@@ -15,7 +15,8 @@ import org.snmp4j.smi.VariableBinding;
 import org.snmp4j.transport.DefaultUdpTransportMapping;
 
 /** This abstract class is a wrapper over SNMP4j to make easier simple
- * comunications with an host. */
+ * comunications with an host. P is the type of the parameters used to
+ * to instanciate the class. */
 public abstract class SNMPLink<P> {
 
    /** Number of milliseconds before returning a timeout error. */
@@ -57,14 +58,15 @@ public abstract class SNMPLink<P> {
    protected abstract PDU getPDU();
 
    /** Returns a SNMPLink instance of the given SNMP version. */
-   public static SNMPLink<?> getInstance(
-      SNMPVersion version, String host, int port, Parameters p
+   public static <P extends SNMPParameters & SNMPv3Parameters>
+   SNMPLink<P> getInstance<T>(
+      SNMPVersion version, String host, int port, P p
    ) throws IOException
    {
       switch (version) {
-      case SNMPv1:  return new SNMPv1Link(host, port, p);
-      case SNMPv2c: return new SNMPv2cLink(host, port, p);
-      case SNMPv3:  return new SNMPv3Link(host, port, p);
+      case SNMPv1:  return new SNMPv1Link<P>(host, port, p);
+      case SNMPv2c: return new SNMPv2cLink<P>(host, port, p);
+      case SNMPv3:  return new SNMPv3Link<P>(host, port, p);
       default:      return null;
       }
    }
@@ -106,6 +108,12 @@ public abstract class SNMPLink<P> {
          throw new IOException("Request timeout.");
       else
          return e.getResponse();
+   }
+
+   public synchronized void sendTrap(OID oid)
+   {
+      PDU pdu = this.getPDU();
+      pdu.add();
    }
 
    /** Closes the session and frees any allocated resources, i.e. sockets and
