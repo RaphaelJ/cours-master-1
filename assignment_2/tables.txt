@@ -1,0 +1,95 @@
+FW1:~# iptables -vL
+Chain INPUT (policy ACCEPT 1890 packets, 159K bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain FORWARD (policy DROP 27 packets, 2276 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+  272 43820 ACCEPT     all  --  any    any     anywhere             anywhere            ctstate RELATED,ESTABLISHED 
+    0     0 ACCEPT     tcp  --  eth0   eth1    anywhere             192.168.7.10        tcp dpt:www 
+    0     0 ACCEPT     udp  --  eth0   eth1    anywhere             192.168.7.11        udp dpt:domain 
+    0     0 ACCEPT     tcp  --  eth0   eth1    anywhere             192.168.7.12        tcp dpt:rsync 
+    0     0 ACCEPT     tcp  --  eth0   eth3    anywhere             192.168.2.13        tcp dpt:smtp 
+    0     0 ACCEPT     tcp  --  eth0   eth3    anywhere             192.168.2.13        tcp dpt:imap2 
+    0     0 ACCEPT     tcp  --  eth0   eth2    anywhere             192.168.1.10        tcp dpt:ssh 
+    0     0 ACCEPT     udp  --  eth3   eth0    192.168.2.10         anywhere            udp dpt:domain 
+    0     0 ACCEPT     udp  --  eth3   eth1    192.168.2.10         192.168.7.11        udp dpt:domain 
+    0     0 ACCEPT     tcp  --  eth3   eth0    192.168.2.11         anywhere            tcp dpt:www 
+    0     0 ACCEPT     tcp  --  eth3   eth1    192.168.2.11         192.168.7.10        tcp dpt:www 
+    0     0 ACCEPT     tcp  --  eth3   eth0    192.168.2.12         anywhere            tcp dpt:https 
+    0     0 ACCEPT     tcp  --  eth3   eth0    192.168.2.13         anywhere            tcp dpt:smtp 
+    0     0 ACCEPT     all  --  eth4   eth0    192.168.3.10         anywhere            
+    0     0 ACCEPT     all  --  eth4   eth0    192.168.3.11         anywhere            
+    0     0 ACCEPT     tcp  --  eth4   eth3    192.168.3.10         192.168.2.13        tcp dpt:smtp 
+    0     0 ACCEPT     tcp  --  eth4   eth3    192.168.3.10         192.168.2.13        tcp dpt:imap2 
+    0     0 ACCEPT     tcp  --  eth4   eth3    192.168.3.11         192.168.2.13        tcp dpt:smtp 
+    0     0 ACCEPT     tcp  --  eth4   eth3    192.168.3.11         192.168.2.13        tcp dpt:imap2 
+    0     0 ACCEPT     tcp  --  eth4   eth2    192.168.3.10         192.168.1.10        tcp dpt:ssh 
+    0     0 ACCEPT     tcp  --  eth4   eth2    192.168.3.10         192.168.1.11        tcp dpt:ftp-data 
+    0     0 ACCEPT     tcp  --  eth4   eth2    192.168.3.10         192.168.1.11        tcp dpt:ftp 
+    2   120 ACCEPT     tcp  --  eth4   eth2    192.168.3.10         192.168.1.12        
+    3   292 ACCEPT     udp  --  eth4   eth2    192.168.3.10         192.168.1.12        
+    1    60 ACCEPT     tcp  --  eth4   eth2    192.168.3.11         192.168.1.12        
+    3   292 ACCEPT     udp  --  eth4   eth2    192.168.3.11         192.168.1.12        
+
+Chain OUTPUT (policy ACCEPT 1882 packets, 160K bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+ 
+ 
+ 
+ 
+FW1:~# iptables -L -t nat
+Chain PREROUTING (policy ACCEPT)
+target     prot opt source               destination         
+DNAT       tcp  --  anywhere             anywhere            tcp dpt:www to:192.168.7.10:80 
+DNAT       udp  --  anywhere             anywhere            udp dpt:domain to:192.168.7.11:53 
+DNAT       tcp  --  anywhere             anywhere            tcp dpt:rsync to:192.168.7.12:873 
+DNAT       tcp  --  anywhere             anywhere            tcp dpt:smtp to:192.168.2.13:25 
+DNAT       tcp  --  anywhere             anywhere            tcp dpt:imap2 to:192.168.2.13:143 
+
+Chain POSTROUTING (policy ACCEPT)
+target     prot opt source               destination         
+MASQUERADE  all  --  anywhere             anywhere            
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination   
+
+
+
+FW2:~# iptables -vL
+Chain INPUT (policy ACCEPT 106 packets, 7916 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain FORWARD (policy DROP 27 packets, 1620 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+  325 70941 ACCEPT     all  --  any    any     anywhere             anywhere            ctstate RELATED,ESTABLISHED 
+   26  1434 ACCEPT     udp  --  eth1   eth0    192.168.6.10         192.168.5.10        udp dpt:domain 
+    3   180 ACCEPT     tcp  --  eth1   eth0    192.168.6.10         192.168.5.11        tcp dpt:3128 
+    2   120 ACCEPT     tcp  --  eth1   eth0    192.168.6.10         192.168.5.12        tcp dpt:3128 
+    1    60 ACCEPT     tcp  --  eth1   eth0    192.168.6.10         192.168.5.13        tcp dpt:smtp 
+    2   120 ACCEPT     tcp  --  eth1   eth0    192.168.6.10         192.168.5.13        tcp dpt:imap2 
+    0     0 ACCEPT     udp  --  eth1   eth0    192.168.6.11         192.168.5.10        udp dpt:domain 
+    0     0 ACCEPT     tcp  --  eth1   eth0    192.168.6.11         192.168.5.11        tcp dpt:3128 
+    0     0 ACCEPT     tcp  --  eth1   eth0    192.168.6.11         192.168.5.12        tcp dpt:3128 
+    0     0 ACCEPT     tcp  --  eth1   eth0    192.168.6.11         192.168.5.13        tcp dpt:smtp 
+    3   180 ACCEPT     tcp  --  eth1   eth0    192.168.6.11         192.168.5.13        tcp dpt:imap2 
+
+Chain OUTPUT (policy ACCEPT 106 packets, 7916 bytes)
+ pkts bytes target     prot opt in     out     source               destination       
+
+
+
+FW3:~# iptables -vL
+Chain INPUT (policy ACCEPT 41 packets, 3408 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain FORWARD (policy DROP 5 packets, 372 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+   79  5028 ACCEPT     all  --  any    any     anywhere             anywhere            ctstate RELATED,ESTABLISHED 
+    0     0 ACCEPT     tcp  --  eth1   eth0    192.168.3.10         192.168.4.10        tcp dpt:ssh 
+    0     0 ACCEPT     tcp  --  eth1   eth0    192.168.1.10         192.168.4.10        tcp dpt:ssh 
+    0     0 ACCEPT     tcp  --  eth0   eth1    192.168.4.10         192.168.1.11        tcp dpt:ftp-data 
+    2   120 ACCEPT     tcp  --  eth0   eth1    192.168.4.10         192.168.1.11        tcp dpt:ftp 
+
+Chain OUTPUT (policy ACCEPT 41 packets, 3408 bytes)
+ pkts bytes target     prot opt in     out     source               destination 
