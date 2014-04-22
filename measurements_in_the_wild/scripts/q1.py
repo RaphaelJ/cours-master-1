@@ -7,7 +7,8 @@ DEFAULT_RETRY    = 2
 DEFAULT_TIMEOUT  = 10
 
 import argparse
-from itertools import chain, count, islice, takewhile
+from itertools import chain, count, ifilter, islice, takewhile
+
 from scapy.all import *
 
 def parse_top_sites(csv_file):
@@ -18,12 +19,44 @@ def parse_top_sites(csv_file):
             # Removes the tailing \n and takes the second field.
             yield l[:-1].split(',')[1]
 
+def lazy_property(f):
+    computed = False
+    value    = None
+
+    @property
+    def inner(self):
+        if not computed:
+            computed = True
+            value    = f(self)
+
+        return value
+
+    return inner
+
+class Path:
+
+    def __init__(self, path):
+        self.path = list(path)
+
+    @lazy_property
+    def n_silent(self):
+        return sum(1 for _ in ifilter(lambda node: node == None, self))
+
+    @property
+    def n_unsilent(self):
+        return len(self) - self.n_silent
+
+    def __iter__(self):
+        return self.path.__iter__()
+
+    def __len__(self):
+        return len(self.path)
+
 def traceroute(target, max_ttl, retry, timeout):
     """
     Sends an TCP SYN request on port 80 to the target with a varying TTL.
-    Returns a iterator of (query, response) describing the probed path if the
-    target has been reached (response is None if no response has been received
-    for the corresponding query) or None if the target was unreachable.
+    Returns an instance of Path if the target has been reached or None if the
+    target was unreachable.
     """
 
     def by_ttl(ans1, ans2):
@@ -43,11 +76,11 @@ def traceroute(target, max_ttl, retry, timeout):
         target_ip = socket.gethostbyname(target)
     except socket.gaierror:
         return None
-    packet       = IP(dst=target_ip, ttl=(1, max_ttl))/TCP(dport=80, flags="S")
+    packet       = IP(dst=target_ip, ttl=(0, max_ttl))/TCP(dport=80, flags="S")
     anss, unanss = sr(packet, retry=retry, timeout=timeout)
 
     if any(from_target(target_ip, ans) for ans in anss):
-        # Reached the target.
+        # Target reached.
         # Combines the list of answered queries with the list of non-answered
         # queries.
         # Sorts them by their TTL. Unanswered queries will have a None answer.
@@ -55,12 +88,14 @@ def traceroute(target, max_ttl, retry, timeout):
         packets.sort(by_ttl)
 
         # Selects the path up to the destination
-        return takewhile(
-            lambda p: p[1] == None or not from_target(target_ip, p),
-            packets
+        return Path(
+            takewhile(
+                lambda p: p[1] == None or not from_target(target_ip, p),
+                packets
+            )
         )
     else:
-        # Failed to reach the target
+        # Failed to reach the target.
         return None
 
 def get_args_parser():
@@ -93,41 +128,39 @@ cli_args = get_args_parser().parse_args()
 
 sites = islice(parse_top_sites(cli_args.csv_file), cli_args.n_sites)
 
-n_reachable   = 0
-n_unreachable = 0
+# Number 
+n_reachable = n_unreachable = 0
 
+# Contains the number of reachable sites for a given number of hops.
+# path_hops_hist[i] is the number of sites with an hop count equals to i.
 path_hops_hist = [0] * (cli_args.max_ttl + 1)
 
 # Number of un-silent and silent routers, regarding the way they handle expired
 # TTLs.
-n_unsilent, n_silent = 0, 0
+n_unsilent = n_silent = 0
 
 for site in sites:
-    path = traceroute(site, cli_args.max_ttl, cli_args.retry, cli_args.timeout)
+    trace = traceroute(site, cli_args.max_ttl, cli_args.retry, cli_args.timeout)
 
-    if path == None:
+    if trace == None:
         n_unreachable += 1
     else:
         n_reachable += 1
-        path_hops = 0
 
-        for node in path:
-            path_hops += 1
-            qry, resp = node
+        path = Path(trace)
 
-            if resp == None:
-                n_slient += 1
-            else:
-                n_unsilent += 1
-
-        path_hops_hist[path_hops] += 1
+        n_silient                 += path.n_silent
+        n_unsilent                += path.n_unsilent
+        path_hops_hist[len(path)] += 1
 
 n_sites = n_reachable + n_unreachable
+sum_path_hops = sum(
+    n * n_hops for n_hops, n_sites in zip(count(0), path_hops_hist)
+)
+avg_path_hops = float(sum_path_hops) / float(n_reachable)
 
 print "Probed sites: {0}".format(n_sites)
-print "Reachable target: {0:2f}%".format(
-    (float(n_reachable) / float(n_sites)) * 100
+print "Reachable target: {0} ({1:2f})%".format(
+    n_reachable, (float(n_reachable) / float(n_sites)) * 100
 )
-
-sum_path_hops = sum(n * n_hops for n_hops, n in zip(count(0), path_hops_hist))
-print "Average path hops: {0}".format(sum_path_hops / n_sites)
+print "Average path hops: {0}".format(avg_path_hops)
