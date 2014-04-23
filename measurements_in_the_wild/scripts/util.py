@@ -2,6 +2,7 @@
 
 import threading
 from collections import deque
+from itertools   import count, izip
 
 def buffered_par_map(f, iterable, buffer_size):
     """
@@ -54,6 +55,37 @@ def buffered_par_map(f, iterable, buffer_size):
             task = fifo.popleft()
             task.join()
             yield task.result
+
+def ilen(iterable):
+    """Generalization of len() which runs on any iterable. Complexity: O(n)."""
+    return sum(1 for _ in iterable)
+
+def ip_to_int(str_ip):
+    """Converts an IP string to its 32 bits value."""
+    byts = map(int, str_ip.split('.'))
+    return byts[3] + (byts[2] << 8) + (byts[1] << 16) + (byts[0] << 24)
+
+def is_private_ip(str_ip):
+    """
+    Returns True if the IP is a private IP (network is 10.0.0.0/8, 172.16.0.0/12
+    or 192.168.0.0/16).
+    """
+
+    def in_net(int_ip, net, net_mask):
+        int_net      = ip_to_int(net)
+        int_net_mask = ip_to_int(net_mask)
+
+        return (int_ip & int_net_mask) ^ int_net == 0
+
+    int_ip = ip_to_int(str_ip)
+
+    return in_net(int_ip, "10.0.0.0",    "255.0.0.0")   \
+        or in_net(int_ip, "172.16.0.0",  "255.240.0.0") \
+        or in_net(int_ip, "192.168.0.0", "255.255.0.0")
+
+def percentage(value, total):
+    """Returns the given value ratio as a percentage."""
+    return (float(value) / float(total)) * 100
 
 def lazy_property(f):
     """

@@ -3,7 +3,7 @@
 import socket
 from itertools import chain, ifilter, takewhile
 
-from scapy.all  import *
+import scapy.all as scapy
 
 from util      import lazy_property
 
@@ -12,21 +12,13 @@ class Path:
     def __init__(self, path):
         self.path = list(path)
 
-    @lazy_property
-    def n_silent(self):
-        return sum(1 for _ in ifilter(lambda node: node == None, self))
-
-    @property
-    def n_unsilent(self):
-        return len(self) - self.n_silent
-
     def __iter__(self):
         return self.path.__iter__()
 
     def __len__(self):
         return len(self.path)
 
-def traceroute(target, max_ttl, retry, timeout):
+def traceroute(target, max_ttl, timeout):
     """
     Sends an TCP SYN request on port 80 to the target with a varying TTL.
     Returns an instance of Path if the target has been reached or None if the
@@ -44,14 +36,14 @@ def traceroute(target, max_ttl, retry, timeout):
         _, resp = ans
         return resp.src == target_ip
 
-    # Sends a bunch of SYN packets to reach the destination. Varies the TTL.
-    # Sends packets with TTL from 1 to max_ttl at the same time as it is faster.
     try:
         target_ip = socket.gethostbyname(target)
     except socket.gaierror:
         return None
-    packet       = IP(dst=target_ip, ttl=(0, max_ttl))/TCP(dport=80, flags="S")
-    anss, unanss = sr(packet, retry=retry, timeout=timeout)
+
+    anss, unanss = scapy.traceroute(
+        target_ip, minttl=0, maxttl=max_ttl, timeout=timeout
+    )
 
     if any(from_target(target_ip, ans) for ans in anss):
         # Target reached.
