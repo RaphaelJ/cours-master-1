@@ -1,3 +1,5 @@
+#! /usr/bin/env python2
+
 def parse_top_sites(filename):
     """Parses the specified Alexa CSV file and returns the urls."""
 
