@@ -7,7 +7,7 @@ DEFAULT_RETRY    = 2
 DEFAULT_TIMEOUT  = 10
 
 import argparse
-from itertools import chain, count, ifilter, islice, takewhile
+from itertools import chain, count, ifilter, islice, izip, takewhile
 
 from scapy.all import *
 
@@ -20,18 +20,22 @@ def parse_top_sites(csv_file):
             yield l[:-1].split(',')[1]
 
 def lazy_property(f):
-    computed = False
-    value    = None
+    """
+    Decorator which transforms a function into a lazy evaluated property.
+    The function will only be called the first time the value will be requested.
+    """
 
-    @property
     def inner(self):
-        if not computed:
-            computed = True
-            value    = f(self)
+        attr = "_" + f.__name__ + "_lazy"
 
-        return value
+        if not hasattr(self, attr):
+            setattr(self, attr, f(self))
 
-    return inner
+        return getattr(self, attr)
+
+    return property(inner)
+
+def buffered_par_map(f, iterable)
 
 class Path:
 
@@ -100,26 +104,27 @@ def traceroute(target, max_ttl, retry, timeout):
 
 def get_args_parser():
     parser = argparse.ArgumentParser(
-        description="Execute TCP traceroute probes to a given list of websites."
+        description="Execute TCP traceroutes to a given list of websites.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument(
         "--csv_file", metavar="csv_file", type=str, default=DEFAULT_CSV_FILE,
         help="CSV file containing the list of websites to probe."
     )
     parser.add_argument(
-        '--n_sites', metavar="n_sites", type=int, default=DEFAULT_N_SITES,
+        "--n_sites", metavar="n_sites", type=int, default=DEFAULT_N_SITES,
         help="Maximum number of sites to probe."
     )
     parser.add_argument(
-        '--max_ttl', metavar="max_ttl", type=int, default=DEFAULT_MAX_TTL,
+        "--max_ttl", metavar="max_ttl", type=int, default=DEFAULT_MAX_TTL,
         help="Largest TTL tried to reach a target."
     )
     parser.add_argument(
-        '--retry', metavar="retry", type=int, default=DEFAULT_RETRY,
+        "--retry", metavar="retry", type=int, default=DEFAULT_RETRY,
         help="Number of time a probe will be resent with no received response."
     )
     parser.add_argument(
-        '--timeout', metavar="timeout", type=int, default=DEFAULT_TIMEOUT,
+        "--timeout", metavar="timeout", type=int, default=DEFAULT_TIMEOUT,
         help="Timeout before a response to be discarded."
     )
     return parser
@@ -140,27 +145,25 @@ path_hops_hist = [0] * (cli_args.max_ttl + 1)
 n_unsilent = n_silent = 0
 
 for site in sites:
-    trace = traceroute(site, cli_args.max_ttl, cli_args.retry, cli_args.timeout)
+    path = traceroute(site, cli_args.max_ttl, cli_args.retry, cli_args.timeout)
 
-    if trace == None:
+    if path == None:
         n_unreachable += 1
     else:
         n_reachable += 1
 
-        path = Path(trace)
-
-        n_silient                 += path.n_silent
+        n_silent                  += path.n_silent
         n_unsilent                += path.n_unsilent
         path_hops_hist[len(path)] += 1
 
 n_sites = n_reachable + n_unreachable
 sum_path_hops = sum(
-    n * n_hops for n_hops, n_sites in zip(count(0), path_hops_hist)
+    n_hops * n_sites for n_hops, n_sites in izip(count(0), path_hops_hist)
 )
 avg_path_hops = float(sum_path_hops) / float(n_reachable)
 
 print "Probed sites: {0}".format(n_sites)
-print "Reachable target: {0} ({1:2f})%".format(
+print "Reachable sites: {0} ({1:2f})%".format(
     n_reachable, (float(n_reachable) / float(n_sites)) * 100
 )
 print "Average path hops: {0}".format(avg_path_hops)
