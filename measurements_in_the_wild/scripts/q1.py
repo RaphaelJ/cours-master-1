@@ -1,12 +1,13 @@
 #! /usr/bin/env python2
 
-DEFAULT_CSV_FILE = "top-1m.csv"
-DEFAULT_N_SITES  = 50
-DEFAULT_MAX_TTL  = 35
-DEFAULT_RETRY    = 2
-DEFAULT_TIMEOUT  = 10
+DEFAULT_CSV_FILE    = "top-1m.csv"
+DEFAULT_N_SITES     = 50
+DEFAULT_MAX_TTL     = 35
+DEFAULT_RETRY       = 2
+DEFAULT_TIMEOUT     = 10
+DEFAULT_PARALLELISM = 1
 
-import argparse
+import argparse, threading
 from itertools import chain, count, ifilter, islice, izip, takewhile
 
 from scapy.all import *
@@ -35,7 +36,34 @@ def lazy_property(f):
 
     return property(inner)
 
-def buffered_par_map(f, iterable)
+def buffered_par_map(f, iterable, buffer_size):
+    """
+    Executes f on each item of iterable with evaluating the buffer_size next
+    items in parallel.
+    """
+
+    class Task(threading.Thread):
+
+        def __init__(self, item):
+            threading.Thread.__init__(self)
+            self.item = item
+
+        def run(self):
+            self.result = f(self.item)
+
+    def take(n, gen):
+        l = []
+        try:
+            for _ in xrange(n):
+                l += next(gen)
+        finally:
+            return l
+
+    for i in iterable:
+        task = Task(i)
+        task.start()
+        task.join()
+        yield task.result
 
 class Path:
 
@@ -112,7 +140,7 @@ def get_args_parser():
         help="CSV file containing the list of websites to probe."
     )
     parser.add_argument(
-        "--n_sites", metavar="n_sites", type=int, default=DEFAULT_N_SITES,
+        "--n_sites", "-n", metavar="n_sites", type=int, default=DEFAULT_N_SITES,
         help="Maximum number of sites to probe."
     )
     parser.add_argument(
@@ -120,33 +148,44 @@ def get_args_parser():
         help="Largest TTL tried to reach a target."
     )
     parser.add_argument(
-        "--retry", metavar="retry", type=int, default=DEFAULT_RETRY,
+        "--retry", "-r", metavar="retry", type=int, default=DEFAULT_RETRY,
         help="Number of time a probe will be resent with no received response."
     )
     parser.add_argument(
-        "--timeout", metavar="timeout", type=int, default=DEFAULT_TIMEOUT,
+        "--timeout", "-t", metavar="timeout", type=int, default=DEFAULT_TIMEOUT,
         help="Timeout before a response to be discarded."
+    )
+    parser.add_argument(
+        "--parallelism", "-p", metavar="parallelism", type=int,
+        default=DEFAULT_PARALLELISM,
+        help="How many traceroutes can be executed at the same time."
     )
     return parser
 
-cli_args = get_args_parser().parse_args()
+cli_args    = get_args_parser().parse_args()
+csv_file    = cli_args.csv_file
+n_sites     = cli_args.n_sites
+max_ttl     = cli_args.max_ttl
+retry       = cli_args.retry
+timeout     = cli_args.timeout
+parallelism = cli_args.parallelism
 
-sites = islice(parse_top_sites(cli_args.csv_file), cli_args.n_sites)
+sites = islice(parse_top_sites(csv_file), n_sites)
 
 # Number 
 n_reachable = n_unreachable = 0
 
 # Contains the number of reachable sites for a given number of hops.
 # path_hops_hist[i] is the number of sites with an hop count equals to i.
-path_hops_hist = [0] * (cli_args.max_ttl + 1)
+path_hops_hist = [0] * (max_ttl + 1)
 
 # Number of un-silent and silent routers, regarding the way they handle expired
 # TTLs.
 n_unsilent = n_silent = 0
 
-for site in sites:
-    path = traceroute(site, cli_args.max_ttl, cli_args.retry, cli_args.timeout)
+trace_site = lambda site: traceroute(site, max_ttl, retry, timeout)
 
+for path in buffered_par_map(trace_site, sites, parallelism):
     if path == None:
         n_unreachable += 1
     else:
