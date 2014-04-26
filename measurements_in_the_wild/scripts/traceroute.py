@@ -5,24 +5,13 @@ from itertools import chain, ifilter, takewhile
 
 import scapy.all as scapy
 
-from util      import lazy_property
-
-class Path:
-
-    def __init__(self, path):
-        self.path = list(path)
-
-    def __iter__(self):
-        return self.path.__iter__()
-
-    def __len__(self):
-        return len(self.path)
-
-def traceroute(target, max_ttl, timeout):
+def traceroute(target, max_ttl, timeout, dport=80, tcp_options=[]):
     """
-    Sends an TCP SYN request on port 80 to the target with a varying TTL.
-    Returns an instance of Path if the target has been reached or None if the
-    target was unreachable.
+    Sends an TCP SYN request on dport to the target with a varying TTL.
+    Return None if the target was unreachable or returns an iterable of pairs
+    representing the hops. The first item of the tuple contains the packet sent
+    whereas the second one contains the packet received (None if the router did
+    not respond).
     """
 
     def by_ttl(ans1, ans2):
@@ -31,9 +20,8 @@ def traceroute(target, max_ttl, timeout):
         qry2, _ = ans2
         return cmp(qry1.ttl, qry2.ttl)
 
-    def from_target(target_ip, ans):
+    def from_target(target_ip, resp):
         """Returns True if the response comes from the given target."""
-        _, resp = ans
         return resp.src == target_ip
 
     try:
@@ -41,24 +29,30 @@ def traceroute(target, max_ttl, timeout):
     except socket.gaierror:
         return None
 
-    anss, unanss = scapy.traceroute(
-        target_ip, minttl=0, maxttl=max_ttl, timeout=timeout
+    # Sends a set of TCP SYN packets with a varying TTL. The following code is
+    # from the Scapy's traceroute source code, slightly adjusted.
+    anss, unanss = scapy.sr(
+        scapy.IP(
+            dst=target_ip, id=scapy.RandShort(), ttl=(1, max_ttl)
+        )/scapy.TCP(
+            seq=scapy.RandInt(), sport=scapy.RandShort(), dport=dport,
+            options=tcp_options
+        ), timeout=timeout,
+        # We only consider ICMP error packets and TCP packets with at least the
+        # ACK flag set *and* either the SYN or the RST flag set.
+        filter="(icmp and (icmp[0]=3 or icmp[0]=4 or icmp[0]=5 or icmp[0]=11 \
+                or icmp[0]=12)) or (tcp and (tcp[13] & 0x16 > 0x10))"
     )
 
-    if any(from_target(target_ip, ans) for ans in anss):
+    if any(from_target(target_ip, resp) for _, resp in anss):
         # Target reached.
         # Combines the list of answered queries with the list of non-answered
         # queries.
         # Sorts them by their TTL. Unanswered queries will have a None answer.
-        packets = list(chain(anss, ((unans, None) for (unans) in unanss)))
-        packets.sort(by_ttl)
-
         # Selects the path up to the destination
-        return Path(
-            takewhile(
-                lambda p: p[1] == None or not from_target(target_ip, p),
-                packets
-            )
+        return takewhile(
+            lambda (_, resp): resp == None or not from_target(target_ip, resp),
+            sorted(chain(anss, ((unans, None) for (unans) in unanss)), by_ttl)
         )
     else:
         # Failed to reach the target.

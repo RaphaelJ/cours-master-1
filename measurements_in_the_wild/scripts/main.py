@@ -11,9 +11,10 @@ from itertools  import count, ifilter, islice, izip
 
 from alexa      import parse_top_sites
 from traceroute import traceroute
-from util       import buffered_par_map, ilen, is_private_ip, percentage
+from util       import buffered_par_map, ilen, is_private_ip, normalize, \
+                       percentage, plot_cdf
 
-def get_args_parser():
+def get_cli_args_parser():
     parser = argparse.ArgumentParser(
         description="Execute TCP traceroutes to a given list of websites.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
@@ -39,14 +40,22 @@ def get_args_parser():
         default=DEFAULT_PARALLELISM,
         help="How many traceroutes can be executed at the same time."
     )
+    parser.add_argument(
+        "--path-hops-cdf", metavar="path_hops_cdf", type=str, default=None,
+        help="""
+             Where to save the CDF graph of the path length (hops).
+             If not specified, will be displayed in a GUI.
+             """
+    )
     return parser
 
-cli_args    = get_args_parser().parse_args()
-csv_file    = cli_args.csv_file
-n_sites     = cli_args.n_sites
-max_ttl     = cli_args.max_ttl
-timeout     = cli_args.timeout
-parallelism = cli_args.parallelism
+cli_args      = get_cli_args_parser().parse_args()
+csv_file      = cli_args.csv_file
+n_sites       = cli_args.n_sites
+max_ttl       = cli_args.max_ttl
+timeout       = cli_args.timeout
+parallelism   = cli_args.parallelism
+path_hops_cdf = cli_args.path_hops_cdf
 
 sites = islice(parse_top_sites(csv_file), n_sites)
 
@@ -104,6 +113,13 @@ print "Unreachable sites ({0}) : {1}.".format(
 )
 
 print "Average path hops: {0}.".format(avg_path_hops)
+
+print "Plot the path hops CDF graph ..."
+plot_cdf(
+    "Path length (hops)", xrange(max_ttl + 1),
+    "Probability"       , normalize(path_hops_hist),
+    path_hops_cdf
+)
 
 ### Routers stats
 

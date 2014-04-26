@@ -1,8 +1,29 @@
 #! /usr/bin/env python2
 
 import threading
+
+import matplotlib
+matplotlib.use('Agg') # Other back-ends require a X display to run.
+import matplotlib.pyplot as plt
+
 from collections import deque
 from itertools   import count, izip
+from operator    import add
+
+def accumulate(iterable, f=add):
+    """
+    Make an iterator that returns accumulated sums.
+    > accumulate([1,2,3,4,5]) --> 1 3 6 10 15
+    > accumulate([1,2,3,4,5], operator.mul) --> 1 2 6 24 120
+    """
+
+    gen = iter(iterable)
+    total = next(gen)
+    yield total
+
+    for i in gen:
+        total = f(total, i)
+        yield total
 
 def buffered_par_map(f, iterable, buffer_size):
     """
@@ -19,7 +40,7 @@ def buffered_par_map(f, iterable, buffer_size):
         def run(self):
             self.result = f(self.item)
 
-    gen = iterable.__iter__()
+    gen = iter(iterable)
 
     fifo = deque()
 
@@ -83,10 +104,6 @@ def is_private_ip(str_ip):
         or in_net(int_ip, "172.16.0.0",  "255.240.0.0") \
         or in_net(int_ip, "192.168.0.0", "255.255.0.0")
 
-def percentage(value, total):
-    """Returns the given value ratio as a percentage."""
-    return (float(value) / float(total)) * 100
-
 def lazy_property(f):
     """
     Decorator which transforms a function into a lazy evaluated property.
@@ -102,3 +119,53 @@ def lazy_property(f):
         return getattr(self, attr)
 
     return property(inner)
+
+def normalize(iterable):
+    """Normalize the values of the iterable (sum(iterable) == 1)."""
+    s = sum(iterable)
+    return (float(i) / float(s) for i in iterable)
+
+def percentage(value, total):
+    """Returns the given value ratio as a percentage."""
+    return (float(value) / float(total)) * 100
+
+def plot_cdf(xlabel, xvalues, ylabel, yvalues, filename=None, xkcd=False):
+    """
+    Given a two sets of values (two 1D arrays) and their respective labels,
+    plot a CDF of the yvalues. If filename is None, display the plot, else save
+    it into the given file.
+    """
+
+    if xkcd:
+        plt.xkcd()
+
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.grid(True)
+
+    plt.plot(xvalues, list(accumulate(yvalues)), antialiased=True)
+
+    if filename != None:
+        plt.savefig(filename)
+    else:
+        plt.show()
+
+def response_is_rfc1812(res):
+    """Returns True if the ICMP response respect the RFC-1812 recommendation."""
+
+    # To check is the response respect the RFC-1812, we need to check if the
+    # ICMP response contains a complete TCP payload. Non-compliant routers could
+    # respond with the first 8 bytes of the received TCP packet.
+    # But we can't just check if the size of the TCP payload is greater than
+    # 8 bytes using len() as Scapy will initialize the TCP response with default
+    # values (flag = SYN ...), and the returned length will thus be greater than
+    # the length of the truly received data.
+    # However, the checksum will not be computed in the case of an incomplete
+    # response (Scapy computes the checksum lazily, at the time the packet is
+    # sent). Thus if the checksum is already computed, that means that the
+    # router sent a complete TCP payload.
+
+    return     type(res.payload) == ICMP                     \
+           and type(res.payload.payload) == IPError          \
+           and type(res.payload.payload.payload) == TCPError \
+           and res.payload.payload.payload.chksum != None
