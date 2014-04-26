@@ -5,7 +5,8 @@ from itertools import chain, ifilter, takewhile
 
 import scapy.all as scapy
 
-def traceroute(target, max_ttl, timeout, dport=80, tcp_options=[]):
+def traceroute(target, max_ttl, timeout, dport=80, verbose=None, \
+               tcp_options=[]):
     """
     Sends an TCP SYN request on dport to the target with a varying TTL.
     Return None if the target was unreachable or returns an iterable of pairs
@@ -37,7 +38,7 @@ def traceroute(target, max_ttl, timeout, dport=80, tcp_options=[]):
         )/scapy.TCP(
             seq=scapy.RandInt(), sport=scapy.RandShort(), dport=dport,
             options=tcp_options
-        ), timeout=timeout,
+        ), timeout=timeout, verbose=verbose,
         # We only consider ICMP error packets and TCP packets with at least the
         # ACK flag set *and* either the SYN or the RST flag set.
         filter="(icmp and (icmp[0]=3 or icmp[0]=4 or icmp[0]=5 or icmp[0]=11 \
