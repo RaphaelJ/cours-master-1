@@ -130,11 +130,11 @@ if __name__ == "__main__":
             n_reachable += 1
             print "Succeed to reach {0}.".format(site)
 
+            path        = list(path)
             mss         = INIT_MSS
             mss_changed = False
-            n_hops = 0
+            n_hops      = len(path)
             for qry, resp in path:
-                n_hops += 1
                 if resp == None:
                     n_silent += 1
                 else:
@@ -255,9 +255,9 @@ if __name__ == "__main__":
     def hist_to_cdf(histogram):
         return list(accumulate(normalize(histogram)))
 
-    plt.plot(hist_to_cdf(path_hops_hist), label="Destination")
-    plt.plot(hist_to_cdf(rfc1812_hist), label="RFC1812-compliant router")
-    plt.plot(hist_to_cdf(mss_changed_hist),label="MSS change")
+    plt.plot(hist_to_cdf(path_hops_hist), label="Destinations")
+    plt.plot(hist_to_cdf(rfc1812_hist), label="RFC1812-compliant routers")
+    plt.plot(hist_to_cdf(mss_changed_hist),label="MSS changes")
 
     plt.xlim(0, hist_size - 1)
     plt.ylim(0, 1)
