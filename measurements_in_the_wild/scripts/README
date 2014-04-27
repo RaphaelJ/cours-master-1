@@ -1,0 +1,30 @@
+The main script can be used to probe the set of the most popular websites.
+
+For example, to probe the 50 most popular websites and to plot the CDF graph in
+the file "cdf.eps", execute the following command (as root):
+
+> python2 main.py --cdf-file cdf.eps -n 50
+
+As the script is slow to execute (because of the number of traces to execute and
+the default timeout of 2 seconds), it can be executed in parallel, on multiple
+websites at the same time, using the "-p" command line parameter.
+However, I discourage anyone to use this feature at it seems that Scapy is not
+tread-safe.
+
+A second script named "proxy.py" is designed to test the presence of a TCP
+proxy.
+
+For example, to test the presence of a proxy when contacting Facebook over HTTP,
+use:
+
+> python2 proxy.py facebook.com
+
+Notice that the execution of this scipt takes a few seconds.
+
+Proxy detection can be enabled in the main.py script too using the
+"--test-proxy" parameter. It is disabled by default as proxy tests are slow to
+execute.
+
+Scapy traces are disabled for both scripts but can be enabled with the
+"--verbose" parameter. Complete script usage can be obtained using the "--help"
+parameter.

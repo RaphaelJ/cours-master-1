@@ -137,7 +137,8 @@ if __name__ == "__main__":
     else:
         has_proxy, prob = result
         if has_proxy:
-            print "HTTP traffic seems to pass through a proxy " \
-                  "(probability : {0}%).".format(prob * 100)
+            print "HTTP traffic doesn't pass through the same path as the " \
+                  "HTTPS traffic "\
+                  "(probability of a proxy: {0}%).".format(prob * 100)
         else:
             print "HTTP traffic doesn't seem to pass through a proxy."
