@@ -1,11 +1,12 @@
-
+FW1:~# iptable -L
+-bash: iptable: command not found
 FW1:~# iptables -vL
-Chain INPUT (policy ACCEPT 366 packets, 31040 bytes)
+Chain INPUT (policy ACCEPT 586 packets, 49740 bytes)
  pkts bytes target     prot opt in     out     source               destination         
 
 Chain FORWARD (policy DROP 0 packets, 0 bytes)
  pkts bytes target     prot opt in     out     source               destination         
-   25  2704 ACCEPT     all  --  any    any     anywhere             anywhere            ctstate RELATED,ESTABLISHED 
+    0     0 ACCEPT     all  --  any    any     anywhere             anywhere            ctstate RELATED,ESTABLISHED 
     0     0 ACCEPT     tcp  --  eth0   eth1    anywhere             192.168.7.10        tcp dpt:www 
     0     0 ACCEPT     udp  --  eth0   eth1    anywhere             192.168.7.11        udp dpt:domain 
     0     0 ACCEPT     tcp  --  eth0   eth1    anywhere             192.168.7.12        tcp dpt:rsync 
@@ -28,10 +29,14 @@ Chain FORWARD (policy DROP 0 packets, 0 bytes)
     0     0 ACCEPT     tcp  --  eth4   eth2    192.168.3.10         192.168.1.10        tcp dpt:ssh 
     0     0 ACCEPT     tcp  --  eth4   eth2    192.168.3.10         192.168.1.11        tcp dpt:ftp-data 
     0     0 ACCEPT     tcp  --  eth4   eth2    192.168.3.10         192.168.1.11        tcp dpt:ftp 
+    0     0 ACCEPT     tcp  --  eth4   eth2    192.168.3.11         192.168.1.10        tcp dpt:ssh 
+    0     0 ACCEPT     tcp  --  eth4   eth2    192.168.3.11         192.168.1.11        tcp dpt:ftp-data 
+    0     0 ACCEPT     tcp  --  eth4   eth2    192.168.3.11         192.168.1.11        tcp dpt:ftp 
+    0     0 ACCEPT     tcp  --  eth4   eth2    192.168.3.10         192.168.4.10        tcp dpt:ssh 
     0     0 ACCEPT     tcp  --  eth4   eth2    192.168.3.10         192.168.1.12        tcp dpt:sunrpc 
-    1    60 ACCEPT     tcp  --  eth4   eth2    192.168.3.10         192.168.1.12        tcp dpts:2046:nfs 
-    2   224 ACCEPT     udp  --  eth4   eth2    192.168.3.10         192.168.1.12        udp dpt:sunrpc 
-    1    68 ACCEPT     udp  --  eth4   eth2    192.168.3.10         192.168.1.12        udp dpts:2046:nfs 
+    0     0 ACCEPT     tcp  --  eth4   eth2    192.168.3.10         192.168.1.12        tcp dpts:2046:nfs 
+    0     0 ACCEPT     udp  --  eth4   eth2    192.168.3.10         192.168.1.12        udp dpt:sunrpc 
+    0     0 ACCEPT     udp  --  eth4   eth2    192.168.3.10         192.168.1.12        udp dpts:2046:nfs 
     0     0 ACCEPT     tcp  --  eth4   eth2    192.168.3.11         192.168.1.12        tcp dpt:sunrpc 
     0     0 ACCEPT     tcp  --  eth4   eth2    192.168.3.11         192.168.1.12        tcp dpts:2046:nfs 
     0     0 ACCEPT     udp  --  eth4   eth2    192.168.3.11         192.168.1.12        udp dpt:sunrpc 
@@ -41,8 +46,9 @@ Chain FORWARD (policy DROP 0 packets, 0 bytes)
     0     0 ACCEPT     tcp  --  eth4   eth1    192.168.3.11         192.168.7.12        tcp dpt:rsync 
     0     0 ACCEPT     tcp  --  eth4   eth1    192.168.3.11         192.168.7.12        tcp dpt:ssh 
 
-Chain OUTPUT (policy ACCEPT 366 packets, 31040 bytes)
- pkts bytes target     prot opt in     out     source               destination         
+Chain OUTPUT (policy ACCEPT 586 packets, 49740 bytes)
+ pkts bytes target     prot opt in     out     source               destination
+
  
 FW1:~# iptables -vL -t nat
 Chain PREROUTING (policy ACCEPT 45 packets, 3274 bytes)
