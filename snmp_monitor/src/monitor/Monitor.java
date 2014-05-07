@@ -1,16 +1,19 @@
-package main;
+package monitor;
+
+import java.io.IOException;
 
 import discovery.DiscoveryThread;
+import traps.TrapsListener;
 
 /**
- * Main class of the program. For now, it just parses the input parameters and
+ * Main class of the monitor program. It just parses the input parameters and
  * starts a thread operating the SNMP discovery. It also provides constants to
  * recognize SNMP version, which are used by other classes (especially in the
  * discovery package).
  */
 public class Monitor
 {
-   public static void main(String args[])
+   public static void main(String args[]) throws IOException
    {
       if (args.length != 10 && args.length != 11)
       {
@@ -59,6 +62,6 @@ public class Monitor
       new DiscoveryThread(p).start();
 
       // Launchs the trap listener.
-      new TrapHandler(p).start();
+      new TrapsListener(p).start();
    }
 }

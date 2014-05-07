@@ -1,7 +1,5 @@
 package snmp;
 
-import main.Parameters;
-
 import java.io.*;
 
 import org.snmp4j.CommunityTarget;
@@ -14,9 +12,9 @@ import org.snmp4j.mp.SnmpConstants;
 import org.snmp4j.smi.OctetString;
 
 /** Creates an SNMPv2c link with the given host. */
-public class SNMPv2cLink<P implements SNMPParameters> extends SNMPLink<P> {
+public class SNMPv2cLink<P extends SNMPParameters> extends SNMPLink<P> {
 
-   public SNMPv2cLink(String host, int port, SNMPParameters p)
+   public SNMPv2cLink(String host, int port, P p)
       throws IOException
    {
       super(host, port, p);

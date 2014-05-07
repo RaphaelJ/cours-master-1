@@ -1,6 +1,6 @@
 package retrieval;
 
-import main.*;
+import monitor.*;
 import snmp.*;
 
 import java.io.*;
@@ -22,8 +22,7 @@ import org.snmp4j.PDU;
  * update if the variable has been modified and is multiplied by two if it
  * hasn't been modified.
  */
-public class RemoteAgent<P implements SNMPParameters & SNMPv3Parameters>
-   implements Comparable<RemoteAgent>
+public class RemoteAgent implements Comparable<RemoteAgent>
 {
    /** Minimum number of milliseconds between two updates of the same
     * variable. */
@@ -37,7 +36,7 @@ public class RemoteAgent<P implements SNMPParameters & SNMPv3Parameters>
    public static final long DEFAULT_VAR_UPDATE_DELAY = 5000;
 
    /** After which number of failed updates a variable will be removed. */
-   public static final int VAR_UPDATE_RETRIES        = 1;
+   public static final int VAR_UPDATE_RETRIES        = 2;
 
    private class Variable {
       public final OID oid;
@@ -56,11 +55,11 @@ public class RemoteAgent<P implements SNMPParameters & SNMPv3Parameters>
    public final SNMPLink.SNMPVersion version;
    public final String               host;
 
-   private P      p;
+   private MonitorParameters p;
    private Writer logger = null; // The log file is opened on the first
                                  // write.
 
-   private SNMPLink<P> link;
+   private SNMPLink<MonitorParameters> link;
    private volatile boolean stopped = false;
 
    /** Keeps all tracked variables.
@@ -73,14 +72,16 @@ public class RemoteAgent<P implements SNMPParameters & SNMPv3Parameters>
    private Timer varUpdateTimer = new Timer();
 
    /** Initialises a RemoteAgent instance with an empty set of variables. */
-   public RemoteAgent(SNMPLink.SNMPVersion version, String host, P p)
-      throws IOException
+   public RemoteAgent(
+      SNMPLink.SNMPVersion version, String host, MonitorParameters p
+   ) throws IOException
    {
       this.version = version;
       this.host    = host;
       this.p       = p;
 
       this.link = SNMPLink.getInstance(version, host, 161, p);
+      this.link.listen();
    }
 
    /** Stops the update timer and the listening socket. */
@@ -246,7 +247,7 @@ public class RemoteAgent<P implements SNMPParameters & SNMPv3Parameters>
    {
       try {
          if (logger == null) { // Opens the log file for the first time.
-            File file = new File(this.p.getOutputDirectory(), this.host + ".log");
+            File file = new File(this.p.getOutputDirectory(), this.host+".log");
             this.logger = new FileWriter(file, true);
          }
 

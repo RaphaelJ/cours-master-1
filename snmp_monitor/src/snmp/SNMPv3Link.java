@@ -1,7 +1,5 @@
 package snmp;
 
-import main.Parameters;
-
 import java.io.*;
 
 import org.snmp4j.PDU;
@@ -25,7 +23,7 @@ import org.snmp4j.smi.OctetString;
 import org.snmp4j.smi.OID;
 
 /** Creates an SNMPv3 link with the given host. */
-public class SNMPv3Link<P implements SNMPv3Parameters> extends SNMPLink<P> {
+public class SNMPv3Link<P extends SNMPv3Parameters> extends SNMPLink<P> {
 
    public SNMPv3Link(String host, int port, P p)
       throws IOException
