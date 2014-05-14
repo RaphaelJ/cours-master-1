@@ -1,15 +1,13 @@
 ! Traffic from the Internet to the sub-network.
 ip access-list extended hawk-firewall-internet-in
     ! Routing traffic
-    permit ospf host eagle.run.montefiore.ulg.ac.be host hawk.run.montefiore.ulg.ac.be
-    permit ospf host owl.run.montefiore.ulg.ac.be   host hawk.run.montefiore.ulg.ac.be
+    permit ospf any any
 
-    ! Accepts Telnet to the router.
-    permit tcp any                     host 139.165.222.5   eq 23
-    permit tcp any                     host 139.165.222.161 eq 23
+    ! Accepts Telnet to this router.
+    permit tcp any host 139.165.222.5 eq 23
 
-    ! Accepts unicast ICMP traffic
-    permit icmp 139.165.222.0 0.0.0.255 host hawk.run.montefiore.ulg.ac.be
+    ! Accepts unicast ICMP traffic from the lab.
+    permit icmp 139.165.222.0 0.0.0.255 host 139.165.222.5
     permit icmp 139.165.222.0 0.0.0.255 host hornet.run.montefiore.ulg.ac.be
     permit icmp 139.165.222.0 0.0.0.255 host scarab.run.montefiore.ulg.ac.be
 
@@ -17,12 +15,14 @@ ip access-list extended hawk-firewall-internet-in
     permit tcp any host hornet.run.montefiore.ulg.ac.be eq www
 
     ! Accepts SSH to the sub-net (from 139.168.222/24).
-    permit tcp 139.165.222.0 0.0.0.255 139.165.222.160 0.0.0.31           eq 22
+    permit tcp 139.165.222.0 0.0.0.255       139.165.222.160 0.0.0.31 eq 22
+    permit tcp 139.165.0.0 0.0.255.255 eq 22 139.165.222.160 0.0.0.31       established
 
-    ! Accepts DHCP, DNS and LDAP UDP responses from ant
-    permit udp host ant.run.montefiore.ulg.ac.be eq 67  any                             eq 68
-    permit udp host ant.run.montefiore.ulg.ac.be eq 53  139.165.222.160 0.0.0.31
-    permit udp host ant.run.montefiore.ulg.ac.be eq 389 139.165.222.160 0.0.0.31
+    ! Accepts DHCP, DNS and LDAP UDP responses
+    permit udp host ant.run.montefiore.ulg.ac.be   eq 67  any                             eq 68
+    permit udp host queen.run.montefiore.ulg.ac.be eq 53  host 139.165.222.5
+    permit udp host queen.run.montefiore.ulg.ac.be eq 53  139.165.222.160 0.0.0.31
+    permit udp host ant.run.montefiore.ulg.ac.be   eq 389 139.165.222.160 0.0.0.31
 
     ! Accepts NFS traffic from ant
     permit udp host ant.run.montefiore.ulg.ac.be eq sunrpc       139.165.222.160 0.0.0.31
@@ -31,7 +31,7 @@ ip access-list extended hawk-firewall-internet-in
     permit tcp host ant.run.montefiore.ulg.ac.be range 2046 2049 139.165.222.160 0.0.0.31 established
 
     ! Allows FTP traffic from ftp.student.montefiore.ulg.ac.be
-    ! In active mode, the client receives data from the server on port 22.
+    ! In active mode, the client receives data from the server on port 20.
     ! As the client is listening, the connection must be established.
     ! In passive mode, the client receives data from the server on a > 1024 port
     ! the server is listening on.
@@ -63,15 +63,15 @@ ip access-list extended icmp-any
 interface FastEthernet0/0
     ip access-group hawk-firewall-internet-in in
 
-    ip tcp intercept list tcp-any
-    ip tcp intercept mode intercept
+    !ip tcp intercept list tcp-any
+    !ip tcp intercept mode intercept
 
     rate-limit input access-group icmp-any 256000 2000 2000 conform-action transmit exceed-action drop
 
 ! Traffic from the sub-network to the Internet.
 ip access-list extended hawk-firewall-lan-in
-    ! Accepts DNS requests to ant
-    permit udp 139.165.222.160 0.0.0.31 host ant.run.montefiore.ulg.ac.be eq 53
+    ! Accepts DNS requests to queen
+    permit udp 139.165.222.160 0.0.0.31 host queen.run.montefiore.ulg.ac.be eq 53
 
     ! Accepts ICMP traffic
     permit icmp 139.165.222.160 0.0.0.31 any
@@ -93,8 +93,13 @@ ip access-list extended hawk-firewall-lan-in
     permit tcp 139.165.222.160 0.0.0.31 any eq www
     permit tcp 139.165.222.160 0.0.0.31 any eq 443
 
-    ! Accepts SSH to & from 139.165.0.0/16.
-    permit tcp 139.165.222.160 0.0.0.31 139.165.0.0 255.255.0.0 eq 22
+    ! Accepts HTTP responses from Hornet
+    permit tcp host 139.165.222.162 eq www any
+
+    ! Accepts SSH from 139.165.222.0/24.
+    permit tcp 139.165.222.160 0.0.0.31       139.165.222.0 0.0.0.255 eq 22
+    ! Accepts SSH to 139.165.0.0/16.
+    permit tcp 139.165.222.160 0.0.0.31 eq 22 139.165.0.0 0.0.255.255       established
 
     ! Allows syslog toward bee (!! Syslog transmits data in cleartext !!).
     permit tcp 139.165.222.160 0.0.0.31 host bee.run.montefiore.ulg.ac.be eq 514
@@ -117,8 +122,21 @@ ip access-list extended hawk-firewall-lan-in
 interface FastEthernet0/1
     ip access-group hawk-firewall-lan-in in
 
+! Enable syslogging to bee. We were not able to check it runs as the logs on bee
+! required us to be root.
+logging bee.run.montefiore.ulg.ac.be
 
 ! http://www.cisco.com/c/en/us/support/docs/ip/access-lists/26448-ACLsamples.html
+
+
+!! RESET : !!
+
+! To disable ACLs :
+interface FastEthernet0/0
+    no ip access-group hawk-firewall-internet-in in
+
+interface FastEthernet0/1
+    no ip access-group hawk-firewall-lan-in in
 
 ! To reset ACLs :
 no ip access-list extended hawk-firewall-internet-in
