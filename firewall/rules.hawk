@@ -2,25 +2,43 @@
 ip access-list extended hawk-firewall-internet-in
     ! Routing traffic
     permit ospf host eagle.run.montefiore.ulg.ac.be host hawk.run.montefiore.ulg.ac.be
-    permit ospf host owl.run.montefiore.ulg.ac.be host hawk.run.montefiore.ulg.ac.be
+    permit ospf host owl.run.montefiore.ulg.ac.be   host hawk.run.montefiore.ulg.ac.be
 
     ! Accepts unicast ICMP traffic
+    permit icmp 139.165.222.0 255.255.255.0 host hawk.run.montefiore.ulg.ac.be
     permit icmp 139.165.222.0 255.255.255.0 host hornet.run.montefiore.ulg.ac.be
     permit icmp 139.165.222.0 255.255.255.0 host scarab.run.montefiore.ulg.ac.be
 
     ! Accepts HTTP traffic to hornet
     permit tcp any host hornet.run.montefiore.ulg.ac.be eq www
 
-    ! Accepts SSH
-    permit tcp 139.165.222.0 255.255.255.0 139.165.222.160 255.255.255.224 eq 22
+    ! Accepts SSH to the router (from anywhere) and to the sub-net (from
+    ! 139.168.222/24).
+    permit tcp any                         host hawk.run.montefiore.ulg.ac.be eq 22
+    permit tcp 139.165.222.0 255.255.255.0 139.165.222.160 255.255.255.224    eq 22
 
     ! Accepts DHCP, DNS and LDAP UDP responses from ant
-    permit udp host ant.run.montefiore.ulg.ac.be 139.165.222.160 255.255.255.224 eq 68
-    permit udp host ant.run.montefiore.ulg.ac.be eq 53 139.165.222.160 255.255.255.224
+    permit udp host ant.run.montefiore.ulg.ac.be eq 67  any                             eq 68
+    permit udp host ant.run.montefiore.ulg.ac.be eq 53  139.165.222.160 255.255.255.224
     permit udp host ant.run.montefiore.ulg.ac.be eq 389 139.165.222.160 255.255.255.224
 
-    ! Accepts any established TCP connections.
-    permit tcp any any established
+    ! Accepts NFS traffic from ant
+    permit udp host ant.run.montefiore.ulg.ac.be eq sunrpc       139.165.222.160 255.255.255.224
+    permit udp host ant.run.montefiore.ulg.ac.be range 2046 2049 139.165.222.160 255.255.255.224
+    permit tcp host ant.run.montefiore.ulg.ac.be eq sunrpc       139.165.222.160 255.255.255.224 established
+    permit tcp host ant.run.montefiore.ulg.ac.be range 2046 2049 139.165.222.160 255.255.255.224 established
+
+    ! Allows FTP traffic from ftp.student.montefiore.ulg.ac.be
+    ! In active mode, the client receives data from the server on port 22.
+    ! As the client is listening, the connection must be established.
+    ! In passive mode, the client receives data from the server on a > 1024 port
+    ! the server is listening on.
+    permit tcp host ftp.student.montefiore.ulg.ac.be eq ftp      139.165.222.160 255.255.255.224 established
+    permit tcp host ftp.student.montefiore.ulg.ac.be eq ftp-data 139.165.222.160 255.255.255.224
+    permit tcp host ftp.student.montefiore.ulg.ac.be gt 1023     139.165.222.160 255.255.255.224 established
+
+    ! Accepts established SMTP traffic from smtp.ulg.ac.be
+    permit tcp host smtp.ulg.ac.be eq 25                         139.165.222.160 255.255.255.224 established
 
     deny log
 
@@ -32,25 +50,58 @@ ip access-list extended hawk-firewall-lan-in
     ! Accepts ICMP traffic
     permit icmp 139.165.222.160 255.255.255.224 any
 
+    ! Accepts DHCP requests
+    permit udp any eq 68 any eq 67
+
     ! Accepts LDAP traffic to ant
     permit tcp 139.165.222.160 255.255.255.224 host ant.run.montefiore.ulg.ac.be eq 389
     permit udp 139.165.222.160 255.255.255.224 host ant.run.montefiore.ulg.ac.be eq 389
+
+    ! Accepts NFS traffic to ant
+    permit udp 139.165.222.160 255.255.255.224 host ant.run.montefiore.ulg.ac.be eq sunrpc
+    permit udp 139.165.222.160 255.255.255.224 host ant.run.montefiore.ulg.ac.be range 2046 2049
+    permit tcp 139.165.222.160 255.255.255.224 host ant.run.montefiore.ulg.ac.be eq sunrpc
+    permit tcp 139.165.222.160 255.255.255.224 host ant.run.montefiore.ulg.ac.be range 2046 2049
 
     ! Accepts HTTP/HTTPS traffic to the Internet
     permit tcp 139.165.222.160 255.255.255.224 any eq www
     permit tcp 139.165.222.160 255.255.255.224 any eq 443
 
-    ! Accepts SSH to 139.165.0.0/16 
+    ! Accepts SSH to & from 139.165.0.0/16.
     permit tcp 139.165.222.160 255.255.255.224 139.165.0.0 255.255.0.0 eq 22
 
-    ! Accepts any established TCP connections.
-    permit tcp any any established
+    ! Allows syslog toward bee (!! Syslog transmits data in cleartext !!).
+    permit tcp 139.165.222.160 255.255.255.224 bee.run.montefiore.ulg.ac.be eq 514
+    permit udp 139.165.222.160 255.255.255.224 bee.run.montefiore.ulg.ac.be eq 514
+
+    ! Allows FTP traffic toward ftp.student.montefiore.ulg.ac.be
+    ! In active mode, the client receives data from the server on port 22.
+    ! As the client is listening, the connection must be established.
+    ! In passive mode, the client receives data from the server on a > 1024 port
+    ! the server is listening on.
+    permit tcp 139.165.222.160 255.255.255.224 host ftp.student.montefiore.ulg.ac.be eq ftp
+    permit tcp 139.165.222.160 255.255.255.224 host ftp.student.montefiore.ulg.ac.be eq ftp-data established
+    permit tcp 139.165.222.160 255.255.255.224 host ftp.student.montefiore.ulg.ac.be gt 1023
+
+    ! Accepts SMTP traffic toward smtp.ulg.ac.be
+    permit tcp 139.165.222.160 255.255.255.224 host smtp.ulg.ac.be eq 25
 
     deny log
 
 ! Prevents SYN flooding by intercepting TCP handshakes.
 ! http://www.cisco.com/c/en/us/td/docs/ios/12_2/security/configuration/guide/fsecur_c/scfdenl.html
-ip tcp intercept list hawk-firewall-internet-in
+ip access-list extended tcp-any
+    permit tcp any
+    deny any
+
+ip tcp intercept list tcp-any
 ip tcp intercept mode intercept
+
+! Limits the number of icmp packets top 256Kio per second
+ip access-list extended icmp-any
+    permit icmp any
+    deny any
+
+rate-limit input access-group icmp-any 256000 2000 2000 conform-action transmit exceed-action drop
 
 ! http://www.cisco.com/c/en/us/support/docs/ip/access-lists/26448-ACLsamples.html
