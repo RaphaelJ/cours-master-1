@@ -48,13 +48,6 @@ ip access-list extended hawk-firewall-internet-in
 
     deny ip any any log
 
-! Prevents SYN flooding by intercepting TCP handshakes.
-! http://www.cisco.com/c/en/us/td/docs/ios/12_2/security/configuration/guide/fsecur_c/scfdenl.html
-! Doesn't seem to be supported on the lab' routers.
-ip access-list extended tcp-any
-    permit tcp any any
-    deny ip any any
-
 ! Limits the number of icmp packets top 256Kio per second
 ip access-list extended icmp-any
     permit icmp any any
@@ -63,10 +56,13 @@ ip access-list extended icmp-any
 interface FastEthernet0/0
     ip access-group hawk-firewall-internet-in in
 
-    !ip tcp intercept list tcp-any
-    !ip tcp intercept mode intercept
-
     rate-limit input access-group icmp-any 256000 2000 2000 conform-action transmit exceed-action drop
+    
+    ! Also sets thresholds with IP inspect to mitigate SYN flooding (see report)
+    ip inspect max-incomplete high 200
+    ip inspect max-incomplete low 100
+    ip inspect one-minute high 200
+    ip inspect one-minute low 100
 
 ! Traffic from the sub-network to the Internet.
 ip access-list extended hawk-firewall-lan-in
@@ -121,6 +117,12 @@ ip access-list extended hawk-firewall-lan-in
 
 interface FastEthernet0/1
     ip access-group hawk-firewall-lan-in in
+    
+    ! Also sets thresholds with IP inspect to mitigate SYN flooding (see report)
+    ip inspect max-incomplete high 200
+    ip inspect max-incomplete low 100
+    ip inspect one-minute high 200
+    ip inspect one-minute low 100
 
 ! Enable syslogging to bee. We were not able to check it runs as the logs on bee
 ! required us to be root.
